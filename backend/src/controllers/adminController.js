@@ -1,0 +1,349 @@
+import { supabaseAdmin } from '../config/supabase.js';
+
+const ASSET_BUCKET = 'ielts-assets';
+const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 50);
+const AUDIO_MIME_TYPES = new Set([
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/mp4',
+  'audio/aac',
+  'audio/x-m4a'
+]);
+const IMAGE_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp'
+]);
+
+const ensureAssetBucket = async () => {
+  const { error: getError } = await supabaseAdmin.storage.getBucket(ASSET_BUCKET);
+
+  if (!getError) {
+    const { error: updateError } = await supabaseAdmin.storage.updateBucket(ASSET_BUCKET, {
+      public: true,
+      allowedMimeTypes: [...AUDIO_MIME_TYPES, ...IMAGE_MIME_TYPES],
+      fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
+    });
+
+    if (updateError) throw updateError;
+    return;
+  }
+
+  const { error: createError } = await supabaseAdmin.storage.createBucket(ASSET_BUCKET, {
+    public: true,
+    allowedMimeTypes: [...AUDIO_MIME_TYPES, ...IMAGE_MIME_TYPES],
+    fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
+  });
+
+  if (createError && createError.message !== 'The resource already exists') {
+    throw createError;
+  }
+};
+
+const getAssetFolder = (mimeType) => {
+  if (AUDIO_MIME_TYPES.has(mimeType)) return 'audio';
+  if (IMAGE_MIME_TYPES.has(mimeType)) return 'images';
+  return 'files';
+};
+
+const getSafeFileName = (originalName) => {
+  const fallbackName = 'asset';
+  const parts = originalName.split('.');
+  const ext = parts.length > 1 ? parts.pop().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+  const baseName = (parts.join('.') || fallbackName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || fallbackName;
+
+  return `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext ? `.${ext}` : ''}`;
+};
+
+// ==========================================
+// SECTION CONTROLLERS
+// ==========================================
+export const createSection = async (req, res) => {
+  try {
+    const { mock_test_id, type, title, duration, order_no } = req.body;
+
+    const { data: section, error } = await supabaseAdmin
+      .from('test_sections')
+      .insert([{ mock_test_id, type, title, duration, order_no }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(section);
+  } catch (err) {
+    console.error('createSection Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to create section.' });
+  }
+};
+
+export const updateSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, duration, order_no } = req.body;
+    const updates = Object.fromEntries(
+      Object.entries({ title, duration, order_no }).filter(([, value]) => value !== undefined)
+    );
+
+    const { data: section, error } = await supabaseAdmin
+      .from('test_sections')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json(section);
+  } catch (err) {
+    console.error('updateSection Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to update section.' });
+  }
+};
+
+export const deleteSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('test_sections')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Section deleted successfully.' });
+  } catch (err) {
+    console.error('deleteSection Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to delete section.' });
+  }
+};
+
+// ==========================================
+// QUESTION GROUP CONTROLLERS
+// ==========================================
+export const createQuestionGroup = async (req, res) => {
+  try {
+    const { section_id, title, instruction, passage, audio_url, image_url, order_no } = req.body;
+
+    const { data: group, error } = await supabaseAdmin
+      .from('question_groups')
+      .insert([{ section_id, title, instruction, passage, audio_url, image_url, order_no }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(group);
+  } catch (err) {
+    console.error('createQuestionGroup Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to create question group.' });
+  }
+};
+
+export const updateQuestionGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, instruction, passage, audio_url, image_url, order_no } = req.body;
+    const updates = Object.fromEntries(
+      Object.entries({ title, instruction, passage, audio_url, image_url, order_no })
+        .filter(([, value]) => value !== undefined)
+    );
+
+    const { data: group, error } = await supabaseAdmin
+      .from('question_groups')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json(group);
+  } catch (err) {
+    console.error('updateQuestionGroup Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to update question group.' });
+  }
+};
+
+export const deleteQuestionGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('question_groups')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Question group deleted successfully.' });
+  } catch (err) {
+    console.error('deleteQuestionGroup Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to delete question group.' });
+  }
+};
+
+// ==========================================
+// QUESTION CONTROLLERS
+// ==========================================
+export const createQuestion = async (req, res) => {
+  try {
+    const { 
+      group_id, 
+      question_type, 
+      question_number, 
+      question_text, 
+      instruction, 
+      options_json, 
+      correct_answers_json, 
+      extra_data_json, 
+      marks, 
+      order_no 
+    } = req.body;
+
+    const { data: question, error } = await supabaseAdmin
+      .from('questions')
+      .insert([{
+        group_id,
+        question_type,
+        question_number,
+        question_text,
+        instruction,
+        options_json,
+        correct_answers_json,
+        extra_data_json,
+        marks,
+        order_no
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(question);
+  } catch (err) {
+    console.error('createQuestion Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to create question.' });
+  }
+};
+
+export const updateQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      question_type,
+      question_number, 
+      question_text, 
+      instruction, 
+      options_json, 
+      correct_answers_json, 
+      extra_data_json, 
+      marks, 
+      order_no 
+    } = req.body;
+
+    const { data: question, error } = await supabaseAdmin
+      .from('questions')
+      .update({
+        question_type,
+        question_number,
+        question_text,
+        instruction,
+        options_json,
+        correct_answers_json,
+        extra_data_json,
+        marks,
+        order_no
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json(question);
+  } catch (err) {
+    console.error('updateQuestion Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to update question.' });
+  }
+};
+
+export const deleteQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('questions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Question deleted successfully.' });
+  } catch (err) {
+    console.error('deleteQuestion Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to delete question.' });
+  }
+};
+
+// ==========================================
+// ASSET STORAGE UPLOAD CONTROLLER
+// ==========================================
+export const uploadAsset = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'BadRequest', message: 'No file uploaded.' });
+    }
+
+    const { file } = req;
+    const assetPath = `${getAssetFolder(file.mimetype)}/${getSafeFileName(file.originalname)}`;
+    
+    await ensureAssetBucket();
+
+    // Upload standard buffer to Supabase storage bucket
+    const { data, error } = await supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .upload(assetPath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+
+    if (error) {
+      console.error('Supabase Storage Upload Error:', error);
+      return res.status(500).json({
+        error: 'StorageError',
+        message: error.message || 'Failed to upload asset to storage.'
+      });
+    }
+
+    // Generate public reading URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .getPublicUrl(data.path);
+
+    res.status(200).json({
+      message: 'Asset uploaded successfully.',
+      bucket: ASSET_BUCKET,
+      path: data.path,
+      file_name: data.path.split('/').pop(),
+      type: getAssetFolder(file.mimetype),
+      url: publicUrl
+    });
+  } catch (err) {
+    console.error('uploadAsset Exception:', err);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: process.env.NODE_ENV === 'production'
+        ? 'Failed to upload file.'
+        : err.message || 'Failed to upload file.'
+    });
+  }
+};
