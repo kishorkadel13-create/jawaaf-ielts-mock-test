@@ -1,4 +1,5 @@
 import React from 'react';
+import { renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
 
 interface SummaryCompletionGroupProps {
   questions: any[];
@@ -149,15 +150,16 @@ const getSegmentInstruction = (questions: any[], groupInstruction = '') => {
 };
 
 const formatInstructionLines = (instruction: string, fallbackHeading: string) => {
-  const normalized = instruction
+  const splitInstruction = splitQuestionInstruction(instruction);
+  const normalized = (splitInstruction.body || instruction)
     .replace(/\s+/g, ' ')
     .replace(/\.([A-Z])/g, '. $1')
     .trim();
 
-  if (!normalized) return { heading: fallbackHeading, lines: [] };
+  if (!normalized) return { heading: splitInstruction.heading || fallbackHeading, lines: [] };
 
   const match = normalized.match(/^(Questions?\s*\d{1,2}(?:\s*[–-]\s*\d{1,2})?)(.*)$/i);
-  const heading = match?.[1]?.replace(/\s*[–-]\s*/g, '-') || fallbackHeading;
+  const heading = splitInstruction.heading || match?.[1]?.replace(/\s*[–-]\s*/g, '-') || fallbackHeading;
   const body = (match?.[2] || normalized).trim();
   const lines = body
     .replace(/\s+(Complete|Write|Choose|Answer|Label|Match|Do|Which)\b/g, '\n$1')
@@ -210,12 +212,16 @@ export const SummaryCompletionGroup = ({
     let lastIndex = 0;
     const re = new RegExp(blankTokenRe.source, 'gi');
     let match: RegExpExecArray | null;
+    const pushFormattedText = (text: string, key: string) => {
+      if (!text) return;
+      parts.push(...(renderFormattedText(text, key) || []));
+    };
 
     while ((match = re.exec(source)) !== null) {
       const number = Number(match[1]);
       const question = questionByNumber.get(number);
 
-      parts.push(source.slice(lastIndex, match.index));
+      pushFormattedText(source.slice(lastIndex, match.index), `${segmentKey}-text-${lastIndex}`);
 
       if (question) {
         const isDropdown = question.question_type === 'SUMMARY_COMPLETION_OPTIONS';
@@ -253,13 +259,13 @@ export const SummaryCompletionGroup = ({
           </React.Fragment>
         );
       } else {
-        parts.push(match[0]);
+        pushFormattedText(match[0], `${segmentKey}-missing-${match.index}`);
       }
 
       lastIndex = match.index + match[0].length;
     }
 
-    parts.push(source.slice(lastIndex));
+    pushFormattedText(source.slice(lastIndex), `${segmentKey}-text-${lastIndex}`);
     return parts;
   };
 
@@ -274,12 +280,12 @@ export const SummaryCompletionGroup = ({
           const instructionBlock = (
             <div className={segmentIndex === 0 ? 'mb-5' : 'mb-5 border-t border-slate-200 pt-7'}>
               <h3 className={`text-[22px] font-black mb-4 ${isDark ? 'text-white' : 'text-[#05162E]'}`}>
-                {heading}
+                {renderFormattedText(heading, `summary-heading-${segmentIndex}`)}
               </h3>
               {lines.length > 0 && (
                 <div className={`space-y-3 text-[16px] leading-relaxed ${isDark ? 'text-slate-300' : 'text-[#05162E]'}`}>
                   {lines.map((line, lineIndex) => (
-                    <p key={lineIndex}>{line}</p>
+                    <p key={lineIndex}>{renderFormattedText(line)}</p>
                   ))}
                 </div>
               )}

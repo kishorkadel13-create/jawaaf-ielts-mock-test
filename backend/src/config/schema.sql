@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'teacher')),
     has_full_access BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -37,7 +37,7 @@ ALTER TABLE mock_tests ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS test_sections (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     mock_test_id UUID NOT NULL REFERENCES mock_tests(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('reading', 'listening')),
+    type TEXT NOT NULL CHECK (type IN ('reading', 'listening', 'writing')),
     title TEXT NOT NULL,
     duration INTEGER, -- Section-specific duration overrides (optional)
     order_no INTEGER NOT NULL,
@@ -73,7 +73,8 @@ CREATE TABLE IF NOT EXISTS questions (
         'YES_NO_NOT_GIVEN',
         'SINGLE_MCQ',
         'MATCHING',
-        'MULTI_SELECT'
+        'MULTI_SELECT',
+        'WRITING_TASK'
     )),
     question_number INTEGER NOT NULL,
     question_text TEXT NOT NULL,
@@ -129,6 +130,28 @@ CREATE TABLE IF NOT EXISTS attempt_answers (
 -- Enable RLS
 ALTER TABLE attempt_answers ENABLE ROW LEVEL SECURITY;
 
+-- 9. WRITING FEEDBACK TABLE
+CREATE TABLE IF NOT EXISTS writing_feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    attempt_id UUID NOT NULL UNIQUE REFERENCES user_attempts(id) ON DELETE CASCADE,
+    reviewed_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    band_score NUMERIC,
+    task_achievement_score NUMERIC,
+    coherence_cohesion_score NUMERIC,
+    lexical_resource_score NUMERIC,
+    grammar_score NUMERIC,
+    task_feedback JSONB NOT NULL DEFAULT '{}'::jsonb,
+    task_achievement TEXT,
+    coherence_cohesion TEXT,
+    lexical_resource TEXT,
+    grammar TEXT,
+    examiner_comments TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE writing_feedback ENABLE ROW LEVEL SECURITY;
+
 -- CREATE INDEXES FOR OPTIMAL RELATIONAL SEARCHES
 CREATE INDEX IF NOT EXISTS idx_mock_tests_published ON mock_tests(is_published, is_demo);
 CREATE INDEX IF NOT EXISTS idx_test_sections_test ON test_sections(mock_test_id);
@@ -136,6 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_question_groups_section ON question_groups(sectio
 CREATE INDEX IF NOT EXISTS idx_questions_group ON questions(group_id);
 CREATE INDEX IF NOT EXISTS idx_user_attempts_user ON user_attempts(user_id);
 CREATE INDEX IF NOT EXISTS idx_attempt_answers_attempt ON attempt_answers(attempt_id);
+CREATE INDEX IF NOT EXISTS idx_writing_feedback_attempt ON writing_feedback(attempt_id);
 
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -180,13 +204,29 @@ CREATE POLICY "Admins can view all attempts" ON user_attempts
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'teacher')
         )
     );
 
 -- Attempt answers policies
 CREATE POLICY "Users can manage their own attempt answers" ON attempt_answers
     FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM user_attempts
+            WHERE user_attempts.id = attempt_id AND user_attempts.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Teachers and admins can manage writing feedback" ON writing_feedback
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'teacher')
+        )
+    );
+
+CREATE POLICY "Students can read feedback for their attempts" ON writing_feedback
+    FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM user_attempts
             WHERE user_attempts.id = attempt_id AND user_attempts.user_id = auth.uid()

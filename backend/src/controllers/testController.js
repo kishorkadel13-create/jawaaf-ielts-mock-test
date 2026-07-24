@@ -17,11 +17,91 @@ export const getTests = async (req, res) => {
 
     if (error) throw error;
 
+    const testIds = tests.map(test => test.id);
+    let sections = [];
+    let groups = [];
+    let questions = [];
+
+    if (testIds.length > 0) {
+      const { data: sectionList, error: sectionError } = await supabaseAdmin
+        .from('test_sections')
+        .select('id, mock_test_id, type, title, duration, order_no')
+        .in('mock_test_id', testIds)
+        .order('order_no', { ascending: true });
+
+      if (sectionError) throw sectionError;
+      sections = sectionList || [];
+
+      const sectionIds = sections.map(section => section.id);
+      if (sectionIds.length > 0) {
+        const { data: groupList, error: groupError } = await supabaseAdmin
+          .from('question_groups')
+          .select('id, section_id, title, instruction, order_no')
+          .in('section_id', sectionIds);
+
+        if (groupError) throw groupError;
+        groups = groupList || [];
+
+        const groupIds = groups.map(group => group.id);
+        if (groupIds.length > 0) {
+          const { data: questionList, error: questionError } = await supabaseAdmin
+            .from('questions')
+            .select('id, group_id, question_type, extra_data_json')
+            .in('group_id', groupIds);
+
+          if (questionError) throw questionError;
+          questions = questionList || [];
+        }
+      }
+    }
+
+    const groupsBySectionId = groups.reduce((acc, group) => {
+      acc[group.section_id] = acc[group.section_id] || [];
+      acc[group.section_id].push(group);
+      return acc;
+    }, {});
+
+    const questionsByGroupId = questions.reduce((acc, question) => {
+      acc[question.group_id] = acc[question.group_id] || [];
+      acc[question.group_id].push(question);
+      return acc;
+    }, {});
+
     // Map lock logic for student view
     const formattedTests = tests.map(test => {
       const isLocked = isStudent && !test.is_demo && !hasFullAccess;
+      const testSections = sections
+        .filter(section => section.mock_test_id === test.id)
+        .map(section => {
+          const sectionGroups = groupsBySectionId[section.id] || [];
+          const questionGroups = sectionGroups.map(group => {
+            const groupQuestions = questionsByGroupId[group.id] || [];
+            const questionTypes = [...new Set(groupQuestions
+              .map(question => question.extra_data_json?.original_type || question.question_type)
+              .filter(Boolean))];
+
+            return {
+              ...group,
+              question_count: groupQuestions.length,
+              question_types: questionTypes,
+              primary_question_type: questionTypes[0] || ''
+            };
+          });
+          const question_count = questionGroups.reduce((total, group) => total + (group.question_count || 0), 0);
+          const questionTypes = [...new Set(questionGroups.flatMap(group => group.question_types || []))];
+
+          return {
+            ...section,
+            group_count: sectionGroups.length,
+            question_count,
+            question_groups: questionGroups,
+            question_types: questionTypes
+          };
+        });
+
       return {
         ...test,
+        sections: testSections,
         is_locked: isLocked
       };
     });
@@ -122,7 +202,7 @@ export const getTestById = async (req, res) => {
 // Create mock test (Admin Only)
 export const createTest = async (req, res) => {
   try {
-    const { title, description, is_demo, is_published, duration } = req.body;
+    const { title, description, is_demo, is_published, duration, section_template = 'full_mock' } = req.body;
 
     const { data: test, error } = await supabaseAdmin
       .from('mock_tests')
@@ -138,6 +218,44 @@ export const createTest = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    const practiceTemplates = {
+      reading: [{ mock_test_id: test.id, type: 'reading', title: 'Reading Practice', duration: 60, order_no: 1 }],
+      reading_passage_1: [{ mock_test_id: test.id, type: 'reading', title: 'Reading Passage 1 Practice', duration: 20, order_no: 1 }],
+      reading_passage_2: [{ mock_test_id: test.id, type: 'reading', title: 'Reading Passage 2 Practice', duration: 20, order_no: 1 }],
+      reading_passage_3: [{ mock_test_id: test.id, type: 'reading', title: 'Reading Passage 3 Practice', duration: 20, order_no: 1 }],
+      listening: [{ mock_test_id: test.id, type: 'listening', title: 'Listening Practice', duration: 30, order_no: 1 }],
+      writing: [{ mock_test_id: test.id, type: 'writing', title: 'Writing Practice', duration: 60, order_no: 1 }],
+      writing_task_1: [{ mock_test_id: test.id, type: 'writing', title: 'Writing Task 1 Practice', duration: 30, order_no: 1 }],
+      writing_task_2: [{ mock_test_id: test.id, type: 'writing', title: 'Writing Task 2 Practice', duration: 50, order_no: 1 }]
+    };
+
+    const defaultSections = practiceTemplates[section_template] || [
+          { mock_test_id: test.id, type: 'listening', title: 'Listening Section', duration: 30, order_no: 1 },
+          { mock_test_id: test.id, type: 'reading', title: 'Reading Section', duration: 60, order_no: 2 },
+          { mock_test_id: test.id, type: 'writing', title: 'Writing Section', duration: 60, order_no: 3 }
+        ];
+
+    const { data: createdSections, error: sectionError } = await supabaseAdmin
+      .from('test_sections')
+      .insert(defaultSections)
+      .select();
+
+    if (sectionError) throw sectionError;
+
+    if (['writing', 'writing_task_1', 'writing_task_2'].includes(section_template) && createdSections?.[0]?.id) {
+      const { error: groupError } = await supabaseAdmin
+        .from('question_groups')
+        .insert([{
+          section_id: createdSections[0].id,
+          title: 'Writing Tasks',
+          instruction: '',
+          passage: '',
+          order_no: 1
+        }]);
+
+      if (groupError) throw groupError;
+    }
 
     res.status(201).json(test);
   } catch (err) {
@@ -161,7 +279,18 @@ export const updateTest = async (req, res) => {
 
     if (error) throw error;
 
-    res.status(200).json(test);
+    const { data: sections, error: sectionError } = await supabaseAdmin
+      .from('test_sections')
+      .select('id, mock_test_id, type, title, duration, order_no')
+      .eq('mock_test_id', id)
+      .order('order_no', { ascending: true });
+
+    if (sectionError) throw sectionError;
+
+    res.status(200).json({
+      ...test,
+      sections: sections || []
+    });
   } catch (err) {
     console.error('updateTest Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: 'Failed to update mock test.' });

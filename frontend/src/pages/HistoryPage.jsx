@@ -1,90 +1,261 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { Award, History, ArrowLeft, Calendar, FileText, CheckSquare } from 'lucide-react';
+import JawaafLogo from '../components/JawaafLogo';
+import {
+  ArrowLeft,
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  FileText,
+  Headphones,
+  History,
+  PenLine,
+  Timer,
+} from 'lucide-react';
+
+const getPrimarySection = (attempt) => attempt.sections?.[0] || null;
+
+const getAttemptLabel = (attempt) => {
+  const section = getPrimarySection(attempt);
+  const sectionText = `${attempt.mock_tests?.title || ''} ${section?.title || ''}`.toLowerCase();
+
+  if (attempt.attempt_mode === 'mock') return 'Full Mock Test';
+  if (section?.type === 'writing' && /task\s*1/.test(sectionText)) return 'Writing Task 1 Practice';
+  if (section?.type === 'writing' && /task\s*2/.test(sectionText)) return 'Writing Task 2 Practice';
+  if (section?.type === 'writing') return 'Writing Practice';
+  if (section?.type === 'listening') return 'Listening Practice';
+  return 'Reading Practice';
+};
+
+const getAttemptIcon = (attempt) => {
+  const section = getPrimarySection(attempt);
+  if (attempt.attempt_mode === 'mock') return <ClipboardList className="h-5 w-5" />;
+  if (section?.type === 'writing') return <PenLine className="h-5 w-5" />;
+  if (section?.type === 'listening') return <Headphones className="h-5 w-5" />;
+  return <BookOpen className="h-5 w-5" />;
+};
+
+const getStatus = (attempt) => {
+  if (attempt.review_status === 'teacher_review_pending') {
+    return {
+      label: 'Teacher review pending',
+      className: 'bg-[#FFF3F2] text-[#EE6055] border-[#EE6055]/20',
+      scoreLabel: 'Pending',
+    };
+  }
+
+  if (attempt.review_status === 'reviewed') {
+    return {
+      label: 'Teacher reviewed',
+      className: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+      scoreLabel: attempt.feedback?.band_score ? `Band ${Number(attempt.feedback.band_score).toFixed(1)}` : 'Reviewed',
+    };
+  }
+
+  return {
+    label: 'Auto graded',
+    className: 'bg-[#EFF4FB] text-[#294b77] border-[#294b77]/10',
+    scoreLabel: `Band ${Number(attempt.score || 0).toFixed(1)}`,
+  };
+};
 
 export default function HistoryPage() {
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
         const { data } = await api.get('/attempts/history');
-        setAttempts(data);
-        setLoading(false);
+        setAttempts(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to retrieve attempts history:', err);
+        setAttempts([]);
+      } finally {
         setLoading(false);
       }
     };
     fetchHistory();
   }, []);
 
+  const filteredAttempts = useMemo(() => attempts.filter((attempt) => {
+    const section = getPrimarySection(attempt);
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'mock') return attempt.attempt_mode === 'mock';
+    if (activeFilter === 'practice') return attempt.attempt_mode === 'practice';
+    return section?.type === activeFilter;
+  }), [activeFilter, attempts]);
+
+  const reviewedCount = attempts.filter(attempt => attempt.review_status !== 'teacher_review_pending').length;
+  const pendingCount = attempts.filter(attempt => attempt.review_status === 'teacher_review_pending').length;
+  const scoreAttempts = attempts.filter(attempt => attempt.review_status !== 'teacher_review_pending');
+  const bestScore = scoreAttempts.length
+    ? Math.max(...scoreAttempts.map(attempt => Number(attempt.feedback?.band_score || attempt.score || 0))).toFixed(1)
+    : '0.0';
+
+  const filters = [
+    ['all', 'All'],
+    ['mock', 'Mock'],
+    ['practice', 'Practice'],
+    ['reading', 'Reading'],
+    ['listening', 'Listening'],
+    ['writing', 'Writing'],
+  ];
+
   return (
-    <div className="flex-1 flex flex-col p-6 md:p-12 max-w-4xl mx-auto w-full">
-      <div className="mb-8 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold">
-          <ArrowLeft className="h-4 w-4" /> Dashboard
-        </Link>
-        <span className="text-xs text-slate-500 font-medium">Jawaaf IELTS Lab</span>
-      </div>
-
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white tracking-tight font-serif flex items-center gap-3">
-          <History className="h-7 w-7 text-brand-400" /> Exam Attempts Log
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">Review your past grades, band scores, and correct answers details.</p>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center p-12">
-          <div className="w-10 h-10 border-4 border-slate-800 border-t-brand-500 rounded-full animate-spin"></div>
-        </div>
-      ) : attempts.length === 0 ? (
-        <div className="text-center p-12 glass-card border-slate-800">
-          <History className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white">No Exam Records</h3>
-          <p className="text-slate-400 mt-2 text-sm">You haven't completed any mock exams yet.</p>
-          <Link to="/tests" className="mt-6 inline-block px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl transition-all shadow-md">
-            Practice Mock Exams
+    <div className="min-h-screen bg-[#F8FAFC] text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <Link to="/dashboard" className="flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#294b77]">
+            <ArrowLeft className="h-4 w-4" /> Dashboard
           </Link>
+          <JawaafLogo className="h-9 w-auto" />
         </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {attempts.map(item => (
-            <div key={item.id} className="glass-card p-6 border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-700 transition-all">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center shrink-0">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-white leading-snug">{item.mock_tests?.title}</h3>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {new Date(item.submitted_at).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><CheckSquare className="h-3.5 w-3.5" /> Completed</span>
-                  </div>
-                </div>
-              </div>
+      </header>
 
-              <div className="flex items-center justify-between sm:justify-end gap-6 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-500 font-semibold block uppercase tracking-wide">IELTS Score</span>
-                  <span className="text-2xl font-extrabold text-brand-400 block">Band {parseFloat(item.score).toFixed(1)}</span>
-                </div>
-                
-                <Link 
-                  to={`/attempts/${item.id}/result`} 
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all border border-slate-700"
-                >
-                  Review Answers
-                </Link>
+      <main className="mx-auto grid w-full max-w-6xl gap-7 px-6 py-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EFF4FB] text-[#294b77]">
+                <History className="h-6 w-6" />
+              </div>
+              <h1 className="text-[30px] font-black tracking-tight text-[#05162E]">Results</h1>
+              <p className="mt-1 text-sm font-semibold text-slate-500">
+                View every completed mock and practice attempt with score, review status, and teacher feedback.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-xl border border-slate-200 bg-[#F8FAFC] px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Attempts</p>
+                <p className="mt-1 text-2xl font-black text-[#05162E]">{attempts.length}</p>
+              </div>
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Reviewed</p>
+                <p className="mt-1 text-2xl font-black text-[#05162E]">{reviewedCount}</p>
+              </div>
+              <div className="rounded-xl border border-[#EE6055]/15 bg-[#FFF3F2] px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#EE6055]">Pending</p>
+                <p className="mt-1 text-2xl font-black text-[#05162E]">{pendingCount}</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {filters.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveFilter(key)}
+                className={`rounded-xl px-4 py-2 text-[12px] font-black transition-colors ${
+                  activeFilter === key
+                    ? 'bg-[#294b77] text-white'
+                    : 'bg-[#F8FAFC] text-slate-500 hover:bg-[#EFF4FB] hover:text-[#294b77]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[18px] font-black text-[#05162E]">Attempt History</h2>
+            <div className="hidden items-center gap-2 text-[12px] font-black text-slate-500 sm:flex">
+              <Award className="h-4 w-4 text-[#294b77]" /> Best score {bestScore}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="grid place-items-center rounded-2xl border border-slate-200 bg-white p-16 shadow-sm">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-[#294b77]"></div>
+            </div>
+          ) : filteredAttempts.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-14 text-center shadow-sm">
+              <History className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+              <h3 className="text-lg font-black text-[#05162E]">No results found</h3>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Completed attempts will appear here after submission.</p>
+              <Link to="/tests?mode=practice" className="mt-6 inline-flex rounded-xl bg-[#294b77] px-5 py-3 text-sm font-black text-white hover:bg-[#1E3A6E]">
+                Start Practice
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredAttempts.map((attempt) => {
+                const section = getPrimarySection(attempt);
+                const status = getStatus(attempt);
+                const submittedDate = attempt.submitted_at ? new Date(attempt.submitted_at) : null;
+                const dateText = submittedDate && !Number.isNaN(submittedDate.getTime())
+                  ? submittedDate.toLocaleDateString()
+                  : 'Date unavailable';
+                const totalQuestions = (attempt.objective_question_count || 0) + (attempt.writing_task_count || 0);
+
+                return (
+                  <article key={attempt.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-[#294b77]/30 hover:shadow-md">
+                    <div className="h-1.5 w-full" style={{ background: 'linear-gradient(to right, #294b77 0%, #294b77 100%)' }}></div>
+                    <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                      <div className="flex gap-4">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#EFF4FB] text-[#294b77]">
+                          {getAttemptIcon(attempt)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-lg bg-[#EFF4FB] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#294b77]">
+                              {getAttemptLabel(attempt)}
+                            </span>
+                            <span className={`rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${status.className}`}>
+                              {status.label}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 truncate text-[18px] font-black text-[#05162E]">{attempt.mock_tests?.title || 'Untitled test'}</h3>
+                          <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-6 text-slate-500">
+                            {attempt.mock_tests?.description || section?.title || 'Completed IELTS practice attempt.'}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] font-bold text-slate-500">
+                            <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {dateText}</span>
+                            <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {attempt.mock_tests?.duration || section?.duration || 0} min</span>
+                            <span className="flex items-center gap-1.5"><ClipboardCheck className="h-4 w-4" /> {totalQuestions} tasks/Qs</span>
+                            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> Completed</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 rounded-2xl bg-[#F8FAFC] p-4">
+                        <div className="flex items-end justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                              {attempt.review_status === 'teacher_review_pending' ? 'Result status' : 'IELTS score'}
+                            </p>
+                            <p className={`mt-1 text-2xl font-black ${attempt.review_status === 'teacher_review_pending' ? 'text-[#EE6055]' : 'text-[#294b77]'}`}>
+                              {status.scoreLabel}
+                            </p>
+                          </div>
+                          {attempt.review_status === 'teacher_review_pending' && <Timer className="h-7 w-7 text-[#EE6055]" />}
+                        </div>
+                        <Link
+                          to={`/attempts/${attempt.id}/result`}
+                          className="flex items-center justify-center rounded-xl bg-[#294b77] px-4 py-3 text-[13px] font-black text-white hover:bg-[#1E3A6E]"
+                        >
+                          {attempt.review_status === 'teacher_review_pending' ? 'View Submission' : 'Review Result'}
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

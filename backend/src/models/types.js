@@ -7,15 +7,29 @@ export const mockTestSchema = z.object({
   is_demo: z.boolean().default(false),
   is_published: z.boolean().default(false),
   duration: z.number().int().min(1, 'Duration must be at least 1 minute'),
+  section_template: z.enum([
+    'full_mock',
+    'reading',
+    'reading_passage_1',
+    'reading_passage_2',
+    'reading_passage_3',
+    'listening',
+    'writing',
+    'writing_task_1',
+    'writing_task_2'
+  ]).optional(),
 });
 
 // Test Section Schema
 export const testSectionSchema = z.object({
   mock_test_id: z.string().uuid('Invalid Mock Test ID'),
-  type: z.enum(['reading', 'listening']),
+  type: z.preprocess(
+    value => typeof value === 'string' ? value.trim().toLowerCase() : value,
+    z.enum(['reading', 'listening', 'writing'])
+  ),
   title: z.string().min(2, 'Title must be at least 2 characters long'),
-  duration: z.number().int().optional(),
-  order_no: z.number().int().min(1),
+  duration: z.coerce.number().int().optional(),
+  order_no: z.coerce.number().int().min(1),
 });
 
 // Question Group Schema
@@ -39,13 +53,14 @@ export const questionSchema = z.object({
     'YES_NO_NOT_GIVEN',
     'SINGLE_MCQ',
     'MATCHING',
-    'MULTI_SELECT'
+    'MULTI_SELECT',
+    'WRITING_TASK'
   ]),
   question_number: z.number().int().min(1),
   question_text: z.string().min(1, 'Question text is required'),
   instruction: z.string().optional(),
   options_json: z.array(z.any()).optional(),
-  correct_answers_json: z.array(z.any()).nonempty('Correct answers are required'),
+  correct_answers_json: z.array(z.any()).optional().default([]),
   extra_data_json: z.record(z.any()).optional(),
   marks: z.number().int().default(1),
   order_no: z.number().int().min(1),

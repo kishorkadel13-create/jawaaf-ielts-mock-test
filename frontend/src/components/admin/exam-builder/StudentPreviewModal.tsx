@@ -1,14 +1,106 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Clock, HelpCircle, CheckCircle2, XCircle, RotateCcw, ClipboardCheck, Headphones, Volume2 } from 'lucide-react';
+import { X, Clock, HelpCircle, CheckCircle2, XCircle, RotateCcw, ClipboardCheck, Headphones, Volume2, PenLine } from 'lucide-react';
 import { normalizePassageHtml } from '../../../utils/passageHtml';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../../utils/textHighlighter';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
+import { renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
 
 interface StudentPreviewModalProps {
   test: any;
   onClose: () => void;
 }
+
+type OrderedQuestionBlock = {
+  id: string;
+  kind: 'matching' | 'summary' | 'standard';
+  instruction: string;
+  questions: any[];
+};
+
+const sortQuestionsByNumber = (questions: any[] = []) => (
+  [...questions].sort((a, b) => Number(a.question_number || 0) - Number(b.question_number || 0))
+);
+
+const getQuestionInstruction = (question: any) => (
+  question?.extra_data_json?.bulk_instruction || question?.instruction || ''
+);
+
+const getQuestionBlockKey = (question: any, kind: OrderedQuestionBlock['kind']) => (
+  [
+    kind,
+    question?.extra_data_json?.bulk_source,
+    getQuestionInstruction(question),
+    question?.extra_data_json?.bulk_id,
+  ].filter(Boolean).join('|') || `${kind}-${question?.id}`
+);
+
+const getQuestionKind = (question: any, groupInstruction = ''): OrderedQuestionBlock['kind'] => {
+  if (isMatchingHeadingsQuestion(question, groupInstruction)) return 'matching';
+  if (isSummaryCompletionQuestion(question)) return 'summary';
+  return 'standard';
+};
+
+const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''): OrderedQuestionBlock[] => {
+  const sorted = sortQuestionsByNumber(questions);
+  const blocks: OrderedQuestionBlock[] = [];
+  const used = new Set<string>();
+
+  sorted.forEach((question) => {
+    if (used.has(question.id)) return;
+
+    const kind = getQuestionKind(question, groupInstruction);
+    const blockKey = getQuestionBlockKey(question, kind);
+    const blockQuestions = sorted.filter((candidate) => (
+      !used.has(candidate.id) &&
+      getQuestionKind(candidate, groupInstruction) === kind &&
+      getQuestionBlockKey(candidate, kind) === blockKey
+    ));
+
+    blockQuestions.forEach((candidate) => used.add(candidate.id));
+
+    blocks.push({
+      id: blockKey,
+      kind,
+      instruction: getQuestionInstruction(question),
+      questions: blockQuestions,
+    });
+  });
+
+  return blocks;
+};
+
+const QuestionInstructionCard = ({ instruction }: { instruction: string }) => {
+  if (!instruction) return null;
+
+  const { heading, body } = splitQuestionInstruction(instruction);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      {heading && (
+        <h3 className="text-[22px] font-black mb-4 text-[#05162E]">
+          {renderFormattedText(heading, 'preview-question-instruction-heading')}
+        </h3>
+      )}
+      <div className="text-[16px] leading-8 text-[#05162E] whitespace-pre-wrap">
+        {renderFormattedText(body || instruction, 'preview-question-instruction-body')}
+      </div>
+    </div>
+  );
+};
+
+const PassageIntroCard = ({ title, instruction }: { title: string; instruction?: string }) => (
+  <div className="mb-6 rounded-2xl border border-[#cfe0f7] bg-[#EFF4FB] p-5 font-sans shadow-sm">
+    <h3 className="text-[18px] font-black uppercase tracking-wide text-[#05162E]">
+      {title}
+    </h3>
+    {instruction && (
+      <div className="mt-3 border-t border-[#cfe0f7] pt-3 text-[14px] font-semibold leading-7 text-[#1E3A6E]">
+        {renderFormattedText(instruction, `preview-passage-intro-${title}`)}
+      </div>
+    )}
+  </div>
+);
 
 const cleanAnswer = (value: any) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -80,19 +172,23 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
       sec.question_groups?.flatMap((grp: any) => grp.questions || []) || []
     )) || []
   ).sort((a: any, b: any) => Number(a.question_number) - Number(b.question_number)), [test]);
+  const isWritingPreview = allQuestions.some((question: any) => question.question_type === 'WRITING_TASK');
   const reviewRows = useMemo(() => allQuestions.map((question: any) => {
     const studentAnswer = previewAnswers[question.id];
-    const isCorrect = evaluatePreviewAnswer(studentAnswer, question.correct_answers_json, question.question_type);
+    const isWritingTask = question.question_type === 'WRITING_TASK';
+    const isCorrect = isWritingTask ? false : evaluatePreviewAnswer(studentAnswer, question.correct_answers_json, question.question_type);
 
     return {
       question,
       studentAnswer,
+      isWritingTask,
       isCorrect,
       isAnswered: hasPreviewAnswer(studentAnswer),
     };
   }), [allQuestions, previewAnswers]);
   const answeredCount = reviewRows.filter((row) => row.isAnswered).length;
-  const correctCount = reviewRows.filter((row) => row.isCorrect).length;
+  const objectiveRows = reviewRows.filter((row) => !row.isWritingTask);
+  const correctCount = objectiveRows.filter((row) => row.isCorrect).length;
 
   useEffect(() => {
     if (!previewAudioUrl || !audioRef.current) return;
@@ -110,6 +206,71 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
   const blockClipboard = (event: React.ClipboardEvent) => {
     event.preventDefault();
   };
+
+  if (isSubmitted) {
+    return (
+      <div
+        className="fixed inset-0 z-[100] bg-[#F8FAFC] flex flex-col font-sans"
+        style={{ fontFamily: "'Inter', sans-serif" }}
+      >
+        <div className="h-16 bg-[#05162E] text-white flex items-center justify-between px-6 shrink-0">
+          <div className="flex items-center gap-4">
+            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-500/30 tracking-widest uppercase">
+              Preview Mode
+            </span>
+            <h2 className="font-bold text-[15px]">{test.title}</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            title="Exit Preview"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-2xl bg-white border border-slate-100 rounded-3xl shadow-sm p-10 text-center flex flex-col items-center">
+            <div className="h-20 w-20 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center mb-6">
+              <ClipboardCheck className="h-10 w-10" />
+            </div>
+            <h1 className="text-[28px] font-black text-[#05162E] tracking-tight">Thank you for submitting your answers.</h1>
+            <p className="text-[14px] text-slate-500 font-semibold leading-relaxed mt-3 max-w-lg">
+              {isWritingPreview
+                ? 'In the real student flow, these writing answers are saved and sent to the teacher review inbox.'
+                : 'In the real student flow, objective answers are saved and graded automatically.'}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 w-full mt-8">
+              <div className="p-4 bg-[#F8FAFC] border border-slate-100 rounded-2xl">
+                <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Answered</span>
+                <span className="block text-[24px] font-black text-[#05162E] mt-1">{answeredCount}/{allQuestions.length}</span>
+              </div>
+              <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                <span className="block text-[10px] font-black uppercase tracking-widest text-rose-500">{isWritingPreview ? 'Status' : 'Score'}</span>
+                <span className="block text-[24px] font-black text-rose-600 mt-1">{isWritingPreview ? 'Teacher Review' : `${correctCount}/${objectiveRows.length}`}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-8">
+              <button
+                onClick={() => setIsSubmitted(false)}
+                className="px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-[#05162E] text-[13px] font-black rounded-xl flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" /> Edit Preview Answers
+              </button>
+              <button
+                onClick={onClose}
+                className="px-5 py-3 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[13px] font-black rounded-xl"
+              >
+                Back to Builder
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const setPreviewAnswer = (questionId: string, value: any) => {
     if (isSubmitted) return;
@@ -251,7 +412,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
           {isSubmitted && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/10 rounded-xl text-[12px] font-bold">
               <ClipboardCheck className="h-4 w-4 text-emerald-400" />
-              <span>{correctCount}/{allQuestions.length} correct</span>
+              <span>{isWritingPreview ? 'Submitted for review' : `${correctCount}/${objectiveRows.length} correct`}</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-amber-400 font-mono text-[16px] font-bold">
@@ -342,9 +503,30 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                   </div>
                 </div>
               )}
+
+              {sec.type === 'writing' && (
+                <div className="my-8 p-5 bg-white border border-rose-100 rounded-2xl shadow-sm flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shrink-0">
+                    <PenLine className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Writing Module</p>
+                    <p className="text-[13px] text-slate-600 font-semibold mt-2 leading-relaxed">
+                      Student writing responses are saved for manual review and are not included in the automatic objective score.
+                    </p>
+                  </div>
+                </div>
+              )}
               
               {sec.question_groups?.map((grp: any) => (
                 <div key={grp.id} className="mb-10">
+                  {sec.type === 'reading' && (
+                    <PassageIntroCard
+                      title={grp.title || 'Reading Passage'}
+                      instruction={grp.instruction}
+                    />
+                  )}
+
                   {grp.image_url && (
                     <img src={grp.image_url} alt="Reference" className="w-full max-w-2xl mx-auto rounded-xl border border-slate-200 shadow-sm mb-6" />
                   )}
@@ -371,48 +553,60 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
             <div className="mb-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-black text-[16px] text-[#05162E]">Preview Result</h3>
+                  <h3 className="font-black text-[16px] text-[#05162E]">
+                    {isWritingPreview ? 'Writing Submitted' : 'Preview Result'}
+                  </h3>
                   <p className="text-[12px] text-slate-500 font-semibold mt-1">
-                    {answeredCount}/{allQuestions.length} answered, {correctCount}/{allQuestions.length} correct.
+                    {isWritingPreview
+                      ? `${answeredCount}/${allQuestions.length} tasks answered. This goes to teacher review in the real student flow.`
+                      : `${answeredCount}/${allQuestions.length} answered, ${correctCount}/${objectiveRows.length} correct.`}
                   </p>
                 </div>
-                <div className="h-16 w-16 rounded-full bg-[#EFF4FB] border border-[#1E3A6E]/10 flex flex-col items-center justify-center shrink-0">
-                  <span className="text-[10px] text-slate-500 font-black uppercase">Score</span>
-                  <span className="text-[18px] text-[#1E3A6E] font-black">{correctCount}/{allQuestions.length}</span>
+                <div className={`h-16 w-16 rounded-full border flex flex-col items-center justify-center shrink-0 ${
+                  isWritingPreview ? 'bg-rose-50 border-rose-100' : 'bg-[#EFF4FB] border-[#1E3A6E]/10'
+                }`}>
+                  <span className={`text-[10px] font-black uppercase ${isWritingPreview ? 'text-rose-500' : 'text-slate-500'}`}>
+                    {isWritingPreview ? 'Review' : 'Score'}
+                  </span>
+                  <span className={`text-[18px] font-black ${isWritingPreview ? 'text-rose-600' : 'text-[#1E3A6E]'}`}>
+                    {isWritingPreview ? 'Manual' : `${correctCount}/${objectiveRows.length}`}
+                  </span>
                 </div>
               </div>
 
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                {reviewRows.map(({ question, studentAnswer, isCorrect, isAnswered }) => (
+                {reviewRows.map(({ question, studentAnswer, isCorrect, isAnswered, isWritingTask }) => (
                   <div key={question.id} className="p-4 flex items-start gap-3">
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-black shrink-0 ${
-                      isCorrect ? 'bg-emerald-50 text-emerald-700' : isAnswered ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
+                      isWritingTask ? 'bg-rose-50 text-rose-600' : isCorrect ? 'bg-emerald-50 text-emerald-700' : isAnswered ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {question.question_number}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        {isCorrect ? (
+                        {isWritingTask ? (
+                          <ClipboardCheck className="h-4 w-4 text-rose-500 shrink-0" />
+                        ) : isCorrect ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                         ) : (
                           <XCircle className="h-4 w-4 text-red-500 shrink-0" />
                         )}
-                        <span className={`text-[12px] font-black uppercase ${isCorrect ? 'text-emerald-600' : isAnswered ? 'text-red-600' : 'text-slate-500'}`}>
-                          {isCorrect ? 'Correct' : isAnswered ? 'Incorrect' : 'Unanswered'}
+                        <span className={`text-[12px] font-black uppercase ${isWritingTask ? 'text-rose-600' : isCorrect ? 'text-emerald-600' : isAnswered ? 'text-red-600' : 'text-slate-500'}`}>
+                          {isWritingTask ? (isAnswered ? 'Ready for teacher review' : 'Unanswered') : isCorrect ? 'Correct' : isAnswered ? 'Incorrect' : 'Unanswered'}
                         </span>
                       </div>
                       <p className="text-[13px] text-[#05162E] font-semibold mt-1 line-clamp-2">{question.question_text}</p>
-                      <div className="grid sm:grid-cols-2 gap-2 mt-3">
+                      <div className={`grid gap-2 mt-3 ${isWritingTask ? 'grid-cols-1' : 'sm:grid-cols-2'}`}>
                         <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
                           <span className="block text-[10px] font-black uppercase text-slate-400">Your answer</span>
                           <span className="block text-[12px] font-bold text-slate-700 mt-0.5">{formatPreviewAnswer(studentAnswer)}</span>
                         </div>
-                        <div className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-100">
+                        {!isWritingTask && <div className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-100">
                           <span className="block text-[10px] font-black uppercase text-emerald-600">Correct answer</span>
                           <span className="block text-[12px] font-bold text-emerald-700 mt-0.5">
                             {(question.correct_answers_json || []).join(' OR ')}
                           </span>
-                        </div>
+                        </div>}
                       </div>
                     </div>
                   </div>
@@ -430,39 +624,72 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                     {grp.instruction && (
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2 text-blue-800 text-[13px] font-medium">
                         <HelpCircle className="h-4 w-4 shrink-0 mt-0.5 text-blue-500" />
-                        <p>{grp.instruction}</p>
+                        <p>{renderFormattedText(grp.instruction)}</p>
                       </div>
                     )}
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <MatchingHeadingsGroup
-                      questions={grp.questions || []}
-                      instruction={grp.instruction || ''}
-                      answers={previewAnswers}
-                      onAnswer={setPreviewAnswer}
-                      disabled={isSubmitted}
-                    />
+                    {buildOrderedQuestionBlocks(grp.questions || [], grp.instruction || '').map((block) => {
+                      if (block.kind === 'matching') {
+                        return (
+                          <MatchingHeadingsGroup
+                            key={block.id}
+                            questions={block.questions}
+                            instruction={block.instruction || grp.instruction || ''}
+                            answers={previewAnswers}
+                            onAnswer={setPreviewAnswer}
+                            disabled={isSubmitted}
+                          />
+                        );
+                      }
 
-                    {grp.questions?.some(isSummaryCompletionQuestion) && (
-                      <SummaryCompletionGroup
-                        questions={grp.questions.filter(isSummaryCompletionQuestion)}
-                        values={previewAnswers}
-                        onChange={setPreviewAnswer}
-                        mode="light"
-                        groupInstruction={grp.instruction || ''}
-                      />
-                    )}
+                      if (block.kind === 'summary') {
+                        return (
+                          <SummaryCompletionGroup
+                            key={block.id}
+                            questions={block.questions}
+                            values={previewAnswers}
+                            onChange={setPreviewAnswer}
+                            mode="light"
+                            groupInstruction={grp.instruction || ''}
+                          />
+                        );
+                      }
 
-                    {grp.questions?.filter((q: any) => (
-                      !isSummaryCompletionQuestion(q) && !isMatchingHeadingsQuestion(q, grp.instruction || '')
-                    )).map((q: any) => (
+                      return (
+                        <div key={block.id} className="flex flex-col gap-4">
+                          <QuestionInstructionCard instruction={block.instruction} />
+                          {block.questions.map((q: any) => (
                       <div key={q.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-start gap-4">
                         <div className="h-8 w-8 bg-[#1E3A6E] text-white rounded-full flex items-center justify-center font-black text-[13px] shrink-0 shadow-md">
                           {q.question_number}
                         </div>
                         
                         <div className="flex-1">
+                          {q.question_type === 'WRITING_TASK' ? (
+                            <div className="flex flex-col gap-4">
+                              <div>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  <span className="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-md text-[10px] font-black uppercase tracking-wider">
+                                    {q.extra_data_json?.task_type || 'Writing Task'}
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 font-bold">
+                                    Minimum {q.extra_data_json?.minimum_words || 250} words
+                                  </span>
+                                </div>
+                                <p className="font-medium text-[15px] text-[#05162E] leading-relaxed whitespace-pre-wrap">{q.question_text}</p>
+                              </div>
+                              <textarea
+                                disabled={isSubmitted}
+                                value={previewAnswers[q.id] || ''}
+                                onChange={(event) => setPreviewAnswer(q.id, event.target.value)}
+                                rows={12}
+                                placeholder="Write the response here..."
+                                className="w-full border-2 border-slate-200 focus:border-rose-400 px-4 py-3 bg-[#F8FAFC] rounded-xl text-[14px] text-[#05162E] outline-none resize-y leading-relaxed"
+                              />
+                            </div>
+                          ) : (
                           <p className="font-medium text-[15px] text-[#05162E] leading-relaxed mb-4">
                             {q.question_type === 'SHORT_ANSWER' ? (
                               <>
@@ -522,6 +749,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                               q.question_text
                             )}
                           </p>
+                          )}
 
                           {['MATCHING', 'MATCHING_INFORMATION', 'MATCHING_HEADINGS', 'SENTENCE_COMPLETION'].includes(q.question_type) && q.options_json && (
                             <select
@@ -598,7 +826,10 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                           )}
                         </div>
                       </div>
-                    ))}
+                          ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

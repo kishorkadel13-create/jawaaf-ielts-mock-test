@@ -70,6 +70,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`🚀 Jawaaf IELTS Lab Server running securely on http://${HOST}:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, HOST, () => {
+    console.log(`🚀 Jawaaf IELTS Lab Server running securely on http://${HOST}:${PORT}`);
+  });
+}
+
+export default app;

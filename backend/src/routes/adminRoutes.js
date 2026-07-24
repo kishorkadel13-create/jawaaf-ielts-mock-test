@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import {
+  createTeacher,
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
   createQuestion, updateQuestion, deleteQuestion,
@@ -45,6 +46,8 @@ const upload = multer({
 // Enforce admin privileges across all CMS routes
 router.use(authMiddleware);
 router.use(adminMiddleware);
+
+router.post('/teachers', createTeacher);
 
 // Sections CRUD
 router.post('/sections', validateBody(testSectionSchema), createSection);

@@ -21,6 +21,8 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminTestsPage from '../pages/admin/AdminTestsPage';
 import AdminTestDetailsPage from '../pages/admin/AdminTestDetailsPage';
 import AdminAccessPage from '../pages/admin/AdminAccessPage';
+import AdminSubmissionsPage from '../pages/admin/AdminSubmissionsPage';
+import TeacherStudentsPage from '../pages/admin/TeacherStudentsPage';
 
 export default function AppRoutes() {
   return (
@@ -35,7 +37,7 @@ export default function AppRoutes() {
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student']}>
             <DashboardPage />
           </ProtectedRoute>
         } 
@@ -43,7 +45,7 @@ export default function AppRoutes() {
       <Route 
         path="/tests" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student']}>
             <MockTestsPage />
           </ProtectedRoute>
         } 
@@ -51,7 +53,7 @@ export default function AppRoutes() {
       <Route 
         path="/history" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student']}>
             <HistoryPage />
           </ProtectedRoute>
         } 
@@ -59,7 +61,7 @@ export default function AppRoutes() {
       <Route 
         path="/access-request" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student']}>
             <AccessRequestPage />
           </ProtectedRoute>
         } 
@@ -67,7 +69,7 @@ export default function AppRoutes() {
       <Route 
         path="/attempts/:id/exam" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student']}>
             <ExamInterface />
           </ProtectedRoute>
         } 
@@ -75,7 +77,7 @@ export default function AppRoutes() {
       <Route 
         path="/attempts/:id/result" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['student', 'admin', 'teacher']}>
             <ResultPage />
           </ProtectedRoute>
         } 
@@ -107,12 +109,46 @@ export default function AppRoutes() {
         } 
       />
       <Route 
+        path="/admin/submissions" 
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminSubmissionsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/access" 
         element={
           <ProtectedRoute adminOnly={true}>
             <AdminAccessPage />
           </ProtectedRoute>
         } 
+      />
+
+      {/* Protected Teacher Portal Routes */}
+      <Route
+        path="/teacher"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <AdminSubmissionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/students"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherStudentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:studentId"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherStudentsPage />
+          </ProtectedRoute>
+        }
       />
 
       {/* Fallback route */}

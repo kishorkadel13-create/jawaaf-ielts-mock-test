@@ -29,14 +29,16 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && profile) {
+    if (isAuthenticated && profile && !isSubmitting) {
       if (profile.role === 'admin') {
         navigate('/admin');
+      } else if (profile.role === 'teacher') {
+        navigate('/teacher');
       } else {
         navigate('/dashboard');
       }
     }
-  }, [isAuthenticated, profile, navigate]);
+  }, [isAuthenticated, profile, isSubmitting, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setSubmitError(null);

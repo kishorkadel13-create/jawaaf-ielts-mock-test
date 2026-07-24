@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, FileText, Plus, Wand2, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, Bold, FileText, Plus, Wand2, X } from 'lucide-react';
 import { QuestionData } from './QuestionBuilder';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
 
@@ -357,12 +357,33 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
   const [headingOptionsText, setHeadingOptionsText] = useState('');
   const [bulkType, setBulkType] = useState('AUTO');
   const [questionStatement, setQuestionStatement] = useState(currentInstruction);
+  const statementRef = useRef<HTMLTextAreaElement | null>(null);
   const [parsedQuestions, setParsedQuestions] = useState<QuestionData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const formatGuide = useMemo(() => FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO, [bulkType]);
   const suggestedStatement = useMemo(() => SUGGESTED_STATEMENTS[bulkType] || '', [bulkType]);
+
+  const boldSelectedStatementText = () => {
+    const textarea = statementRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = questionStatement.slice(start, end);
+    const fallbackText = 'bold text';
+    const wrappedText = `**${selectedText || fallbackText}**`;
+    const nextValue = `${questionStatement.slice(0, start)}${wrappedText}${questionStatement.slice(end)}`;
+    const selectionStart = start + 2;
+    const selectionEnd = selectionStart + (selectedText || fallbackText).length;
+
+    setQuestionStatement(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+    });
+  };
 
   useEffect(() => {
     if (bulkType !== 'MATCHING_HEADINGS') return;
@@ -550,17 +571,28 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Question Statement / Student Instruction
                 </label>
-                {suggestedStatement && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setQuestionStatement(suggestedStatement)}
-                    className="text-[11px] font-bold text-[#1E3A6E] hover:underline"
+                    onClick={boldSelectedStatementText}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-black text-[#1E3A6E] hover:bg-[#EFF4FB]"
+                    title="Bold selected text"
                   >
-                    Use suggested
+                    <Bold className="h-3.5 w-3.5" /> Bold
                   </button>
-                )}
+                  {suggestedStatement && (
+                    <button
+                      type="button"
+                      onClick={() => setQuestionStatement(suggestedStatement)}
+                      className="text-[11px] font-bold text-[#1E3A6E] hover:underline"
+                    >
+                      Use suggested
+                    </button>
+                  )}
+                </div>
               </div>
               <textarea
+                ref={statementRef}
                 rows={3}
                 value={questionStatement}
                 onChange={(e) => setQuestionStatement(e.target.value)}
@@ -568,7 +600,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                 className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl focus:border-[#1E3A6E] text-[13px] outline-none resize-y transition-colors"
               />
               <span className="text-[11px] text-slate-400">
-                This appears above the questions for students.
+                This appears above the questions for students. Select text and click Bold to save it like **this**.
               </span>
             </div>
             {bulkType === 'MATCHING_HEADINGS' ? (

@@ -6,7 +6,7 @@ import JawaafLogo from '../components/JawaafLogo';
 import { 
   Monitor, Headphones, BookOpen, History, Award, 
   Settings, LogOut, Lock, CheckSquare, Calendar, 
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine
 } from 'lucide-react';
 
 // Interfaces for typing
@@ -25,10 +25,16 @@ interface MockTest {
   id: string;
   title: string;
   description: string;
-  type: string;
   duration: number;
   is_locked: boolean;
   is_demo: boolean;
+  sections?: Array<{
+    id: string;
+    type: 'reading' | 'listening' | 'writing';
+    title: string;
+    question_count: number;
+    group_count: number;
+  }>;
 }
 
 export default function DashboardPage() {
@@ -54,7 +60,7 @@ export default function DashboardPage() {
 
       // Load available tests
       const { data: tests } = await api.get('/tests').catch(() => ({ data: [] }));
-      setAvailableTests(tests.slice(0, 3)); // show first 3 tests
+      setAvailableTests(tests.filter((test: MockTest) => (test.sections?.length || 0) > 1).slice(0, 3));
 
       // Calculate statistics dynamically
       const completed = attempts.filter((a: any) => a.status === 'completed');
@@ -97,11 +103,32 @@ export default function DashboardPage() {
 
   const handleStartTest = async (testId: string) => {
     try {
-      const { data } = await api.post(`/attempts/start`, { testId });
-      navigate(`/attempts/${data.id}/exam`);
+      const { data } = await api.post(`/attempts/start`, { mock_test_id: testId });
+      navigate(`/attempts/${data.attempt.id}/exam`);
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to start test');
     }
+  };
+
+  const getSectionTypes = (test: MockTest) => {
+    const types = new Set((test.sections || []).map(section => section.type));
+    return ['listening', 'reading', 'writing'].filter(type => types.has(type as any));
+  };
+
+  const getQuestionTotal = (test: MockTest) =>
+    (test.sections || []).reduce((total, section) => total + (section.question_count || 0), 0);
+
+  const getMockSummary = (test: MockTest) => {
+    const sectionCount = test.sections?.length || 0;
+    const questionTotal = getQuestionTotal(test);
+    if (!sectionCount) return `${test.duration || 0} min`;
+    return `${test.duration || 0} min • ${sectionCount} sections • ${questionTotal} tasks/Qs`;
+  };
+
+  const sectionBadgeClass = (type: string) => {
+    if (type === 'listening') return 'bg-emerald-50 text-emerald-600';
+    if (type === 'writing') return 'bg-rose-50 text-rose-600';
+    return 'bg-[#EFF4FB] text-[#1E3A6E]';
   };
 
   return (
@@ -126,16 +153,16 @@ export default function DashboardPage() {
             <Monitor className="h-5 w-5 text-[#1E3A6E]" /> Dashboard
           </Link>
           <Link 
-            to="/tests" 
+            to="/tests?mode=practice" 
             className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
           >
-            <BookOpen className="h-5 w-5" /> Reading Tests
+            <BookOpen className="h-5 w-5" /> Practice Tests
           </Link>
           <Link 
-            to="/tests" 
+            to="/tests?mode=mock" 
             className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
           >
-            <Headphones className="h-5 w-5" /> Listening Tests
+            <PenLine className="h-5 w-5" /> Mock Tests
           </Link>
           <Link 
             to="/history" 
@@ -168,6 +195,14 @@ export default function DashboardPage() {
               className="px-4 py-3 mt-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-xl flex items-center gap-3 transition-colors border border-emerald-100"
             >
               <Award className="h-5 w-5" /> Admin Console
+            </Link>
+          )}
+          {profile?.role === 'teacher' && (
+            <Link 
+              to="/admin/submissions" 
+              className="px-4 py-3 mt-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-xl flex items-center gap-3 transition-colors border border-emerald-100"
+            >
+              <PenLine className="h-5 w-5" /> Teacher Review
             </Link>
           )}
         </nav>
@@ -258,65 +293,53 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-5 mt-2">
           <div className="flex justify-between items-end">
             <h3 className="text-[18px] font-black text-[#05162E]">Available Mock Tests</h3>
-            <Link to="/tests" className="text-[13px] text-[#1E3A6E] hover:text-[#EE6055] font-bold flex items-center gap-1 transition-colors">
+            <Link to="/tests?mode=mock" className="text-[13px] text-[#1E3A6E] hover:text-[#EE6055] font-bold flex items-center gap-1 transition-colors">
               View All <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
 
-          {/* Mock Test Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Card 1: Free */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300">
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-1 bg-[#EFF4FB] text-[#1E3A6E] text-[10px] font-extrabold rounded-md uppercase tracking-wider">Reading</span>
-                <span className="text-[12px] text-slate-500 font-semibold">60 min • 40 Qs</span>
+            {loading ? (
+              <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 text-center text-[14px] text-slate-500 font-bold">
+                Loading mock tests...
               </div>
-              <div>
-                <h4 className="font-extrabold text-[16px] text-[#05162E] leading-tight">IELTS Academic Reading 01</h4>
-                <p className="text-[13px] text-slate-500 mt-1">Official practice test set</p>
+            ) : availableTests.length === 0 ? (
+              <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 text-center text-[14px] text-slate-500 font-bold">
+                No published mock tests available yet.
               </div>
-              <button 
-                onClick={() => handleStartTest(availableTests[0]?.id || '1')}
-                className="w-full mt-auto py-2.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+            ) : availableTests.map(test => (
+              <div
+                key={test.id}
+                className={`${test.is_locked ? 'bg-[#F8FAFC]' : 'bg-white hover:-translate-y-1'} border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col gap-4 transition-transform duration-300`}
               >
-                Start Test <Play className="h-3 w-3 fill-current" />
-              </button>
-            </div>
-
-            {/* Card 2: Locked */}
-            <div className="bg-[#F8FAFC] border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col gap-4 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-1 bg-slate-200 text-slate-500 text-[10px] font-extrabold rounded-md uppercase tracking-wider">Reading</span>
-                <span className="text-[12px] text-slate-400 font-semibold">60 min • 40 Qs</span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {getSectionTypes(test).map(type => (
+                      <span key={type} className={`px-2.5 py-1 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${sectionBadgeClass(type)}`}>
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-[12px] text-slate-500 font-semibold whitespace-nowrap">{getMockSummary(test)}</span>
+                </div>
+                <div>
+                  <h4 className={`font-extrabold text-[16px] leading-tight ${test.is_locked ? 'text-slate-400' : 'text-[#05162E]'}`}>{test.title}</h4>
+                  <p className={`text-[13px] mt-1 ${test.is_locked ? 'text-slate-400' : 'text-slate-500'}`}>{test.description || 'Full IELTS mock exam with multiple modules.'}</p>
+                </div>
+                {test.is_locked ? (
+                  <Link to="/access-request" className="w-full mt-auto py-2.5 bg-slate-200 text-slate-500 text-[13px] font-bold rounded-xl flex items-center justify-center gap-2">
+                    <Lock className="h-4 w-4" /> Locked
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleStartTest(test.id)}
+                    className="w-full mt-auto py-2.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+                  >
+                    Start Mock Test <Play className="h-3 w-3 fill-current" />
+                  </button>
+                )}
               </div>
-              <div>
-                <h4 className="font-extrabold text-[16px] text-slate-400 leading-tight">IELTS Academic Reading 02</h4>
-                <p className="text-[13px] text-slate-400 mt-1">Premium mock exam set</p>
-              </div>
-              <div className="w-full mt-auto py-2.5 bg-slate-200 text-slate-500 text-[13px] font-bold rounded-xl flex items-center justify-center gap-2">
-                <Lock className="h-4 w-4" /> Locked
-              </div>
-            </div>
-
-            {/* Card 3: Free */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-300">
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-extrabold rounded-md uppercase tracking-wider">Listening</span>
-                <span className="text-[12px] text-slate-500 font-semibold">30 min • 40 Qs</span>
-              </div>
-              <div>
-                <h4 className="font-extrabold text-[16px] text-[#05162E] leading-tight">IELTS Listening Test 01</h4>
-                <p className="text-[13px] text-slate-500 mt-1">Reference audio streaming set</p>
-              </div>
-              <button 
-                onClick={() => handleStartTest(availableTests[1]?.id || '2')}
-                className="w-full mt-auto py-2.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
-              >
-                Start Test <Play className="h-3 w-3 fill-current" />
-              </button>
-            </div>
-
+            ))}
           </div>
         </div>
 
@@ -356,7 +379,7 @@ export default function DashboardPage() {
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-4 px-6 font-bold text-[#05162E]">{item.mock_tests?.title || 'IELTS Mock Test'}</td>
                           <td className="py-4 px-6">
-                            <span className="capitalize font-semibold text-slate-500">{item.mock_tests?.type || 'Reading'}</span>
+                            <span className="capitalize font-semibold text-slate-500">Mock Test</span>
                           </td>
                           <td className="py-4 px-6">
                             <span className="px-2.5 py-1 bg-[#EE6055]/10 text-[#d45248] text-[12px] font-black rounded-lg">

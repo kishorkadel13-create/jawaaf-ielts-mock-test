@@ -1,24 +1,86 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
-import { Award, BookOpen, Headphones, Lock, ShieldAlert, ArrowLeft, Play, ArrowRight, Clock, Info } from 'lucide-react';
+import JawaafLogo from '../components/JawaafLogo';
+import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu } from 'lucide-react';
 
 interface MockTest {
   id: string;
   title: string;
   description: string;
-  type: string;
   duration: number;
   is_locked: boolean;
   is_demo: boolean;
+  sections?: Array<{
+    id: string;
+    type: 'reading' | 'listening' | 'writing';
+    title: string;
+    duration?: number;
+    order_no?: number;
+    question_count: number;
+    group_count: number;
+    question_types?: string[];
+    question_groups?: Array<{
+      id: string;
+      title: string;
+      instruction?: string;
+      order_no?: number;
+      question_count: number;
+      question_types?: string[];
+      primary_question_type?: string;
+    }>;
+  }>;
 }
 
+const READING_QUESTION_TYPES = [
+  { key: 'all', label: 'All Question Types' },
+  { key: 'matching_headings', label: 'Matching Headings', aliases: ['MATCHING_HEADINGS'] },
+  { key: 'matching_information', label: 'Matching Information', aliases: ['MATCHING_INFORMATION'] },
+  { key: 'matching_features', label: 'Matching Features', aliases: ['MATCHING_FEATURES', 'MATCHING'] },
+  { key: 'multiple_choice', label: 'Multiple Choice', aliases: ['SINGLE_MCQ', 'MULTI_SELECT', 'MULTIPLE_CHOICE'] },
+  { key: 'sentence_completion', label: 'Sentence Completion', aliases: ['SENTENCE_COMPLETION'] },
+  { key: 'summary_completion', label: 'Summary Completion', aliases: ['SUMMARY_COMPLETION', 'SUMMARY_COMPLETION_OPTIONS'] },
+  { key: 'note_completion', label: 'Note Completion', aliases: ['NOTE_COMPLETION', 'FILL_IN_THE_BLANK', 'INPUT_TEXT'] },
+  { key: 'table_completion', label: 'Table Completion', aliases: ['TABLE_COMPLETION'] },
+  { key: 'flowchart_completion', label: 'Flowchart Completion', aliases: ['FLOWCHART_COMPLETION', 'FLOW_CHART_COMPLETION'] },
+  { key: 'diagram_labelling', label: 'Diagram Labelling', aliases: ['DIAGRAM_LABELLING', 'DIAGRAM_LABELING'] },
+  { key: 'true_false_not_given', label: 'True / False / Not Given', aliases: ['TRUE_FALSE_NOT_GIVEN'] },
+  { key: 'yes_no_not_given', label: 'Yes / No / Not Given', aliases: ['YES_NO_NOT_GIVEN'] },
+  { key: 'short_answer', label: 'Short Answer Questions', aliases: ['SHORT_ANSWER', 'SHORT_ANSWER_QUESTIONS'] }
+] as const;
+
+type ReadingQuestionTypeKey = typeof READING_QUESTION_TYPES[number]['key'];
+
+const normalizeReadingType = (value?: string) =>
+  String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/&/g, 'AND')
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const getReadingTypeMeta = (values: string[] = [], fallbackText = '') => {
+  const normalizedValues = new Set(values.map(normalizeReadingType).filter(Boolean));
+  const normalizedText = normalizeReadingType(fallbackText);
+
+  return READING_QUESTION_TYPES.find(type => {
+    if (type.key === 'all') return false;
+    return type.aliases?.some(alias => normalizedValues.has(alias) || normalizedText.includes(alias));
+  }) || READING_QUESTION_TYPES[0];
+};
+
 export default function MockTestsPage() {
-  const { profile } = useAuthStore();
+  const { profile, logout } = useAuthStore();
+  const [searchParams] = useSearchParams();
   const [tests, setTests] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingTestId, setStartingTestId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'mock' | 'practice'>(searchParams.get('mode') === 'practice' ? 'practice' : 'mock');
+  const [practiceType, setPracticeType] = useState<'reading' | 'listening' | 'writing' | null>(null);
+  const [writingPracticeType, setWritingPracticeType] = useState<'task1' | 'task2' | 'combo' | null>(null);
+  const [readingPassage, setReadingPassage] = useState<1 | 2 | 3>(1);
+  const [readingQuestionType, setReadingQuestionType] = useState<ReadingQuestionTypeKey>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +98,15 @@ export default function MockTestsPage() {
     fetchTests();
   }, []);
 
+  useEffect(() => {
+    const nextTab = searchParams.get('mode') === 'practice' ? 'practice' : 'mock';
+    setActiveTab(nextTab);
+    if (nextTab === 'mock') {
+      setPracticeType(null);
+      setWritingPracticeType(null);
+    }
+  }, [searchParams]);
+
   const handleStartTest = async (testId: string) => {
     try {
       setStartingTestId(testId);
@@ -50,43 +121,264 @@ export default function MockTestsPage() {
     }
   };
 
+  const getSectionTypes = (test: MockTest) => {
+    const types = new Set((test.sections || []).map(section => section.type));
+    return ['listening', 'reading', 'writing'].filter(type => types.has(type as any));
+  };
+
+  const getQuestionTotal = (test: MockTest) =>
+    (test.sections || []).reduce((total, section) => total + (section.question_count || 0), 0);
+
+  const getSectionSummary = (test: MockTest) => {
+    const sectionCount = test.sections?.length || 0;
+    const questionTotal = getQuestionTotal(test);
+    if (!sectionCount) return 'Content setup pending';
+    return `${sectionCount} sections • ${questionTotal} tasks/Qs`;
+  };
+
+  const sectionBadgeClass = (type: string) => {
+    if (type === 'listening') return 'bg-emerald-50 text-emerald-600';
+    if (type === 'writing') return 'bg-rose-50 text-rose-600';
+    return 'bg-[#EFF4FB] text-[#1E3A6E]';
+  };
+
+  const sectionIcon = (type: string) => {
+    if (type === 'listening') return <Headphones className="h-3 w-3" />;
+    if (type === 'writing') return <PenLine className="h-3 w-3" />;
+    return <BookOpen className="h-3 w-3" />;
+  };
+
+  const mockTests = tests.filter(test => (test.sections?.length || 0) > 1);
+  const practiceTests = tests.filter(test => (test.sections?.length || 0) <= 1);
+  const getReadingPassageNumber = (test: MockTest) => {
+    const section = test.sections?.find(item => item.type === 'reading');
+    const label = `${test.title || ''} ${test.description || ''} ${section?.title || ''}`.toLowerCase();
+    const match = label.match(/passage\s*([123])/i);
+    return match ? Number(match[1]) as 1 | 2 | 3 : 1;
+  };
+
+  const getReadingDifficulty = (test: MockTest) => {
+    const label = `${test.title || ''} ${test.description || ''}`.toLowerCase();
+    if (label.includes('hard') || label.includes('difficult')) return 'Hard';
+    if (label.includes('easy') || label.includes('beginner')) return 'Easy';
+    if (label.includes('medium') || label.includes('intermediate')) return 'Medium';
+    return 'Standard';
+  };
+
+  const readingPracticeCards = practiceTests
+    .filter(test => (test.sections?.[0]?.type || 'reading') === 'reading')
+    .flatMap(test => {
+      const section = test.sections?.[0];
+      const passage = getReadingPassageNumber(test);
+      const groups = section?.question_groups || [];
+
+      if (groups.length === 0) {
+        const typeMeta = getReadingTypeMeta(section?.question_types || [], `${test.title} ${section?.title || ''}`);
+        return [{
+          id: `${test.id}-section`,
+          test,
+          passage,
+          title: test.title,
+          questionTypeKey: typeMeta.key,
+          questionTypeLabel: typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
+          questionCount: section?.question_count || 0,
+          duration: section?.duration || test.duration || 20,
+          difficulty: getReadingDifficulty(test)
+        }];
+      }
+
+      return groups.map(group => {
+        const typeMeta = getReadingTypeMeta(group.question_types || [], `${group.title || ''} ${group.instruction || ''}`);
+        return {
+          id: `${test.id}-${group.id}`,
+          test,
+          passage,
+          title: group.title || test.title,
+          questionTypeKey: typeMeta.key,
+          questionTypeLabel: typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
+          questionCount: group.question_count || 0,
+          duration: section?.duration || test.duration || 20,
+          difficulty: getReadingDifficulty(test)
+        };
+      });
+    });
+
+  const filteredReadingCards = readingPracticeCards.filter(card =>
+    card.passage === readingPassage && (
+      readingQuestionType === 'all' ||
+      card.questionTypeKey === readingQuestionType ||
+      card.questionTypeKey === 'all'
+    )
+  );
+
+  const getReadingTypeCount = (typeKey: ReadingQuestionTypeKey) =>
+    readingPracticeCards.filter(card =>
+      card.passage === readingPassage && (
+        typeKey === 'all' ||
+        card.questionTypeKey === typeKey ||
+        card.questionTypeKey === 'all'
+      )
+    ).length;
+
+  const getWritingPracticeKind = (test: MockTest) => {
+    const section = test.sections?.[0];
+    const label = `${test.title || ''} ${section?.title || ''}`.toLowerCase();
+    if (/task\s*1/.test(label)) return 'task1';
+    if (/task\s*2/.test(label)) return 'task2';
+    return 'combo';
+  };
+  const visibleTests = activeTab === 'mock'
+    ? mockTests
+    : practiceType === 'writing' && writingPracticeType
+    ? practiceTests.filter(test => (test.sections?.[0]?.type || 'reading') === 'writing' && getWritingPracticeKind(test) === writingPracticeType)
+    : practiceType && practiceType !== 'writing'
+    ? practiceTests.filter(test => (test.sections?.[0]?.type || 'reading') === practiceType)
+    : [];
+
+  const getPracticeTestsByType = (type: 'reading' | 'listening' | 'writing') =>
+    practiceTests.filter(test => (test.sections?.[0]?.type || 'reading') === type);
+  const getWritingPracticeTestsByKind = (kind: 'task1' | 'task2' | 'combo') =>
+    getPracticeTestsByType('writing').filter(test => getWritingPracticeKind(test) === kind);
+
+  const practiceCards = [
+    {
+      type: 'reading' as const,
+      title: 'Reading',
+      description: 'Practice your reading skills with different question types.',
+      icon: <BookOpen className="h-10 w-10" />,
+      iconClass: 'bg-[#EFF4FB] text-[#1E3A6E]',
+      duration: '~ 60 mins'
+    },
+    {
+      type: 'listening' as const,
+      title: 'Listening',
+      description: 'Improve your listening skills with real exam-like tests.',
+      icon: <Headphones className="h-10 w-10" />,
+      iconClass: 'bg-emerald-50 text-emerald-700',
+      duration: '~ 30 mins'
+    },
+    {
+      type: 'writing' as const,
+      title: 'Writing',
+      description: 'Practice your writing tasks and review your responses.',
+      icon: <PenLine className="h-10 w-10" />,
+      iconClass: 'bg-orange-50 text-orange-500',
+      duration: '~ 60 mins'
+    }
+  ];
+  const writingPracticeCards = [
+    {
+      type: 'task1' as const,
+      title: 'Writing Task 1',
+      description: 'Practice Task 1 only with graph, chart, table, process, or map prompts.',
+      icon: <PenLine className="h-9 w-9" />,
+      duration: '30 mins'
+    },
+    {
+      type: 'task2' as const,
+      title: 'Writing Task 2',
+      description: 'Practice essay-only questions for opinion, discussion, advantages, and problem topics.',
+      icon: <PenLine className="h-9 w-9" />,
+      duration: '50 mins'
+    },
+    {
+      type: 'combo' as const,
+      title: 'Task 1 + Task 2',
+      description: 'Attempt the full writing practice set with both writing tasks together.',
+      icon: <ClipboardList className="h-9 w-9" />,
+      duration: '60 mins'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="h-screen overflow-hidden bg-[#F8FAFC] font-sans flex" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <aside className="hidden lg:flex w-[305px] bg-white flex-col p-6 border-r border-slate-100 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <Link to="/" className="mb-12 mt-2 px-2 block">
+          <JawaafLogo className="h-10 w-auto relative left-[-15px]" />
+        </Link>
+
+        <nav className="grid gap-3 text-[18px] font-bold text-slate-500">
+          <Link to="/dashboard" className="px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <Monitor className="h-5 w-5" /> Dashboard
+          </Link>
+          <Link to="/tests?mode=practice" className={`px-5 py-4 rounded-2xl flex items-center gap-4 ${activeTab === 'practice' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'hover:bg-slate-50 hover:text-[#1E3A6E]'}`}>
+            <Target className="h-5 w-5" /> Practice Test
+          </Link>
+          <Link to="/tests?mode=mock" className={`px-5 py-4 rounded-2xl flex items-center gap-4 ${activeTab === 'mock' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'hover:bg-slate-50 hover:text-[#1E3A6E]'}`}>
+            <ClipboardList className="h-5 w-5" /> Mock Test
+          </Link>
+
+          <Link to="/history" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <CheckSquare className="h-5 w-5" /> Results
+          </Link>
+          <Link to="/history" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <History className="h-5 w-5" /> History
+          </Link>
+          <Link to="/dashboard" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <User className="h-5 w-5" /> Profile
+          </Link>
+          <Link to="/dashboard" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <Settings className="h-5 w-5" /> Settings
+          </Link>
+
+          {profile?.role === 'admin' && (
+            <Link to="/admin" className="px-5 py-4 mt-5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-2xl flex items-center gap-4 transition-colors border border-emerald-100">
+              <Award className="h-5 w-5" /> Admin Console
+            </Link>
+          )}
+        </nav>
+
+        <button onClick={logout} className="mt-auto px-5 py-4 rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-600 flex items-center gap-4 font-bold text-[18px]">
+          <LogOut className="h-5 w-5" /> Logout
+        </button>
+      </aside>
+
+      <main className="flex-1 min-w-0 h-screen overflow-hidden">
+        <header className="h-[68px] bg-white border-b border-slate-100 px-6 lg:px-10 flex items-center justify-between shadow-sm">
+          <button className="lg:hidden p-2 rounded-xl hover:bg-slate-50 text-[#05162E]">
+            <Menu className="h-6 w-6" />
+          </button>
           <Link 
             to="/dashboard" 
-            className="flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
+            className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[12px] text-slate-500 font-bold uppercase tracking-wider">Jawaaf Testing Platform</span>
+          <div className="flex items-center gap-4">
+            <span className="hidden md:flex items-center gap-2 text-[12px] text-slate-500 font-black uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Jawaaf Testing Platform
+            </span>
+            <div className="h-10 w-10 rounded-full bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center font-black">
+              {profile?.full_name?.charAt(0).toUpperCase() || 'S'}
+            </div>
           </div>
-        </div>
-      </nav>
+        </header>
 
-      <main className="max-w-6xl mx-auto p-6 md:p-12 w-full">
+        <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && !practiceType ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         
         {/* Header Section */}
-        <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-[32px] md:text-[40px] font-black text-[#05162E] tracking-tight leading-tight">IELTS Mock Exams</h1>
-            <p className="text-[15px] text-slate-500 mt-2">Select a reading or listening CBT set to begin practicing under exam conditions.</p>
-          </div>
-          
-          {!profile?.has_full_access && (
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3 max-w-md shadow-sm">
-              <Lock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-[13px] text-amber-800 leading-relaxed font-medium">
-                Premium tests are locked. <Link to="/premium" className="font-bold underline hover:text-amber-900">Request full premium access</Link> to unlock our entire library. Free demos are always available.
+        {!(activeTab === 'practice' && !practiceType) && (
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <h1 className="text-[28px] md:text-[34px] font-black text-[#05162E] tracking-tight leading-tight">
+                Hi, {profile?.full_name?.split(' ')[0] || 'Student'}!
+              </h1>
+              <p className="text-[13px] text-slate-500 mt-1">
+                Welcome back. Ready to improve your IELTS score today?
               </p>
             </div>
-          )}
-        </div>
+            
+            {!profile?.has_full_access && (
+              <div className="hidden xl:flex p-3 bg-amber-50 border border-amber-100 rounded-xl items-start gap-3 max-w-md shadow-sm">
+                <Lock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[13px] text-amber-800 leading-relaxed font-medium">
+                  Premium tests are locked. <Link to="/access-request" className="font-bold underline hover:text-amber-900">Request full premium access</Link> to unlock our entire library.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Content Section */}
         {loading ? (
@@ -102,24 +394,372 @@ export default function MockTestsPage() {
             <h3 className="text-[20px] font-black text-[#05162E]">No Mock Tests Available</h3>
             <p className="text-slate-500 mt-2 text-[15px]">There are currently no mock tests available in the system. Please check back later or contact your administrator.</p>
           </div>
+        ) : activeTab === 'practice' && !practiceType ? (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="grid xl:grid-cols-[minmax(0,1fr)_330px] gap-8 p-7 md:p-8">
+              <section>
+                <div className="mb-7">
+                  <h2 className="text-[30px] font-black text-[#05162E] tracking-tight">Practice Test</h2>
+                  <p className="text-[15px] text-slate-500 mt-2">Choose a section to practice individually. Improve your skills step by step.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-7">
+                  {practiceCards.map(card => {
+                    const count = getPracticeTestsByType(card.type).length;
+                    return (
+                      <button
+                        key={card.type}
+                        type="button"
+	                        onClick={() => {
+	                          setPracticeType(card.type);
+	                          setWritingPracticeType(null);
+                            setReadingQuestionType('all');
+	                        }}
+                        className="bg-white border border-slate-200 hover:border-[#1E3A6E]/40 rounded-2xl p-6 min-h-[365px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-center flex flex-col items-center"
+                      >
+                        <div className={`h-20 w-20 rounded-3xl flex items-center justify-center mb-5 ${card.iconClass}`}>
+                          {card.icon}
+                        </div>
+                        <h3 className="text-[24px] font-black text-[#05162E]">{card.title}</h3>
+                        <p className="text-[14px] text-slate-500 leading-relaxed mt-3 min-h-[54px] max-w-[260px]">{card.description}</p>
+                        <div className="mt-auto grid gap-1.5 text-[13px] font-bold text-[#1E3A6E]">
+                          <span className="flex items-center justify-center gap-2">
+                            <ClipboardList className="h-4 w-4" /> {count} Tests Available
+                          </span>
+                          <span className="flex items-center justify-center gap-2 text-slate-500">
+                            <Clock className="h-4 w-4" /> {card.duration}
+                          </span>
+                        </div>
+                        <span className="w-full mt-5 py-3.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[14px] font-black rounded-xl transition-colors">
+                          Start Practice
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <aside className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
+                <h3 className="text-[20px] font-black text-[#1E3A6E] mb-7">How Practice Test Works?</h3>
+                <div className="grid gap-7">
+                  {[
+                    [<ClipboardList className="h-5 w-5" />, 'Choose a section', 'Select Reading, Listening or Writing.'],
+                    [<CheckSquare className="h-5 w-5" />, 'Practice & Improve', 'Attempt questions and check your answers.'],
+                    [<BarChart3 className="h-5 w-5" />, 'Track Progress', 'See your performance and improve your band score.']
+                  ].map(([icon, title, desc]) => (
+                    <div key={String(title)} className="flex items-start gap-4">
+                      <div className="h-14 w-14 rounded-full bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center shrink-0">
+                        {icon}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-[#05162E] text-[15px]">{title}</h4>
+                        <p className="text-[13px] text-slate-500 font-medium leading-relaxed mt-1">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-5 text-center">
+                  <p className="text-[14px] font-bold text-[#05162E] leading-relaxed">Practice is the key to success in IELTS!</p>
+                  <p className="text-[13px] font-black text-slate-500 mt-3">- Keep Going</p>
+                </div>
+              </aside>
+            </div>
+
+            <div className="border-t border-slate-100 p-6 md:p-7">
+              <h3 className="text-[18px] font-black text-[#05162E] mb-5">Tips for Practice</h3>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {[
+                  [<Timer className="h-6 w-6" />, 'Manage Your Time', 'Practice with timer to improve your speed.', 'bg-[#EFF4FB] text-[#1E3A6E]'],
+                  [<Target className="h-6 w-6" />, 'Focus on Weak Areas', 'Identify your weak areas and work on them.', 'bg-emerald-50 text-emerald-600'],
+                  [<BarChart3 className="h-6 w-6" />, 'Analyze Results', 'Review your performance and learn from mistakes.', 'bg-orange-50 text-orange-500'],
+                  [<Star className="h-6 w-6" />, 'Stay Consistent', 'Practice daily and stay consistent.', 'bg-violet-50 text-violet-600']
+                ].map(([icon, title, desc, colorClass]) => (
+                  <div key={String(title)} className="flex items-start gap-4">
+                    <div className={`h-14 w-14 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                      {icon}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-[#05162E] text-[14px]">{title}</h4>
+                      <p className="text-[13px] text-slate-500 font-medium leading-relaxed mt-1">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+	        ) : activeTab === 'practice' && practiceType === 'reading' ? (
+          <div className="grid gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPracticeType(null);
+                    setReadingQuestionType('all');
+                  }}
+                  className="mb-3 inline-flex items-center gap-2 text-[13px] font-black text-slate-500 hover:text-[#294b77]"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to practice sections
+                </button>
+                <h2 className="text-[28px] font-black text-[#05162E]">Reading Practice</h2>
+                <p className="text-[14px] text-slate-500 mt-1">Choose a passage, then filter by IELTS reading question type.</p>
+              </div>
+
+              <div className="flex rounded-2xl bg-white border border-slate-200 p-1 shadow-sm">
+                {[1, 2, 3].map(passage => (
+                  <button
+                    key={passage}
+                    type="button"
+                    onClick={() => {
+                      setReadingPassage(passage as 1 | 2 | 3);
+                      setReadingQuestionType('all');
+                    }}
+                    className={`px-4 sm:px-6 py-3 rounded-xl text-[13px] font-black transition-all ${
+                      readingPassage === passage
+                        ? 'bg-[#294b77] text-white shadow-sm'
+                        : 'text-slate-500 hover:bg-[#EFF4FB] hover:text-[#294b77]'
+                    }`}
+                  >
+                    Passage {passage}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+              <aside className="lg:sticky lg:top-0 h-fit rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="border-b border-slate-100 bg-[#294b77] px-5 py-4">
+                  <h3 className="text-[15px] font-black text-white">Question Types</h3>
+                  <p className="text-[12px] font-semibold text-white/70 mt-1">Passage {readingPassage} practice sets</p>
+                </div>
+                <div className="max-h-[calc(100vh-260px)] overflow-y-auto p-3">
+                  {READING_QUESTION_TYPES.map(type => {
+                    const count = getReadingTypeCount(type.key);
+                    const isActive = readingQuestionType === type.key;
+                    return (
+                      <button
+                        key={type.key}
+                        type="button"
+                        onClick={() => setReadingQuestionType(type.key)}
+                        className={`w-full rounded-xl px-3 py-3 text-left transition-all flex items-center justify-between gap-3 ${
+                          isActive
+                            ? 'bg-[#EFF4FB] text-[#294b77] ring-1 ring-[#294b77]/20'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-[#294b77]'
+                        }`}
+                      >
+                        <span className="text-[13px] font-black leading-snug">{type.label}</span>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
+                          isActive ? 'bg-white text-[#294b77]' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
+
+              <section className="min-w-0">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-[18px] font-black text-[#05162E]">
+                      Passage {readingPassage} Practice Sets
+                    </h3>
+                    <p className="text-[13px] text-slate-500 font-semibold">
+                      {filteredReadingCards.length} set{filteredReadingCards.length === 1 ? '' : 's'} available
+                    </p>
+                  </div>
+                </div>
+
+                {filteredReadingCards.length === 0 ? (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-14 text-center shadow-sm flex flex-col items-center">
+                    <div className="w-16 h-16 bg-[#EFF4FB] rounded-full flex items-center justify-center mb-5">
+                      <BookOpen className="h-8 w-8 text-[#294b77]" />
+                    </div>
+                    <h3 className="text-[19px] font-black text-[#05162E]">No practice set found</h3>
+                    <p className="text-slate-500 mt-2 text-[14px] max-w-md">
+                      No reading practice is available for Passage {readingPassage} with this question type yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
+                    {filteredReadingCards.map(card => (
+                      <div
+                        key={card.id}
+                        className={`bg-white rounded-2xl border ${card.test.is_locked ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1'} transition-all overflow-hidden`}
+                      >
+                        <div className="h-2 w-full bg-[#294b77]"></div>
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#EFF4FB] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#294b77]">
+                              <BookOpen className="h-3 w-3" /> Passage {card.passage}
+                            </span>
+                            {card.test.is_locked ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500">
+                                <Lock className="h-3 w-3" /> Locked
+                              </span>
+                            ) : card.test.is_demo ? (
+                              <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-600">
+                                Free Demo
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <h4 className="text-[18px] font-black text-[#05162E] leading-snug">{card.title}</h4>
+                          <p className="mt-2 text-[13px] font-bold text-slate-500">{card.test.title}</p>
+
+                          <div className="mt-5 grid grid-cols-2 gap-3 text-[12px] font-black">
+                            <div className="rounded-xl bg-[#F8FAFC] p-3">
+                              <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Question Type</span>
+                              <span className="mt-1 block text-[#05162E]">{card.questionTypeLabel}</span>
+                            </div>
+                            <div className="rounded-xl bg-[#F8FAFC] p-3">
+                              <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Questions</span>
+                              <span className="mt-1 block text-[#05162E]">{card.questionCount || 'Setup pending'}</span>
+                            </div>
+                            <div className="rounded-xl bg-[#F8FAFC] p-3">
+                              <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Difficulty</span>
+                              <span className="mt-1 block text-[#05162E]">{card.difficulty}</span>
+                            </div>
+                            <div className="rounded-xl bg-[#F8FAFC] p-3">
+                              <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Estimated Time</span>
+                              <span className="mt-1 block text-[#05162E]">{card.duration} min</span>
+                            </div>
+                          </div>
+
+                          {card.test.is_locked ? (
+                            <Link
+                              to="/access-request"
+                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 py-3 text-[13px] font-black text-slate-600 hover:bg-slate-200"
+                            >
+                              Unlock Practice <Lock className="h-3.5 w-3.5" />
+                            </Link>
+                          ) : (
+                            <button
+                              disabled={startingTestId === card.test.id}
+                              onClick={() => handleStartTest(card.test.id)}
+                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#294b77] py-3 text-[13px] font-black text-white shadow-sm hover:bg-[#203d63] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {startingTestId === card.test.id ? 'Starting Practice...' : <>Start Practice <Play className="h-3 w-3 fill-current" /></>}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+	        ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
+	          <div className="grid gap-6">
+	            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+	              <div>
+	                <button
+	                  type="button"
+	                  onClick={() => {
+	                    setPracticeType(null);
+	                    setWritingPracticeType(null);
+	                  }}
+	                  className="mb-3 inline-flex items-center gap-2 text-[13px] font-black text-slate-500 hover:text-[#1E3A6E]"
+	                >
+	                  <ArrowLeft className="h-4 w-4" /> Back to practice sections
+	                </button>
+	                <h2 className="text-[26px] font-black text-[#05162E]">Writing Practice Types</h2>
+	                <p className="text-[14px] text-slate-500 mt-1">Choose Task 1, Task 2, or the combined writing practice.</p>
+	              </div>
+	            </div>
+
+	            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+	              {writingPracticeCards.map(card => {
+	                const count = getWritingPracticeTestsByKind(card.type).length;
+	                return (
+	                  <button
+	                    key={card.type}
+	                    type="button"
+	                    onClick={() => setWritingPracticeType(card.type)}
+	                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 text-left transition-all overflow-hidden"
+	                  >
+	                    <div className="h-2 w-full bg-[#1E3A6E]"></div>
+	                    <div className="p-6">
+	                      <div className="h-16 w-16 rounded-2xl bg-[#FFF3F2] text-[#EE6055] flex items-center justify-center mb-5">
+	                        {card.icon}
+	                      </div>
+	                      <h3 className="text-[20px] font-black text-[#05162E]">{card.title}</h3>
+	                      <p className="text-[13px] text-slate-500 leading-relaxed mt-2 min-h-[64px]">{card.description}</p>
+	                      <div className="mt-6 flex items-center justify-between text-[12px] font-black text-slate-500">
+	                        <span className="flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> {count} tests</span>
+	                        <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {card.duration}</span>
+	                      </div>
+	                      <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] py-3 text-[13px] font-black text-white">
+	                        Open {card.title} <Play className="h-3 w-3 fill-current" />
+	                      </span>
+	                    </div>
+	                  </button>
+	                );
+	              })}
+	            </div>
+	          </div>
+	        ) : visibleTests.length === 0 ? (
+          <div className="bg-white border border-slate-100 rounded-2xl p-16 text-center shadow-sm flex flex-col items-center">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+              <BookOpen className="h-10 w-10 text-slate-300" />
+            </div>
+            <h3 className="text-[20px] font-black text-[#05162E]">No {activeTab === 'mock' ? 'Mock' : 'Practice'} Tests Available</h3>
+            <p className="text-slate-500 mt-2 text-[15px]">
+              {activeTab === 'mock'
+                ? 'Create a full test with Listening, Reading, and Writing sections from the admin console.'
+                : 'Single-section reading, listening, or writing practice tests will appear here.'}
+            </p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tests.map(test => (
+          <div className="grid gap-6">
+            {activeTab === 'practice' && practiceType && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <button
+                    type="button"
+	                    onClick={() => {
+	                      if (practiceType === 'writing' && writingPracticeType) {
+	                        setWritingPracticeType(null);
+	                        return;
+	                      }
+	                      setPracticeType(null);
+	                    }}
+                    className="mb-3 inline-flex items-center gap-2 text-[13px] font-black text-slate-500 hover:text-[#1E3A6E]"
+                  >
+	                    <ArrowLeft className="h-4 w-4" /> {practiceType === 'writing' && writingPracticeType ? 'Back to writing types' : 'Back to practice sections'}
+	                  </button>
+	                  <h2 className="text-[26px] font-black text-[#05162E] capitalize">
+	                    {practiceType === 'writing' && writingPracticeType
+	                      ? writingPracticeCards.find(card => card.type === writingPracticeType)?.title
+	                      : practiceType} Practice Tests
+	                  </h2>
+                  <p className="text-[14px] text-slate-500 mt-1">Choose one test to open its questions and start practicing.</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleTests.map(test => (
               <div 
                 key={test.id} 
                 className={`bg-white rounded-2xl border ${test.is_locked ? 'border-slate-100 bg-slate-50/50' : 'border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1'} flex flex-col relative transition-all duration-300`}
               >
                 
-                {/* Colored Top Bar */}
-                <div className={`h-2 w-full rounded-t-2xl ${test.type === 'reading' ? 'bg-[#1E3A6E]' : 'bg-[#EE6055]'}`}></div>
+                <div className="h-2 w-full rounded-t-2xl bg-[#1E3A6E]"></div>
 
                 <div className="p-6 flex flex-col flex-1">
                   
                   {/* Badges */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`px-2.5 py-1 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${test.type === 'reading' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'bg-[#EE6055]/10 text-[#EE6055]'}`}>
-                      {test.type || 'Reading'}
-                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {getSectionTypes(test).map(type => (
+                        <span key={type} className={`px-2.5 py-1 text-[10px] font-extrabold rounded-md uppercase tracking-wider flex items-center gap-1 ${sectionBadgeClass(type)}`}>
+                          {sectionIcon(type)} {type}
+                        </span>
+                      ))}
+                    </div>
                     
                     {test.is_locked ? (
                       <span className="px-2.5 py-1 bg-slate-200 text-slate-500 text-[10px] font-extrabold rounded-md uppercase tracking-wider flex items-center gap-1">
@@ -141,7 +781,7 @@ export default function MockTestsPage() {
                         <Clock className="h-4 w-4" /> {test.duration || 60} min
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Info className="h-4 w-4" /> 40 Qs
+                        <Info className="h-4 w-4" /> {getSectionSummary(test)}
                       </div>
                     </div>
 
@@ -156,12 +796,12 @@ export default function MockTestsPage() {
                       <button 
                         disabled={startingTestId === test.id}
                         onClick={() => handleStartTest(test.id)}
-                        className={`w-full py-3 text-white text-[13px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 ${test.type === 'reading' ? 'bg-[#1E3A6E] hover:bg-[#162d57]' : 'bg-[#EE6055] hover:bg-[#d45248]'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className="w-full py-3 text-white text-[13px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#162d57] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {startingTestId === test.id ? (
                           <>Starting Exam...</>
                         ) : (
-                          <>Start Exam <Play className="h-3 w-3 fill-current" /></>
+                          <>{activeTab === 'mock' ? 'Start Mock Test' : 'Open Questions'} <Play className="h-3 w-3 fill-current" /></>
                         )}
                       </button>
                     )}
@@ -169,9 +809,11 @@ export default function MockTestsPage() {
 
                 </div>
               </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

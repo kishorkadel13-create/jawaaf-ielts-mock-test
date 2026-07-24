@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import { 
   ArrowLeft, Layers, Plus, Trash2, Edit2, Play,
   ChevronRight, GripVertical, Wand2,
-  Upload, Headphones, CheckCircle2, Loader2, Link2, Save, Image as ImageIcon, X
+  Upload, Headphones, CheckCircle2, Loader2, Link2, Save, Image as ImageIcon, X, PenLine
 } from 'lucide-react';
 import PassageEditor from '../../components/admin/exam-builder/PassageEditor';
 import QuestionBuilder, { QuestionData } from '../../components/admin/exam-builder/QuestionBuilder';
@@ -37,7 +37,11 @@ export default function AdminTestDetailsPage() {
   const [sectionForm, setSectionForm] = useState({ id: '', title: '', type: 'reading', duration: '', order_no: 1 });
 
   const getDefaultGroupTitle = (sectionType: string, order: number) =>
-    sectionType === 'listening' ? `Section ${order}` : `Questions Group ${order}`;
+    sectionType === 'listening'
+      ? `Section ${order}`
+      : sectionType === 'writing'
+      ? `Writing Tasks ${order}`
+      : `Questions Group ${order}`;
 
   const activeSection = selectedSection && test?.sections
     ? test.sections.find((sec: any) => sec.id === selectedSection.id) || selectedSection
@@ -48,6 +52,19 @@ export default function AdminTestDetailsPage() {
   const activeGroup = activeGroupFromSection && selectedGroup?.id === activeGroupFromSection.id
     ? { ...activeGroupFromSection, ...selectedGroup }
     : activeGroupFromSection;
+  const writingGroup = activeSection?.type === 'writing'
+    ? activeSection.question_groups?.[0] || activeGroup
+    : null;
+  const writingTasks = (writingGroup?.questions || [])
+    .filter((question: any) => question.question_type === 'WRITING_TASK')
+    .sort((a: any, b: any) => (Number(a.order_no) || 0) - (Number(b.order_no) || 0));
+  const writingPracticeMode = activeSection?.type === 'writing' && /task\s*1/i.test(activeSection?.title || '')
+    ? 'task_1'
+    : activeSection?.type === 'writing' && /task\s*2/i.test(activeSection?.title || '')
+    ? 'task_2'
+    : 'full';
+  const maxWritingTasks = writingPracticeMode === 'full' ? 2 : 1;
+  const requiredWritingTaskNumber = writingPracticeMode === 'task_2' ? 2 : 1;
   const listeningAudioUrl = test?.sections
     ?.filter((sec: any) => sec.type === 'listening')
     ?.flatMap((sec: any) => sec.question_groups || [])
@@ -112,7 +129,7 @@ export default function AdminTestDetailsPage() {
     try {
       const payload: any = {
         mock_test_id: id,
-        type: sectionForm.type,
+        type: sectionForm.type.toLowerCase(),
         title: sectionForm.title,
         order_no: Number(sectionForm.order_no)
       };
@@ -128,7 +145,10 @@ export default function AdminTestDetailsPage() {
       setIsSectionModalOpen(false);
       fetchTestDetails();
     } catch (err: any) {
-      alert(err.message || 'Failed to save section');
+      const details = Array.isArray(err.details)
+        ? `\n${err.details.map((detail: any) => `${detail.field}: ${detail.message}`).join('\n')}`
+        : '';
+      alert(`${err.message || 'Failed to save section'}${details}`);
     }
   };
 
@@ -393,7 +413,64 @@ export default function AdminTestDetailsPage() {
     });
   };
 
+  const ensureWritingGroup = async () => {
+    if (!activeSection || activeSection.type !== 'writing') return null;
+    if (writingGroup) {
+      setSelectedGroup(writingGroup);
+      return writingGroup;
+    }
+
+    const { data: newGroup } = await api.post('/admin/groups', {
+      section_id: activeSection.id,
+      title: 'Writing Tasks',
+      instruction: '',
+      passage: '',
+      audio_url: '',
+      order_no: 1
+    });
+
+    setSelectedGroup(newGroup);
+    await fetchTestDetails();
+    return newGroup;
+  };
+
+  const startCreateWritingTask = async () => {
+    const group = await ensureWritingGroup();
+    if (!group) return;
+
+    const questions = group.questions || writingTasks;
+    if (questions.length >= maxWritingTasks) {
+      alert(writingPracticeMode === 'full' ? 'IELTS Writing has only Task 1 and Task 2.' : 'This practice test is for one writing task only.');
+      return;
+    }
+    const nextQuestionNumber = questions.length > 0
+      ? Math.max(...questions.map((q: any) => Number(q.question_number) || 0)) + 1
+      : 1;
+    const taskNumber = writingPracticeMode === 'full' ? questions.length + 1 : requiredWritingTaskNumber;
+    const suggestedMinutes = writingPracticeMode === 'full'
+      ? taskNumber === 1 ? 20 : 40
+      : taskNumber === 1 ? 30 : 50;
+
+    setEditingBatchKey(null);
+    setEditingQuestion({
+      question_type: 'WRITING_TASK',
+      question_number: nextQuestionNumber,
+      question_text: '',
+      instruction: `You should spend about ${suggestedMinutes} minutes on this task.`,
+      correct_answers_json: [],
+      marks: 0,
+      order_no: questions.length + 1,
+      extra_data_json: {
+        task_type: taskNumber === 1 ? 'Task 1' : 'Task 2',
+        task_title: taskNumber === 1 ? 'Task 1' : 'Task 2',
+        minimum_words: taskNumber === 1 ? 150 : 250,
+        suggested_minutes: suggestedMinutes
+      }
+    } as any);
+  };
+
   const mapToDBType = (type: string) => {
+    if (type === 'WRITING_TASK') return 'WRITING_TASK';
     if (['FILL_IN_THE_BLANK', 'SUMMARY_COMPLETION', 'TABLE_COMPLETION', 'SHORT_ANSWER', 'DIAGRAM_LABELLING'].includes(type)) return 'INPUT_TEXT';
     if (['SUMMARY_COMPLETION_OPTIONS', 'MULTI_SELECT'].includes(type)) return 'MULTI_SELECT';
     if (['SINGLE_MCQ', 'SENTENCE_COMPLETION'].includes(type)) return 'SINGLE_MCQ';
@@ -402,7 +479,8 @@ export default function AdminTestDetailsPage() {
   };
 
   const handleSaveQuestion = async () => {
-    if (!editingQuestion || !activeGroup) return;
+    const targetGroup = activeSection?.type === 'writing' ? writingGroup : activeGroup;
+    if (!editingQuestion || !targetGroup) return;
     try {
       const dbType = mapToDBType(editingQuestion.question_type);
       const originalQuestion = getOriginalQuestionById(editingQuestion.id);
@@ -418,8 +496,10 @@ export default function AdminTestDetailsPage() {
       };
       const payload = {
         ...editingQuestion,
-        group_id: activeGroup.id,
+        group_id: targetGroup.id,
         question_type: dbType,
+        correct_answers_json: editingQuestion.correct_answers_json || [],
+        marks: dbType === 'WRITING_TASK' ? 0 : editingQuestion.marks,
         extra_data_json: extraData
       };
 
@@ -553,6 +633,48 @@ export default function AdminTestDetailsPage() {
   };
 
   const renderQuestionCard = (q: any, batchKey?: string | null) => (
+    q.question_type === 'WRITING_TASK' ? (
+      editingQuestion?.id === q.id && editingQuestion !== null ? (
+        <WritingTaskBuilder
+          key={q.id}
+          question={editingQuestion as any}
+          onChange={setEditingQuestion}
+          onSave={handleSaveQuestion}
+          onCancel={cancelEditQuestion}
+        />
+      ) : (
+        <div key={q.id} className="bg-white border border-rose-100 rounded-2xl p-5 shadow-sm group hover:border-rose-200 transition-colors flex items-start gap-4">
+          <div className="h-8 w-8 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center font-black text-[13px] shrink-0 border border-rose-100">
+            {q.question_number}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-wider rounded-md">
+                {q.extra_data_json?.task_type || 'Writing Task'}
+              </span>
+              <span className="text-[11px] text-slate-400 font-bold">
+                {q.extra_data_json?.minimum_words || 250}+ words • {q.extra_data_json?.suggested_minutes || 40} min
+              </span>
+            </div>
+            <p className="font-semibold text-[14px] text-[#05162E] leading-relaxed whitespace-pre-wrap">{q.question_text}</p>
+          </div>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => startEditQuestion(q, batchKey)}
+              className="p-2 text-slate-400 hover:text-[#1E3A6E] bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleDeleteQuestion(q.id)}
+              className="p-2 text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )
+    ) : (
     editingQuestion?.id === q.id && editingQuestion !== null ? (
       <QuestionBuilder
         key={q.id}
@@ -613,6 +735,7 @@ export default function AdminTestDetailsPage() {
         </div>
       </div>
     )
+    )
   );
 
   return (
@@ -659,7 +782,7 @@ export default function AdminTestDetailsPage() {
             <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-10">
               <h3 className="font-extrabold text-[12px] text-[#05162E] uppercase tracking-wider">Exam Sections</h3>
               <button 
-                onClick={() => { setSectionForm({ id: '', title: '', type: 'reading', duration: '', order_no: (test?.sections?.length || 0) + 1 }); setIsSectionModalOpen(true); }}
+                onClick={() => { setSectionForm({ id: '', title: '', type: 'listening', duration: '', order_no: (test?.sections?.length || 0) + 1 }); setIsSectionModalOpen(true); }}
                 className="p-1.5 bg-[#F8FAFC] hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"
                 title="Add Section"
               >
@@ -681,7 +804,11 @@ export default function AdminTestDetailsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md mb-1.5 inline-block ${
-                        sec.type === 'reading' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        sec.type === 'reading'
+                          ? 'bg-amber-100 text-amber-700'
+                          : sec.type === 'writing'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-blue-100 text-blue-700'
                       }`}>
                         {sec.type}
                       </span>
@@ -816,17 +943,95 @@ export default function AdminTestDetailsPage() {
                   </div>
                 )}
 
+                {activeSection.type === 'writing' && (
+                  <div className="flex flex-col gap-6">
+                    <div className="bg-white border border-rose-100 rounded-2xl p-6 shadow-sm flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                        <PenLine className="h-6 w-6" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Writing Module</p>
+                        <h3 className="text-[17px] font-black text-[#05162E] mt-1">
+                          {writingPracticeMode === 'full'
+                            ? 'Create exactly Task 1 and Task 2'
+                            : `Create Writing Task ${requiredWritingTaskNumber} only`}
+                        </h3>
+                        <p className="text-[12px] font-semibold text-slate-500 mt-1 leading-relaxed">
+                          {writingPracticeMode === 'full'
+                            ? 'Task 1 can include an optional image, graph, table, or map. Writing responses are saved for manual marking.'
+                            : `This practice test lets students attempt only Writing Task ${requiredWritingTaskNumber}. Responses are saved for manual marking.`}
+                        </p>
+                      </div>
+                      <div className="px-3 py-2 bg-rose-50 border border-rose-100 rounded-xl text-[12px] font-black text-rose-600">
+                        {writingTasks.length}/{maxWritingTasks} tasks
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-5">
+                      {writingTasks.map((task: any) => (
+                        <WritingTaskBuilder
+                          key={task.id}
+                          question={editingQuestion?.id === task.id ? editingQuestion : task}
+                          onChange={setEditingQuestion}
+                          onSave={handleSaveQuestion}
+                          onCancel={cancelEditQuestion}
+                          imageUrl={task.extra_data_json?.task_type === 'Task 1' ? writingGroup?.image_url : ''}
+                          imageUploading={imageUploading}
+                          onUploadImage={task.extra_data_json?.task_type === 'Task 1' ? handleUploadGroupImage : undefined}
+                          onRemoveImage={task.extra_data_json?.task_type === 'Task 1' ? handleRemoveGroupImage : undefined}
+                          startEditing={() => startEditQuestion(task)}
+                          isEditing={editingQuestion?.id === task.id}
+                          lockedTaskType={writingPracticeMode === 'full' ? undefined : `Task ${requiredWritingTaskNumber}`}
+                        />
+                      ))}
+
+                      {editingQuestion && !editingQuestion.id && editingQuestion.question_type === 'WRITING_TASK' && (
+                        <WritingTaskBuilder
+                          question={editingQuestion as any}
+                          onChange={setEditingQuestion}
+                          onSave={handleSaveQuestion}
+                          onCancel={cancelEditQuestion}
+                          imageUrl={editingQuestion.extra_data_json?.task_type === 'Task 1' ? writingGroup?.image_url : ''}
+                          imageUploading={imageUploading}
+                          onUploadImage={editingQuestion.extra_data_json?.task_type === 'Task 1' ? handleUploadGroupImage : undefined}
+                          onRemoveImage={editingQuestion.extra_data_json?.task_type === 'Task 1' ? handleRemoveGroupImage : undefined}
+                          isEditing
+                          lockedTaskType={writingPracticeMode === 'full' ? undefined : `Task ${requiredWritingTaskNumber}`}
+                        />
+                      )}
+                    </div>
+
+                    {!editingQuestion && writingTasks.length < maxWritingTasks && (
+                      <button
+                        onClick={startCreateWritingTask}
+                        className="py-4 bg-transparent border-2 border-dashed border-rose-200 hover:border-rose-400 hover:bg-rose-50/40 text-rose-600 rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all"
+                      >
+                        <Plus className="h-4 w-4" /> Create {writingPracticeMode === 'full' ? (writingTasks.length === 0 ? 'Task 1' : 'Task 2') : `Task ${requiredWritingTaskNumber}`}
+                      </button>
+                    )}
+
+                    <div className="grid md:grid-cols-3 gap-3">
+                      {['AI Writing Evaluation', 'Band Score Prediction', 'Grammar Feedback', 'Vocabulary Analysis', 'Coherence & Cohesion Analysis', 'Examiner Comments'].map((feature) => (
+                        <div key={feature} className="px-4 py-3 bg-white border border-slate-100 rounded-xl text-[12px] font-bold text-slate-400">
+                          {feature}
+                          <span className="block text-[10px] font-black uppercase tracking-widest text-slate-300 mt-1">Future</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Group Tabs Bar */}
-                <div className="flex flex-col gap-3">
+                {activeSection.type !== 'writing' && <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                     <h3 className="font-extrabold text-[14px] text-[#05162E] uppercase tracking-wider flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 text-slate-400" /> Question Groups
+                      <GripVertical className="h-4 w-4 text-slate-400" /> {activeSection.type === 'reading' ? 'Question Type Practice Sets' : 'Question Groups'}
                     </h3>
                     <button 
                       onClick={createGroup}
                       className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-[12px] font-bold text-[#05162E] rounded-lg transition-colors flex items-center gap-1 shadow-sm"
                     >
-                      <Plus className="h-3.5 w-3.5" /> New Group
+                      <Plus className="h-3.5 w-3.5" /> {activeSection.type === 'reading' ? 'New Practice Set' : 'New Group'}
                     </button>
                   </div>
                   
@@ -854,19 +1059,19 @@ export default function AdminTestDetailsPage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>}
 
                 {/* Active Group Settings & Questions */}
-                {activeGroup && (
+                {activeSection.type !== 'writing' && activeGroup && (
                   <div className="flex flex-col gap-6">
                     {/* Inline Group Settings */}
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Group Tab Name</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{activeSection.type === 'reading' ? 'Practice Set / Question Type Name' : 'Group Tab Name'}</label>
                           <input 
                             type="text" value={activeGroup.title} onChange={(e) => updateGroupMeta('title', e.target.value)}
-                            placeholder="e.g. Section 1"
+                            placeholder={activeSection.type === 'reading' ? 'e.g. Matching Headings' : 'e.g. Section 1'}
                             className="px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-[#1E3A6E]"
                           />
                         </div>
@@ -1013,6 +1218,13 @@ export default function AdminTestDetailsPage() {
                           nextOrderNo={(activeGroup.questions?.length || 0) + 1}
                           currentInstruction={activeGroup.instruction || ''}
                         />
+                      ) : editingQuestion && !editingQuestion.id && editingQuestion.question_type === 'WRITING_TASK' ? (
+                        <WritingTaskBuilder
+                          question={editingQuestion as any}
+                          onChange={setEditingQuestion}
+                          onSave={handleSaveQuestion}
+                          onCancel={cancelEditQuestion}
+                        />
                       ) : editingQuestion && !editingQuestion.id ? (
                         <QuestionBuilder 
                           question={editingQuestion}
@@ -1020,6 +1232,15 @@ export default function AdminTestDetailsPage() {
                           onSave={handleSaveQuestion}
                           onCancel={cancelEditQuestion}
                         />
+                      ) : activeSection.type === 'writing' ? (
+                        <div className="flex gap-4">
+                          <button
+                            onClick={startCreateWritingTask}
+                            className="flex-1 py-4 bg-transparent border-2 border-dashed border-rose-200 hover:border-rose-400 hover:bg-rose-50/40 text-rose-600 rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Plus className="h-4 w-4" /> Add Writing Task
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex gap-4">
                           <button
@@ -1070,8 +1291,9 @@ export default function AdminTestDetailsPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">Type</label>
                   <select value={sectionForm.type} onChange={e => setSectionForm({...sectionForm, type: e.target.value})} className="px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl outline-none focus:border-[#1E3A6E] text-[14px] font-medium">
-                    <option value="reading">Reading</option>
                     <option value="listening">Listening</option>
+                    <option value="reading">Reading</option>
+                    <option value="writing">Writing</option>
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 mt-2">
@@ -1087,3 +1309,220 @@ export default function AdminTestDetailsPage() {
     </div>
   );
 }
+
+const WritingTaskBuilder = ({
+  question,
+  onChange,
+  onSave,
+  onCancel,
+  imageUrl = '',
+  imageUploading = false,
+  onUploadImage,
+  onRemoveImage,
+  startEditing,
+  isEditing = !question.id,
+  lockedTaskType,
+}: {
+  question: any;
+  onChange: (question: any) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  imageUrl?: string;
+  imageUploading?: boolean;
+  onUploadImage?: (file?: File | null) => void;
+  onRemoveImage?: () => void;
+  startEditing?: () => void;
+  isEditing?: boolean;
+  lockedTaskType?: string;
+}) => {
+  const meta = question.extra_data_json || {};
+  const taskType = lockedTaskType || meta.task_type || 'Task 1';
+
+  const updateMeta = (updates: Record<string, any>) => {
+    onChange({
+      ...question,
+      extra_data_json: {
+        ...meta,
+        ...updates,
+        original_type: 'WRITING_TASK',
+      },
+    });
+  };
+
+  if (!isEditing) {
+    return (
+      <div className="bg-white border border-rose-100 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{taskType}</p>
+            <h3 className="font-black text-[17px] text-[#05162E] mt-1">{meta.task_title || taskType}</h3>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">
+              {meta.suggested_minutes || (taskType === 'Task 1' ? 20 : 40)} min • {meta.minimum_words || (taskType === 'Task 1' ? 150 : 250)}+ words
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={startEditing}
+            className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-[12px] font-black flex items-center gap-2"
+          >
+            <Edit2 className="h-4 w-4" /> Edit
+          </button>
+        </div>
+        {taskType === 'Task 1' && imageUrl && (
+          <img src={imageUrl} alt="Task 1 visual" className="w-full max-h-56 object-contain bg-[#F8FAFC] border border-slate-200 rounded-xl" />
+        )}
+        <div className="p-4 bg-[#F8FAFC] border border-slate-100 rounded-xl">
+          {question.instruction && <p className="text-[12px] font-bold text-slate-500 mb-3">{question.instruction}</p>}
+          <p className="text-[13px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap line-clamp-6">{question.question_text}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-rose-100 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{taskType}</p>
+          <h3 className="font-black text-[17px] text-[#05162E] mt-1">
+            {question.id ? 'Edit writing task' : `Create ${taskType}`}
+          </h3>
+        </div>
+        <PenLine className="h-5 w-5 text-rose-500" />
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Task Label</label>
+          <select
+            value={taskType}
+            onChange={(event) => updateMeta({ task_type: event.target.value })}
+            disabled={Boolean(lockedTaskType)}
+            className="px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-rose-400"
+          >
+            <option value="Task 1">Task 1</option>
+            <option value="Task 2">Task 2</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Task Title</label>
+          <input
+            type="text"
+            value={meta.task_title || taskType}
+            onChange={(event) => updateMeta({ task_title: event.target.value })}
+            className="px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-rose-400"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Minimum Words</label>
+          <input
+            type="number"
+            min={1}
+            value={meta.minimum_words || 250}
+            onChange={(event) => updateMeta({ minimum_words: Number(event.target.value) })}
+            className="px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-rose-400"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Minutes</label>
+          <input
+            type="number"
+            min={1}
+            value={meta.suggested_minutes || 40}
+            onChange={(event) => updateMeta({ suggested_minutes: Number(event.target.value) })}
+            className="px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-rose-400"
+          />
+        </div>
+      </div>
+
+      {taskType === 'Task 1' && onUploadImage && (
+        <div className="flex flex-col gap-3 border border-slate-100 rounded-2xl p-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Image / Graph / Table / Map</label>
+              <p className="text-[12px] text-slate-500 font-semibold mt-1">Optional visual for Task 1.</p>
+            </div>
+            <div className="flex gap-2">
+              <label className={`px-3 py-2 rounded-xl text-[12px] font-black flex items-center gap-2 transition-colors cursor-pointer ${
+                imageUploading ? 'bg-slate-100 text-slate-400 pointer-events-none' : 'bg-rose-600 hover:bg-rose-700 text-white'
+              }`}>
+                {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {imageUrl ? 'Replace Image' : 'Upload Image'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"
+                  className="hidden"
+                  disabled={imageUploading}
+                  onChange={(event) => {
+                    onUploadImage(event.target.files?.[0]);
+                    event.currentTarget.value = '';
+                  }}
+                />
+              </label>
+              {imageUrl && onRemoveImage && (
+                <button
+                  type="button"
+                  onClick={onRemoveImage}
+                  disabled={imageUploading}
+                  className="px-3 py-2 bg-red-50 border border-red-100 hover:bg-red-100 disabled:opacity-50 text-red-600 rounded-xl text-[12px] font-black"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+          {imageUrl && (
+            <img src={imageUrl} alt="Task 1 visual preview" className="w-full max-h-64 object-contain bg-[#F8FAFC] border border-slate-200 rounded-xl" />
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions</label>
+        <textarea
+          value={question.instruction || ''}
+          onChange={(event) => onChange({ ...question, instruction: event.target.value })}
+          rows={3}
+          placeholder="e.g. You should spend about 20 minutes on this task."
+          className="w-full px-4 py-3 bg-[#F8FAFC] border border-slate-200 focus:border-rose-400 rounded-xl text-[13px] text-[#05162E] placeholder-slate-400 outline-none transition-all resize-y"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{taskType === 'Task 1' ? 'Question Prompt' : 'Essay Prompt'}</label>
+        <textarea
+          required
+          value={question.question_text || ''}
+          onChange={(event) => onChange({
+            ...question,
+            question_text: event.target.value,
+            question_type: 'WRITING_TASK',
+            correct_answers_json: [],
+            marks: 0,
+          })}
+          rows={8}
+          placeholder="Paste the full IELTS writing task prompt here..."
+          className="w-full px-4 py-3.5 bg-[#F8FAFC] border border-slate-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-100 rounded-xl text-[14px] text-[#05162E] placeholder-slate-400 outline-none transition-all resize-y"
+        />
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] font-bold rounded-xl"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!question.question_text?.trim()}
+          className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-bold rounded-xl"
+        >
+          Save Writing Task
+        </button>
+      </div>
+    </div>
+  );
+};

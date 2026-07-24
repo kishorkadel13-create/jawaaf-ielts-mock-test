@@ -1,13 +1,105 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExamStore } from '../store/examStore';
 import { api } from '../services/api';
 import { QuestionRenderer } from '../components/QuestionRenderer';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../components/SummaryCompletionGroup';
+import { renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
 import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
-import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2 } from 'lucide-react';
+import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX } from 'lucide-react';
+
+type OrderedQuestionBlock = {
+  id: string;
+  kind: 'matching' | 'summary' | 'standard';
+  instruction: string;
+  questions: any[];
+};
+
+const sortQuestionsByNumber = (questions: any[] = []) => (
+  [...questions].sort((a, b) => Number(a.question_number || 0) - Number(b.question_number || 0))
+);
+
+const getQuestionInstruction = (question: any) => (
+  question?.extra_data_json?.bulk_instruction || question?.instruction || ''
+);
+
+const getQuestionBlockKey = (question: any, kind: OrderedQuestionBlock['kind']) => (
+  [
+    kind,
+    question?.extra_data_json?.bulk_source,
+    getQuestionInstruction(question),
+    question?.extra_data_json?.bulk_id,
+  ].filter(Boolean).join('|') || `${kind}-${question?.id}`
+);
+
+const getQuestionKind = (question: any, groupInstruction = ''): OrderedQuestionBlock['kind'] => {
+  if (isMatchingHeadingsQuestion(question, groupInstruction)) return 'matching';
+  if (isSummaryCompletionQuestion(question)) return 'summary';
+  return 'standard';
+};
+
+const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''): OrderedQuestionBlock[] => {
+  const sorted = sortQuestionsByNumber(questions);
+  const blocks: OrderedQuestionBlock[] = [];
+  const used = new Set<string>();
+
+  sorted.forEach((question) => {
+    if (used.has(question.id)) return;
+
+    const kind = getQuestionKind(question, groupInstruction);
+    const blockKey = getQuestionBlockKey(question, kind);
+    const blockQuestions = sorted.filter((candidate) => (
+      !used.has(candidate.id) &&
+      getQuestionKind(candidate, groupInstruction) === kind &&
+      getQuestionBlockKey(candidate, kind) === blockKey
+    ));
+
+    blockQuestions.forEach((candidate) => used.add(candidate.id));
+
+    blocks.push({
+      id: blockKey,
+      kind,
+      instruction: getQuestionInstruction(question),
+      questions: blockQuestions,
+    });
+  });
+
+  return blocks;
+};
+
+const QuestionInstructionCard = ({ instruction }: { instruction: string }) => {
+  if (!instruction) return null;
+
+  const { heading, body } = splitQuestionInstruction(instruction);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      {heading && (
+        <h3 className="text-[22px] font-black mb-4 text-[#05162E]">
+          {renderFormattedText(heading, 'question-instruction-heading')}
+        </h3>
+      )}
+      <div className="text-[16px] leading-8 text-[#05162E] whitespace-pre-wrap">
+        {renderFormattedText(body || instruction, 'question-instruction-body')}
+      </div>
+    </div>
+  );
+};
+
+const PassageIntroCard = ({ title, instruction }: { title: string; instruction?: string }) => (
+  <div className="mb-6 rounded-2xl border border-[#cfe0f7] bg-[#EFF4FB] p-5 font-sans shadow-sm">
+    <h3 className="text-[18px] font-black uppercase tracking-wide text-[#05162E]">
+      {title}
+    </h3>
+    {instruction && (
+      <div className="mt-3 border-t border-[#cfe0f7] pt-3 text-[14px] font-semibold leading-7 text-[#1E3A6E]">
+        {renderFormattedText(instruction, `passage-intro-${title}`)}
+      </div>
+    )}
+  </div>
+);
 
 export default function ExamInterface() {
   const { id } = useParams(); // attempt_id
@@ -36,6 +128,10 @@ export default function ExamInterface() {
 
   const [loading, setLoading] = useState(true);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [activeWritingTaskIndex, setActiveWritingTaskIndex] = useState(0);
+  const [sectionSecondsRemaining, setSectionSecondsRemaining] = useState<number | null>(null);
+  const [clipboardMessage, setClipboardMessage] = useState('');
+  const internalClipboardRef = useRef<{ text: string; taskId: string | null } | null>(null);
   
   // Custom Audio parameters
   const [audioPlaying, setAudioPlaying] = useState(false);
@@ -110,7 +206,7 @@ export default function ExamInterface() {
   const passageRef = useRef<HTMLDivElement>(null);
   const highlightTargetRef = useRef<HighlightTarget | null>(null);
   const [highlightCoords, setHighlightCoords] = useState<{top: number, left: number} | null>(null);
-  const [highlightedPassageHtml, setHighlightedPassageHtml] = useState<string | null>(null);
+  const [highlightedPassages, setHighlightedPassages] = useState<Record<string, string>>({});
 
   const handleSelection = () => {
     const selection = window.getSelection();
@@ -169,7 +265,10 @@ export default function ExamInterface() {
     
     try {
       if (passageEl && applyHighlightTarget(target, passageEl)) {
-        setHighlightedPassageHtml(passageEl.innerHTML);
+        setHighlightedPassages((current) => ({
+          ...current,
+          [target.passageId]: passageEl.innerHTML,
+        }));
       }
 
       window.getSelection()?.removeAllRanges();
@@ -185,33 +284,180 @@ export default function ExamInterface() {
     event.preventDefault();
   };
 
-  // Trigger final submission
-  const handleSubmit = async () => {
-    const confirmSubmit = window.confirm('Are you sure you want to submit your mock test? This action will lock your answers and calculate scores.');
-    if (!confirmSubmit) return;
+  const showClipboardWarning = useCallback(() => {
+    setClipboardMessage('External content cannot be pasted during the writing test.');
+    window.setTimeout(() => setClipboardMessage(''), 2800);
+  }, []);
 
-    try {
-      await submitExam();
-      navigate(`/attempts/${id}/result`);
-    } catch (err) {
-      alert('Failed to submit exam. Check your connection.');
-    }
+  const getSelectedTextareaText = (textarea: HTMLTextAreaElement) => (
+    textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+  );
+
+  const replaceTextareaSelection = (
+    textarea: HTMLTextAreaElement,
+    replacement: string,
+    questionId: string
+  ) => {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    textarea.setRangeText(replacement, start, end, 'end');
+    setAnswer(questionId, textarea.value);
   };
 
+  const handleWritingCopy = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>, questionId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const selectedText = getSelectedTextareaText(event.currentTarget);
+    if (!selectedText) return;
+
+    internalClipboardRef.current = { text: selectedText, taskId: questionId };
+    setClipboardMessage('');
+  }, []);
+
+  const handleWritingCut = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>, questionId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const textarea = event.currentTarget;
+    const selectedText = getSelectedTextareaText(textarea);
+    if (!selectedText) return;
+
+    internalClipboardRef.current = { text: selectedText, taskId: questionId };
+    replaceTextareaSelection(textarea, '', questionId);
+    setClipboardMessage('');
+  }, [setAnswer]);
+
+  const handleWritingPaste = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>, questionId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const internalClipboard = internalClipboardRef.current;
+    if (!internalClipboard?.text || internalClipboard.taskId !== questionId) {
+      showClipboardWarning();
+      return;
+    }
+
+    replaceTextareaSelection(event.currentTarget, internalClipboard.text, questionId);
+    setClipboardMessage('');
+  }, [setAnswer, showClipboardWarning]);
+
+  const handleWritingDrop = useCallback((event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    showClipboardWarning();
+  }, [showClipboardWarning]);
+
   const activeSection = activeTest?.sections?.[activeSectionIndex];
+  const isFullMock = (activeTest?.sections?.length || 0) > 1;
+  const isLastSection = activeSectionIndex >= ((activeTest?.sections?.length || 1) - 1);
+  const nextSection = activeTest?.sections?.[activeSectionIndex + 1];
   const activeGroups = activeSection?.question_groups || [];
   const listeningAudioUrl = activeSection?.type === 'listening'
     ? activeGroups.find((group: any) => group.audio_url)?.audio_url || ''
     : '';
   const sectionQuestions = activeGroups.flatMap((g: any) => g.questions || []).sort((a: any, b: any) => a.question_number - b.question_number);
-  const activePassageHtml = useMemo(
-    () => normalizePassageHtml(activeGroups[0]?.passage) || 'No reading passage uploaded.',
+  const writingTasks = activeSection?.type === 'writing'
+    ? sectionQuestions
+        .filter((question: any) => question.question_type === 'WRITING_TASK')
+        .sort((a: any, b: any) => (Number(a.order_no) || 0) - (Number(b.order_no) || 0))
+    : [];
+  const activeWritingTask = writingTasks[activeWritingTaskIndex] || writingTasks[0] || null;
+  const activeWritingGroup = activeSection?.type === 'writing'
+    ? activeGroups.find((group: any) => group.questions?.some((question: any) => question.id === activeWritingTask?.id)) || activeGroups[0]
+    : null;
+  const activeWritingAnswer = activeWritingTask ? String(answers[activeWritingTask.id] || '') : '';
+  const activeWritingWordCount = activeWritingAnswer.trim() ? activeWritingAnswer.trim().split(/\s+/).length : 0;
+  const activePassages = useMemo(
+    () => activeGroups.map((group: any) => ({
+      ...group,
+      normalizedPassage: normalizePassageHtml(group.passage),
+    })),
     [activeGroups]
   );
 
+  const getSectionDurationMinutes = useCallback((section: any) => {
+    if (Number(section?.duration) > 0) return Number(section.duration);
+    if (section?.type === 'listening') return 30;
+    if (section?.type === 'reading') return 60;
+    if (section?.type === 'writing') return 60;
+    return 60;
+  }, []);
+
+  const completeCurrentSection = useCallback(async (automatic = false) => {
+    if (!isLastSection) {
+      if (!automatic) {
+        const confirmSection = window.confirm(`Submit ${activeSection?.type || 'this'} section and continue to ${nextSection?.type || 'the next'} section? You can continue the same mock attempt.`);
+        if (!confirmSection) return;
+      }
+
+      await autosave();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setActiveSection(activeSectionIndex + 1);
+      setActiveQuestionId(null);
+      setActiveWritingTaskIndex(0);
+      return;
+    }
+
+    if (!automatic) {
+      const confirmSubmit = window.confirm('Are you sure you want to submit your test? This will send your answers for scoring and teacher review.');
+      if (!confirmSubmit) return;
+    }
+
+    await submitExam();
+    navigate(`/attempts/${id}/result`);
+  }, [activeSection?.type, activeSectionIndex, autosave, id, isLastSection, navigate, nextSection?.type, setActiveSection, submitExam]);
+
+  const handleSubmit = async () => {
+    try {
+      await completeCurrentSection(false);
+    } catch (err) {
+      if (isLastSection) {
+        alert('Failed to submit exam. Check your connection.');
+      } else {
+        alert('Failed to save this section. Check your connection.');
+      }
+    }
+  };
+
   useEffect(() => {
-    setHighlightedPassageHtml(null);
-  }, [activePassageHtml]);
+    if (!activeSection) return;
+    setSectionSecondsRemaining(getSectionDurationMinutes(activeSection) * 60);
+  }, [activeSection?.id, activeSection, getSectionDurationMinutes]);
+
+  useEffect(() => {
+    if (!isFullMock || !isActive || isFinished || sectionSecondsRemaining === null) return;
+
+    const interval = setInterval(() => {
+      setSectionSecondsRemaining(current => {
+        if (current === null) return current;
+        if (current <= 1) {
+          clearInterval(interval);
+          completeCurrentSection(true).catch((err) => {
+            console.error('Automatic section submission failed:', err);
+          });
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [completeCurrentSection, isActive, isFinished, isFullMock, sectionSecondsRemaining]);
+
+  useEffect(() => {
+    if (isFinished) {
+      navigate(`/attempts/${id}/result`);
+    }
+  }, [id, isFinished, navigate]);
+
+  useEffect(() => {
+    setHighlightedPassages({});
+  }, [activeSection?.id]);
+
+  useEffect(() => {
+    setActiveWritingTaskIndex(0);
+  }, [activeSection?.id]);
 
   useEffect(() => {
     if (activeSection?.type !== 'listening' || !listeningAudioUrl || !audioRef.current || isFinished) return;
@@ -267,6 +513,12 @@ export default function ExamInterface() {
     return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
+  const submitButtonLabel = !isLastSection
+    ? `Submit ${activeSection?.type || 'Section'}`
+    : isFullMock
+    ? 'Final Submit'
+    : 'Submit Test';
+
   return (
     <div
       className="flex-1 flex flex-col h-screen bg-[#F8FAFC] select-none"
@@ -287,19 +539,41 @@ export default function ExamInterface() {
 
         {/* Section Navigation Tabs */}
         <div className="hidden sm:flex bg-slate-950 p-1 rounded-xl border border-white/5">
-          {activeTest.sections.map((sec: any, idx: number) => (
-            <button
-              key={sec.id}
-              onClick={() => setActiveSection(idx)}
-              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                activeSectionIndex === idx
-                  ? 'bg-[#1E3A6E] text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {sec.title}
-            </button>
-          ))}
+          {activeSection?.type === 'writing' && writingTasks.length > 0 ? (
+            writingTasks.map((task: any, idx: number) => (
+              <button
+                key={task.id}
+                onClick={() => setActiveWritingTaskIndex(idx)}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  activeWritingTaskIndex === idx
+                    ? 'bg-[#1E3A6E] text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {task.extra_data_json?.task_type || `Task ${idx + 1}`}
+              </button>
+            ))
+          ) : (
+            activeTest.sections.map((sec: any, idx: number) => (
+              <button
+                key={sec.id}
+                type="button"
+                disabled={isFullMock}
+                onClick={() => {
+                  if (!isFullMock) setActiveSection(idx);
+                }}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  activeSectionIndex === idx
+                    ? 'bg-[#1E3A6E] text-white'
+                    : isFullMock
+                    ? 'text-slate-600'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {sec.title}
+              </button>
+            ))
+          )}
         </div>
 
         {/* Timer & Submit controls */}
@@ -316,10 +590,10 @@ export default function ExamInterface() {
 
           {/* Countdown Clock */}
           <div className={`px-4 py-1.5 bg-slate-950 border rounded-xl flex items-center gap-2 font-mono text-sm font-bold ${
-            secondsRemaining < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
+            (isFullMock ? (sectionSecondsRemaining || 0) : secondsRemaining) < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
           }`}>
             <Timer className="h-4 w-4 animate-pulse" />
-            <span>{formatTime(secondsRemaining)}</span>
+            <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
           </div>
 
           <button
@@ -327,7 +601,7 @@ export default function ExamInterface() {
             disabled={isSubmitting}
             className="px-4 py-1.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5"
           >
-            <CheckCircle2 className="h-4 w-4" /> Submit Test
+            <CheckCircle2 className="h-4 w-4" /> {submitButtonLabel}
           </button>
         </div>
       </header>
@@ -421,21 +695,164 @@ export default function ExamInterface() {
                 </div>
               )}
             </div>
+          ) : activeSection?.type === 'writing' ? (
+            <div className="flex-1 flex flex-col gap-6 py-6">
+              {activeWritingTask ? (
+                <>
+                  <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
+                    <div>
+                      <span className="px-2.5 py-1 bg-[#EFF4FB] text-[#1E3A6E] text-[10px] font-black uppercase tracking-wider rounded-md">
+                        {activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
+                      </span>
+                      <h2 className="text-2xl font-extrabold text-[#05162E] font-serif mt-3">
+                        {activeWritingTask.extra_data_json?.task_title || activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
+                      </h2>
+                      <p className="text-[12px] font-bold text-slate-500 mt-2">
+                        Recommendation: {activeWritingTask.extra_data_json?.suggested_minutes || 40} minutes • Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words
+                      </p>
+                    </div>
+                    <PenLine className="h-7 w-7 text-[#1E3A6E] shrink-0" />
+                  </div>
+
+                  {activeWritingTask.instruction && (
+                    <div className="bg-[#EFF4FB] border border-[#1E3A6E]/10 rounded-2xl p-5 text-[13px] font-semibold text-[#1E3A6E] leading-relaxed">
+                      {activeWritingTask.instruction}
+                    </div>
+                  )}
+
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Prompt</h3>
+                    <p className="text-[15px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap">
+                      {activeWritingTask.question_text}
+                    </p>
+                  </div>
+
+                  {activeWritingTask.extra_data_json?.task_type === 'Task 1' && activeWritingGroup?.image_url && (
+                    <img
+                      src={activeWritingGroup.image_url}
+                      alt="Task 1 visual"
+                      className="w-full max-h-[420px] object-contain bg-white border border-slate-200 rounded-2xl shadow-sm"
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400">
+                  <PenLine className="h-14 w-14 mb-4 text-slate-300" />
+                  <h2 className="text-xl font-black text-[#05162E]">Writing tasks are not ready</h2>
+                  <p className="text-sm font-semibold mt-2">Ask the admin to create Task 1 and Task 2 before publishing this test.</p>
+                </div>
+              )}
+            </div>
           ) : (
             /* Reading Passage HTML Render */
             <div ref={passageRef} className="ielts-passage-shell mb-12">
               <h2 className="ielts-passage-title text-[#05162E] border-b border-slate-200 pb-4">{activeSection?.title || 'Reading Passage'}</h2>
-              <div 
-                data-passage-id={activeGroups[0]?.id || 'active-passage'}
-                className="ielts-passage focus:outline-none select-text"
-                dangerouslySetInnerHTML={{ __html: highlightedPassageHtml ?? activePassageHtml }}
-              ></div>
+              <div className="space-y-10">
+                {activePassages.length > 0 ? activePassages.map((group: any, index: number) => (
+                  <section key={group.id || index} className="scroll-mt-6">
+                    <PassageIntroCard
+                      title={group.title || `Reading Passage ${index + 1}`}
+                      instruction={group.instruction}
+                    />
+                    {group.image_url && (
+                      <img
+                        src={group.image_url}
+                        alt={`${group.title || 'Reading passage'} reference`}
+                        className="w-full max-w-2xl mx-auto rounded-xl border border-slate-200 shadow-sm mb-6"
+                      />
+                    )}
+                    {group.normalizedPassage ? (
+                      <div 
+                        data-passage-id={group.id || `active-passage-${index}`}
+                        className="ielts-passage focus:outline-none select-text"
+                        dangerouslySetInnerHTML={{ __html: highlightedPassages[group.id] ?? group.normalizedPassage }}
+                      />
+                    ) : (
+                      <p className="text-[14px] font-semibold text-slate-400">No passage text uploaded for this group yet.</p>
+                    )}
+                  </section>
+                )) : (
+                  <p className="text-[14px] font-semibold text-slate-400">No reading passage uploaded.</p>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* RIGHT COLUMN: Interactive Questions column */}
         <div className="flex-1 w-full md:w-1/2 bg-[#F8FAFC] overflow-y-auto p-8">
+          {activeSection?.type === 'writing' ? (
+            <div className="h-full flex flex-col gap-5">
+              <div className="flex gap-2">
+                {writingTasks.map((task: any, idx: number) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => setActiveWritingTaskIndex(idx)}
+                    className={`flex-1 py-3 rounded-xl text-[13px] font-black transition-all border ${
+                      activeWritingTaskIndex === idx
+                        ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    {task.extra_data_json?.task_type || `Task ${idx + 1}`}
+                  </button>
+                ))}
+              </div>
+
+              {activeWritingTask ? (
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
+	                  <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+	                    <div>
+	                      <h3 className="font-black text-[15px] text-[#05162E]">Writing Editor</h3>
+	                      <p className="text-[11px] font-bold text-slate-400 mt-1">
+	                        Internal copy, cut, and paste are allowed. External paste is blocked.
+	                      </p>
+	                    </div>
+                    <div className={`px-3 py-1.5 rounded-xl text-[12px] font-black ${
+                      activeWritingWordCount >= (activeWritingTask.extra_data_json?.minimum_words || 250)
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}>
+	                      {activeWritingWordCount} words
+	                    </div>
+	                  </div>
+	                  {clipboardMessage && (
+	                    <div className="mx-5 mt-4 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055]">
+	                      <ClipboardX className="h-4 w-4 shrink-0" />
+	                      {clipboardMessage}
+	                    </div>
+	                  )}
+	                  <textarea
+	                    value={activeWritingAnswer}
+	                    onChange={(event) => setAnswer(activeWritingTask.id, event.target.value)}
+	                    onCopy={(event) => handleWritingCopy(event, activeWritingTask.id)}
+	                    onCut={(event) => handleWritingCut(event, activeWritingTask.id)}
+	                    onPaste={(event) => handleWritingPaste(event, activeWritingTask.id)}
+	                    onDrop={handleWritingDrop}
+	                    onContextMenu={(event) => event.preventDefault()}
+	                    placeholder="Write your answer here..."
+	                    spellCheck={false}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    autoComplete="off"
+                    data-gramm="false"
+                    data-gramm_editor="false"
+                    data-enable-grammarly="false"
+	                    className="flex-1 min-h-[420px] w-full resize-none select-text p-6 bg-white text-[#05162E] text-[15px] leading-7 outline-none"
+                  />
+                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                    <span>Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words</span>
+                    <span>{autosaveStatus === 'saving' ? 'Saving...' : autosaveStatus === 'saved' ? 'Autosaved' : 'Autosave active'}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 font-bold">
+                  No writing tasks available.
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="space-y-10">
             {activeGroups.map((group: any) => (
               <div key={group.id} className="space-y-6 mb-10">
@@ -444,80 +861,93 @@ export default function ExamInterface() {
                   <h3 className="font-extrabold text-[16px] text-[#05162E]">{group.title}</h3>
                   {group.instruction && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-[13px] font-medium">
-                      <p>{group.instruction}</p>
+                      <p>{renderFormattedText(group.instruction)}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Render questions inside group */}
                 <div className="space-y-6">
-                  <MatchingHeadingsGroup
-                    questions={group.questions || []}
-                    instruction={group.instruction || ''}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                    onActivateQuestion={setActiveQuestionId}
-                  />
-
-                  {group.questions?.some(isSummaryCompletionQuestion) && (
-                    <SummaryCompletionGroup
-                      questions={group.questions.filter(isSummaryCompletionQuestion)}
-                      values={answers}
-                      onChange={setAnswer}
-                      mode="light"
-                      onActivateQuestion={setActiveQuestionId}
-                      groupInstruction={group.instruction || ''}
-                    />
-                  )}
-
-                  {group.questions?.filter((question: any) => (
-                    !isSummaryCompletionQuestion(question) && !isMatchingHeadingsQuestion(question, group.instruction || '')
-                  )).map((question: any) => (
-                    <div 
-                      key={question.id} 
-                      className={`bg-white rounded-2xl p-6 shadow-sm flex items-start gap-4 border transition-all ${
-                        activeQuestionId === question.id 
-                          ? 'border-[#1E3A6E]/50' 
-                          : 'border-slate-200'
-                      }`}
-                      onClick={() => setActiveQuestionId(question.id)}
-                    >
-                      <div className="h-8 w-8 bg-[#1E3A6E] text-white rounded-full flex items-center justify-center font-black text-[13px] shrink-0 shadow-md">
-                        {question.question_number}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex justify-end mb-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFlag(question.id);
-                            }}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              flaggedQuestions.includes(question.id)
-                                ? 'text-amber-500 bg-amber-500/10'
-                                : 'text-slate-400 hover:text-[#1E3A6E] hover:bg-[#EFF4FB]'
-                            }`}
-                            title="Flag for review"
-                          >
-                            <Flag className="h-4 w-4 fill-current" />
-                          </button>
-                        </div>
-
-                        {/* Unified Question Renderer component */}
-                        <QuestionRenderer 
-                          question={question} 
-                          value={answers[question.id]} 
-                          onChange={(val) => setAnswer(question.id, val)}
-                          mode="light"
+                  {buildOrderedQuestionBlocks(group.questions || [], group.instruction || '').map((block) => {
+                    if (block.kind === 'matching') {
+                      return (
+                        <MatchingHeadingsGroup
+                          key={block.id}
+                          questions={block.questions}
+                          instruction={block.instruction || group.instruction || ''}
+                          answers={answers}
+                          onAnswer={setAnswer}
+                          onActivateQuestion={setActiveQuestionId}
                         />
+                      );
+                    }
+
+                    if (block.kind === 'summary') {
+                      return (
+                        <SummaryCompletionGroup
+                          key={block.id}
+                          questions={block.questions}
+                          values={answers}
+                          onChange={setAnswer}
+                          mode="light"
+                          onActivateQuestion={setActiveQuestionId}
+                          groupInstruction={group.instruction || ''}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div key={block.id} className="space-y-4">
+                        <QuestionInstructionCard instruction={block.instruction} />
+                        {block.questions.map((question: any) => (
+                          <div 
+                            key={question.id} 
+                            className={`bg-white rounded-2xl p-6 shadow-sm flex items-start gap-4 border transition-all ${
+                              activeQuestionId === question.id 
+                                ? 'border-[#1E3A6E]/50' 
+                                : 'border-slate-200'
+                            }`}
+                            onClick={() => setActiveQuestionId(question.id)}
+                          >
+                            <div className="h-8 w-8 bg-[#1E3A6E] text-white rounded-full flex items-center justify-center font-black text-[13px] shrink-0 shadow-md">
+                              {question.question_number}
+                            </div>
+
+                            <div className="flex-1">
+                              <div className="flex justify-end mb-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFlag(question.id);
+                                  }}
+                                  className={`p-1.5 rounded-lg transition-colors ${
+                                    flaggedQuestions.includes(question.id)
+                                      ? 'text-amber-500 bg-amber-500/10'
+                                      : 'text-slate-400 hover:text-[#1E3A6E] hover:bg-[#EFF4FB]'
+                                  }`}
+                                  title="Flag for review"
+                                >
+                                  <Flag className="h-4 w-4 fill-current" />
+                                </button>
+                              </div>
+
+                              <QuestionRenderer 
+                                question={question} 
+                                value={answers[question.id]} 
+                                onChange={(val) => setAnswer(question.id, val)}
+                                mode="light"
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
 
       </div>
@@ -525,16 +955,22 @@ export default function ExamInterface() {
       {/* 3. Bottom Palette Navigation Dock */}
       <footer className="bg-white border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-slate-500 select-none shrink-0 shadow-[0_-4px_20px_rgba(15,23,42,0.04)]">
         <div className="flex flex-wrap gap-2 max-w-full overflow-x-auto py-1">
-          {sectionQuestions.map((q: any) => {
+          {(activeSection?.type === 'writing' ? writingTasks : sectionQuestions).map((q: any, idx: number) => {
             const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
             const isFlagged = flaggedQuestions.includes(q.id);
-            const isActiveQ = activeQuestionId === q.id;
+            const isActiveQ = activeSection?.type === 'writing' ? activeWritingTaskIndex === idx : activeQuestionId === q.id;
 
             return (
               <button
                 key={q.id}
-                onClick={() => setActiveQuestionId(q.id)}
-                className={`w-9 h-9 rounded-xl font-bold text-[13px] flex items-center justify-center transition-all ${
+                onClick={() => {
+                  if (activeSection?.type === 'writing') {
+                    setActiveWritingTaskIndex(idx);
+                  } else {
+                    setActiveQuestionId(q.id);
+                  }
+                }}
+                className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} h-9 rounded-xl font-bold text-[13px] flex items-center justify-center transition-all ${
                   isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
                 } ${
                   isFlagged 
@@ -544,7 +980,7 @@ export default function ExamInterface() {
                     : 'bg-white border border-slate-300 text-slate-500 hover:bg-[#F8FAFC]'
                 }`}
               >
-                {q.question_number}
+                {activeSection?.type === 'writing' ? (q.extra_data_json?.task_type || `Task ${idx + 1}`) : q.question_number}
               </button>
             );
           })}

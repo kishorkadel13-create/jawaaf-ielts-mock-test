@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { 
   Award, ShieldCheck, ShieldAlert, Clock, Check, X, 
-  Search, ChevronLeft, Layers, BookOpen, Mail, Calendar 
+  Search, ChevronLeft, Layers, BookOpen, Mail, Calendar, UserPlus
 } from 'lucide-react';
 import JawaafLogo from '../../components/JawaafLogo';
 
@@ -25,6 +25,8 @@ export default function AdminAccessPage() {
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [actioningId, setActioningId] = useState<string | null>(null);
+  const [teacherForm, setTeacherForm] = useState({ full_name: '', email: '', password: '' });
+  const [creatingTeacher, setCreatingTeacher] = useState(false);
 
   const fetchRequests = async () => {
     try {
@@ -80,6 +82,21 @@ export default function AdminAccessPage() {
       console.error(`Failed to ${status} request:`, err);
       alert(err.message || `Failed to update request status to ${status}`);
       setActioningId(null);
+    }
+  };
+
+  const handleCreateTeacher = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      setCreatingTeacher(true);
+      await api.post('/admin/teachers', teacherForm);
+      alert(`Teacher account created. Login email: ${teacherForm.email}`);
+      setTeacherForm({ full_name: '', email: '', password: '' });
+    } catch (err: any) {
+      console.error('Failed to create teacher:', err);
+      alert(err.response?.data?.message || err.message || err.error || 'Failed to create teacher account.');
+    } finally {
+      setCreatingTeacher(false);
     }
   };
 
@@ -155,9 +172,55 @@ export default function AdminAccessPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/50 pb-5">
           <div>
             <h1 className="text-[28px] md:text-[32px] font-black text-[#05162E] tracking-tight">Access Approvals</h1>
-            <p className="text-[14px] text-slate-500 mt-1">Review student subscription upgrade requests and unlock platform mock exams.</p>
+            <p className="text-[14px] text-slate-500 mt-1">Review student subscription requests and create teacher reviewer accounts.</p>
           </div>
         </div>
+
+        <form onSubmit={handleCreateTeacher} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm grid gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-black text-[#05162E]">Create Teacher Login</h2>
+              <p className="text-[12px] font-semibold text-slate-500">Teachers can review mock writing submissions and release feedback.</p>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-[1fr_1fr_220px_auto] gap-3">
+            <input
+              required
+              type="text"
+              value={teacherForm.full_name}
+              onChange={(event) => setTeacherForm(current => ({ ...current, full_name: event.target.value }))}
+              className="px-4 py-3 bg-[#F8FAFC] border border-slate-100 focus:border-[#1E3A6E] rounded-xl text-[14px] outline-none"
+              placeholder="Teacher name"
+            />
+            <input
+              required
+              type="email"
+              value={teacherForm.email}
+              onChange={(event) => setTeacherForm(current => ({ ...current, email: event.target.value }))}
+              className="px-4 py-3 bg-[#F8FAFC] border border-slate-100 focus:border-[#1E3A6E] rounded-xl text-[14px] outline-none"
+              placeholder="teacher@email.com"
+            />
+            <input
+              required
+              type="password"
+              minLength={6}
+              value={teacherForm.password}
+              onChange={(event) => setTeacherForm(current => ({ ...current, password: event.target.value }))}
+              className="px-4 py-3 bg-[#F8FAFC] border border-slate-100 focus:border-[#1E3A6E] rounded-xl text-[14px] outline-none"
+              placeholder="Password"
+            />
+            <button
+              type="submit"
+              disabled={creatingTeacher}
+              className="px-5 py-3 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[13px] font-black rounded-xl transition-colors disabled:opacity-60"
+            >
+              {creatingTeacher ? 'Creating...' : 'Create Teacher'}
+            </button>
+          </div>
+        </form>
 
         {/* Filters Header */}
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">

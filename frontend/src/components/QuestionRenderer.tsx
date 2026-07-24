@@ -148,6 +148,46 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
     </div>
   );
 
+  if (question_type === 'WRITING_TASK') {
+    const wordCount = String(value || '').trim()
+      ? String(value || '').trim().split(/\s+/).length
+      : 0;
+    const minimumWords = question.extra_data_json?.minimum_words || 250;
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${isLight ? 'bg-rose-50 text-rose-600' : 'bg-rose-500/10 text-rose-300'}`}>
+              {question.extra_data_json?.task_type || 'Writing Task'}
+            </span>
+            <span className={`text-[11px] font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Minimum {minimumWords} words
+            </span>
+          </div>
+          <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{question_text}</p>
+        </div>
+        <textarea
+          value={value || ''}
+          onChange={(event) => onChange(event.target.value)}
+          rows={14}
+          placeholder="Write your answer here..."
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          autoComplete="off"
+          data-gramm="false"
+          data-gramm_editor="false"
+          data-enable-grammarly="false"
+          className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all resize-y leading-relaxed ${inputClass}`}
+        />
+        <div className={`text-[11px] font-bold text-right ${wordCount < minimumWords ? 'text-amber-600' : 'text-emerald-600'}`}>
+          {wordCount} words
+        </div>
+      </div>
+    );
+  }
+
   // ─── BLANK FILLING TYPES (1-4): Fill in the Blank, Summary Completion, Short Answer, Diagram ───
   if (['FILL_IN_THE_BLANK', 'SUMMARY_COMPLETION', 'TABLE_COMPLETION', 'DIAGRAM_LABELLING'].includes(question_type)) {
     return renderInlineTextInputs('Type your answer here...');

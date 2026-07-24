@@ -62,6 +62,93 @@ const getSafeFileName = (originalName) => {
   return `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext ? `.${ext}` : ''}`;
 };
 
+export const createTeacher = async (req, res) => {
+  try {
+    const { full_name, email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (!full_name || !normalizedEmail || !password || password.length < 6) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'Teacher name, email, and a password of at least 6 characters are required.'
+      });
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY === 'placeholder') {
+      return res.status(500).json({
+        error: 'MissingServiceRoleKey',
+        message: 'SUPABASE_SERVICE_ROLE_KEY is required to create teacher login accounts.'
+      });
+    }
+
+    let teacherUser = null;
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (existingProfile?.id) {
+      const { data: updatedUser, error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(existingProfile.id, {
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name,
+          role: 'teacher'
+        }
+      });
+
+      if (updateUserError) throw updateUserError;
+      teacherUser = updatedUser.user;
+    } else {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name
+        }
+      });
+
+      if (error) throw error;
+      teacherUser = data.user;
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert([{
+        id: teacherUser.id,
+        full_name,
+        email: normalizedEmail,
+        role: 'teacher',
+        has_full_access: true
+      }], { onConflict: 'id' })
+      .select('id, full_name, email, role')
+      .single();
+
+    if (profileError) {
+      if (String(profileError.message || '').includes('profiles_role_check')) {
+        return res.status(500).json({
+          error: 'SchemaMigrationRequired',
+          message: 'Database migration required: profiles.role must allow teacher. Run 20260723_add_writing_mock_support.sql in Supabase.'
+        });
+      }
+      throw profileError;
+    }
+
+    res.status(201).json({
+      message: 'Teacher account created successfully.',
+      teacher: profile
+    });
+  } catch (err) {
+    console.error('createTeacher Error:', err);
+    res.status(500).json({
+      error: 'TeacherCreateError',
+      message: err.message || 'Failed to create teacher account.'
+    });
+  }
+};
+
 // ==========================================
 // SECTION CONTROLLERS
 // ==========================================
@@ -87,9 +174,9 @@ export const createSection = async (req, res) => {
 export const updateSection = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, duration, order_no } = req.body;
+    const { type, title, duration, order_no } = req.body;
     const updates = Object.fromEntries(
-      Object.entries({ title, duration, order_no }).filter(([, value]) => value !== undefined)
+      Object.entries({ type, title, duration, order_no }).filter(([, value]) => value !== undefined)
     );
 
     const { data: section, error } = await supabaseAdmin

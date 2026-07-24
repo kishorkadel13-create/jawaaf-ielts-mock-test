@@ -2,7 +2,13 @@ import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 
-export default function ProtectedRoute({ children, adminOnly = false }) {
+const getRoleHome = (role) => {
+  if (role === 'admin') return '/admin';
+  if (role === 'teacher') return '/teacher';
+  return '/dashboard';
+};
+
+export default function ProtectedRoute({ children, adminOnly = false, roles = null }) {
   const { isAuthenticated, profile, isLoading, initializeAuth } = useAuthStore();
 
   // Try checking user session on mount
@@ -30,7 +36,12 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
 
   if (adminOnly && profile?.role !== 'admin') {
     console.warn('Unauthorized role access blocked. Redirecting to student portal.');
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getRoleHome(profile?.role)} replace />;
+  }
+
+  if (roles && !roles.includes(profile?.role)) {
+    console.warn('Unauthorized role access blocked. Redirecting to student portal.');
+    return <Navigate to={getRoleHome(profile?.role)} replace />;
   }
 
   return children;

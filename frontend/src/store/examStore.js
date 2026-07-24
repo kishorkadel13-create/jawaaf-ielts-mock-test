@@ -27,8 +27,11 @@ export const useExamStore = create((set, get) => ({
       console.warn('Failed to parse local storage cache:', e);
     }
 
-    // Default parameters
-    const totalDurationSeconds = test.duration * 60;
+    const sectionDurationTotal = Array.isArray(test.sections)
+      ? test.sections.reduce((total, section) => total + (Number(section.duration) || 0), 0)
+      : 0;
+    const durationMinutes = Number(test.duration) || sectionDurationTotal || 60;
+    const totalDurationSeconds = durationMinutes * 60;
     
     // Fallback: If resumed, calculate time elapsed or load cached values
     let answers = {};
@@ -38,7 +41,7 @@ export const useExamStore = create((set, get) => ({
 
     if (savedState && savedState.attemptId === attempt.id) {
       answers = savedState.answers || {};
-      secondsRemaining = savedState.secondsRemaining || totalDurationSeconds;
+      secondsRemaining = Math.min(savedState.secondsRemaining || totalDurationSeconds, totalDurationSeconds);
       flaggedQuestions = savedState.flaggedQuestions || [];
       activeSectionIndex = savedState.activeSectionIndex || 0;
     } else if (resumedState) {
