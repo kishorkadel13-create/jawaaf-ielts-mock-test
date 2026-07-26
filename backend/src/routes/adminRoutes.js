@@ -5,7 +5,9 @@ import {
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
   createQuestion, updateQuestion, deleteQuestion,
-  uploadAsset
+  uploadAsset,
+  createListeningAudioUpload,
+  saveListeningAudio
 } from '../controllers/adminController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
@@ -86,5 +88,7 @@ const uploadSingleAsset = (req, res, next) => {
 
 // Asset File Upload Endpoint (Supabase storage gateway)
 router.post('/upload', uploadSingleAsset, uploadAsset);
+router.post('/tests/:testId/audio/sign', createListeningAudioUpload);
+router.put('/tests/:testId/audio', saveListeningAudio);
 
 export default router;

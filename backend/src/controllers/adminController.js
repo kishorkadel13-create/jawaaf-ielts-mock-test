@@ -434,3 +434,85 @@ export const uploadAsset = async (req, res) => {
     });
   }
 };
+
+export const createListeningAudioUpload = async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const { file_name, content_type } = req.body;
+    const contentType = String(content_type || '').trim();
+
+    if (!file_name || !contentType || !AUDIO_MIME_TYPES.has(contentType)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'A valid audio filename and content type are required.'
+      });
+    }
+
+    await ensureAssetBucket();
+
+    const audioPath = `audio/${testId}/${getSafeFileName(file_name)}`;
+    const { data, error } = await supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .createSignedUploadUrl(audioPath, { upsert: true });
+
+    if (error) {
+      console.error('Supabase Signed Audio Upload Error:', error);
+      return res.status(500).json({
+        error: 'StorageError',
+        message: error.message || 'Failed to create audio upload URL.'
+      });
+    }
+
+    res.status(200).json({
+      bucket: ASSET_BUCKET,
+      path: audioPath,
+      signedUrl: data.signedUrl,
+      token: data.token
+    });
+  } catch (err) {
+    console.error('createListeningAudioUpload Exception:', err);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: process.env.NODE_ENV === 'production'
+        ? 'Failed to prepare audio upload.'
+        : err.message || 'Failed to prepare audio upload.'
+    });
+  }
+};
+
+export const saveListeningAudio = async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const audioFile = String(req.body.audio_file || '').trim();
+
+    if (!audioFile) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'audio_file is required.'
+      });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('mock_tests')
+      .update({ audio_file: audioFile })
+      .eq('id', testId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      message: 'Listening audio saved.',
+      test: data,
+      audio_file: data.audio_file
+    });
+  } catch (err) {
+    console.error('saveListeningAudio Exception:', err);
+    res.status(500).json({
+      error: 'DatabaseError',
+      message: process.env.NODE_ENV === 'production'
+        ? 'Failed to save listening audio.'
+        : err.message || 'Failed to save listening audio.'
+    });
+  }
+};

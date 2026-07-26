@@ -8,6 +8,7 @@ import { renderFormattedText, splitQuestionInstruction } from '../utils/renderFo
 import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
+import { resolveListeningAudioUrl } from '../utils/audioUrl';
 import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX } from 'lucide-react';
 
 type OrderedQuestionBlock = {
@@ -354,7 +355,7 @@ export default function ExamInterface() {
   const nextSection = activeTest?.sections?.[activeSectionIndex + 1];
   const activeGroups = activeSection?.question_groups || [];
   const listeningAudioUrl = activeSection?.type === 'listening'
-    ? activeGroups.find((group: any) => group.audio_url)?.audio_url || ''
+    ? resolveListeningAudioUrl(activeSection?.audio_file || activeTest?.audio_file || activeGroups.find((group: any) => group.audio_url)?.audio_url || '')
     : '';
   const sectionQuestions = activeGroups.flatMap((g: any) => g.questions || []).sort((a: any, b: any) => a.question_number - b.question_number);
   const writingTasks = activeSection?.type === 'writing'

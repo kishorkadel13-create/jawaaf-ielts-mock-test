@@ -29,6 +29,7 @@ lerna-debug.log*
 # === User uploads (keep the dir, ignore contents) ===
 backend/src/uploads/*
 !backend/src/uploads/.gitkeep
+audio/
 
 # === OS / editor junk ===
 .DS_Store

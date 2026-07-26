@@ -5,6 +5,7 @@ import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
 import { renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
+import { resolveListeningAudioUrl } from '../../../utils/audioUrl';
 
 interface StudentPreviewModalProps {
   test: any;
@@ -148,11 +149,11 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioAutoplayBlocked, setAudioAutoplayBlocked] = useState(false);
   const previewAudioUrl = useMemo(() => (
-    test?.sections
+    resolveListeningAudioUrl(test?.audio_file || test?.sections
       ?.filter((sec: any) => sec.type === 'listening')
       ?.flatMap((sec: any) => sec.question_groups || [])
       ?.find((grp: any) => grp.audio_url)
-      ?.audio_url || ''
+      ?.audio_url || '')
   ), [test]);
   const normalizedPassages = useMemo(() => {
     const passages: Record<string, string> = {};
