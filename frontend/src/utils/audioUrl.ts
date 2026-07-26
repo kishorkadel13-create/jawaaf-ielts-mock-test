@@ -7,6 +7,14 @@ export const resolveListeningAudioUrl = (audioFile?: string | null) => {
   if (/^https?:\/\//i.test(value)) return value;
 
   const normalizedPath = value.replace(/^\/+/, '');
+  const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const isBareLegacyFilename = !normalizedPath.includes('/');
+  const localFallbackFileName = normalizedPath.split('/').filter(Boolean).pop();
+
+  if (isLocalHost && localFallbackFileName) {
+    return `/audio/${encodeURIComponent(isBareLegacyFilename ? normalizedPath : localFallbackFileName)}`;
+  }
+
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const configuredBaseUrl = import.meta.env.VITE_AUDIO_BASE_URL;
   const storageBaseUrl = configuredBaseUrl
