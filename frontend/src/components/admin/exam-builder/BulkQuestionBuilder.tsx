@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Bold, FileText, Plus, Wand2, X } from 'lucide-react';
+import { AlertCircle, Bold, FileText, Heading2, Plus, Wand2, X } from 'lucide-react';
 import { QuestionData } from './QuestionBuilder';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
+import { renderFormattedBlockText } from '../../../utils/renderFormattedText';
 
 interface BulkQuestionBuilderProps {
   onSave: (questions: QuestionData[], instruction?: string) => void;
@@ -222,6 +223,7 @@ const splitQuestionBlocks = (text: string) => {
   const lines = text.split('\n').map((line) => line.trimEnd());
   const blocks: Array<{ number: number; lines: string[] }> = [];
   let current: { number: number; lines: string[] } | null = null;
+  let pendingPreamble: string[] = [];
 
   lines.forEach((line) => {
     const startMatch = line.match(QUESTION_START_RE);
@@ -229,12 +231,15 @@ const splitQuestionBlocks = (text: string) => {
 
     if (startMatch && !optionMatch) {
       if (current) blocks.push(current);
-      current = { number: Number(startMatch[1]), lines: [startMatch[2].trim()] };
+      current = { number: Number(startMatch[1]), lines: [...pendingPreamble, startMatch[2].trim()].filter(Boolean) };
+      pendingPreamble = [];
       return;
     }
 
     if (current) {
       current.lines.push(line.trim());
+    } else if (line.trim()) {
+      pendingPreamble.push(line.trim());
     }
   });
 
@@ -358,6 +363,8 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
   const [bulkType, setBulkType] = useState('AUTO');
   const [questionStatement, setQuestionStatement] = useState(currentInstruction);
   const statementRef = useRef<HTMLTextAreaElement | null>(null);
+  const rawTextRef = useRef<HTMLTextAreaElement | null>(null);
+  const headingOptionsRef = useRef<HTMLTextAreaElement | null>(null);
   const [parsedQuestions, setParsedQuestions] = useState<QuestionData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -365,24 +372,35 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
   const formatGuide = useMemo(() => FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO, [bulkType]);
   const suggestedStatement = useMemo(() => SUGGESTED_STATEMENTS[bulkType] || '', [bulkType]);
 
-  const boldSelectedStatementText = () => {
-    const textarea = statementRef.current;
+  const applyTextareaFormat = (
+    textarea: HTMLTextAreaElement | null,
+    value: string,
+    setValue: (value: string) => void,
+    format: 'bold' | 'heading'
+  ) => {
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selectedText = questionStatement.slice(start, end);
-    const fallbackText = 'bold text';
-    const wrappedText = `**${selectedText || fallbackText}**`;
-    const nextValue = `${questionStatement.slice(0, start)}${wrappedText}${questionStatement.slice(end)}`;
-    const selectionStart = start + 2;
-    const selectionEnd = selectionStart + (selectedText || fallbackText).length;
+    const selectedText = value.slice(start, end);
+    const fallbackText = format === 'heading' ? 'Question heading' : 'bold text';
+    const targetText = selectedText || fallbackText;
+    const lineStart = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+    const prefix = format === 'heading' && !value.slice(lineStart, start).startsWith('## ') ? '## ' : '';
+    const wrappedText = format === 'bold' ? `**${targetText}**` : `${prefix}${targetText}`;
+    const nextValue = `${value.slice(0, start)}${wrappedText}${value.slice(end)}`;
+    const selectionStart = start + (format === 'bold' ? 2 : prefix.length);
+    const selectionEnd = selectionStart + targetText.length;
 
-    setQuestionStatement(nextValue);
+    setValue(nextValue);
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(selectionStart, selectionEnd);
     });
+  };
+
+  const boldSelectedStatementText = () => {
+    applyTextareaFormat(statementRef.current, questionStatement, setQuestionStatement, 'bold');
   };
 
   useEffect(() => {
@@ -472,7 +490,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
       });
 
       const isolateTargetBlank = blankFocusedTypes.has(bulkType) || (bulkType === 'AUTO' && bodyLines.join(' ').match(ANY_NUMBERED_BLANK_RE));
-      const questionText = normalizeBlankText(bodyLines.join(' ').replace(/\s+/g, ' ').trim(), block.number, Boolean(isolateTargetBlank));
+      const questionText = normalizeBlankText(bodyLines.join('\n').trim(), block.number, Boolean(isolateTargetBlank));
       const answersFromKey = answerMap[block.number] || [];
       const rawAnswers = inlineAnswers.length > 0 ? inlineAnswers : answersFromKey;
       const questionType = inferType(bulkType, options, rawAnswers, questionText);
@@ -603,12 +621,41 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                 This appears above the questions for students. Select text and click Bold to save it like **this**.
               </span>
             </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => applyTextareaFormat(rawTextRef.current, rawText, setRawText, 'heading')}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-black text-[#1E3A6E] hover:bg-[#EFF4FB]"
+                title="Make selected raw question text a heading"
+              >
+                <Heading2 className="h-3.5 w-3.5" /> Heading
+              </button>
+              <button
+                type="button"
+                onClick={() => applyTextareaFormat(rawTextRef.current, rawText, setRawText, 'bold')}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-black text-[#1E3A6E] hover:bg-[#EFF4FB]"
+                title="Bold selected raw question text"
+              >
+                <Bold className="h-3.5 w-3.5" /> Bold
+              </button>
+            </div>
             {bulkType === 'MATCHING_HEADINGS' ? (
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="bg-[#EFF4FB] border-b border-[#1E3A6E]/10 px-4 py-3">
-                  <h4 className="text-center text-[13px] font-black text-[#1E3A6E]">List of Headings</h4>
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-center text-[13px] font-black text-[#1E3A6E]">List of Headings</h4>
+                    <button
+                      type="button"
+                      onClick={() => applyTextareaFormat(headingOptionsRef.current, headingOptionsText, setHeadingOptionsText, 'bold')}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#1E3A6E]/20 bg-white px-2.5 py-1.5 text-[11px] font-black text-[#1E3A6E] hover:bg-[#EFF4FB]"
+                      title="Bold selected heading option text"
+                    >
+                      <Bold className="h-3.5 w-3.5" /> Bold
+                    </button>
+                  </div>
                 </div>
                 <textarea
+                  ref={headingOptionsRef}
                   rows={7}
                   value={headingOptionsText}
                   onChange={(e) => setHeadingOptionsText(e.target.value)}
@@ -620,6 +667,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                     Paragraph Questions / Answer Key
                   </label>
                   <textarea
+                    ref={rawTextRef}
                     rows={9}
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
@@ -630,6 +678,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
               </div>
             ) : (
               <textarea
+                ref={rawTextRef}
                 rows={15}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
@@ -687,9 +736,9 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                     <span className="absolute top-4 right-4 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500">
                       {q.question_type.replace(/_/g, ' ')}
                     </span>
-                    <p className="font-bold text-[14px] text-[#05162E] mb-2 pr-28">
-                      {q.question_number}. {q.question_text.replace(/\[blank\]/g, '__________')}
-                    </p>
+                    <div className="font-bold text-[14px] text-[#05162E] mb-2 pr-28 whitespace-pre-wrap">
+                      {q.question_number}. {renderFormattedBlockText(q.question_text.replace(/\[blank\]/g, '__________'), `bulk-preview-${idx}`)}
+                    </div>
 
                     {showInlineOptions && (
                       <ul className="list-disc pl-5 mb-3 text-[13px] text-slate-600 space-y-1">

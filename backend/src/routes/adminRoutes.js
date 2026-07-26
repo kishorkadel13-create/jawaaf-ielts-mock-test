@@ -5,6 +5,9 @@ import {
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
   createQuestion, updateQuestion, deleteQuestion,
+  createListeningAudioUpload,
+  saveListeningAudio,
+  uploadListeningAudio,
   uploadAsset
 } from '../controllers/adminController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -16,7 +19,7 @@ const router = Router();
 
 // In-Memory Multer config to handle uploads cleanly
 const storage = multer.memoryStorage();
-const uploadMaxSizeMb = Number(process.env.UPLOAD_MAX_SIZE_MB || 50);
+const uploadMaxSizeMb = Number(process.env.UPLOAD_MAX_SIZE_MB || 500);
 const upload = multer({
   storage,
   limits: { fileSize: uploadMaxSizeMb * 1024 * 1024 },
@@ -73,7 +76,7 @@ const uploadSingleAsset = (req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         error: 'FileTooLarge',
-        message: 'Audio file is too large. Please upload an MP3 or M4A under 500MB, or paste a hosted audio URL.'
+        message: `File is too large. Please upload a file under ${uploadMaxSizeMb}MB.`
       });
     }
 
@@ -83,6 +86,13 @@ const uploadSingleAsset = (req, res, next) => {
     });
   });
 };
+
+// Listening Audio Upload Endpoints.
+// Vercel-safe flow: sign -> browser uploads directly to storage -> save DB path.
+router.post('/tests/:testId/audio/sign', createListeningAudioUpload);
+router.put('/tests/:testId/audio', saveListeningAudio);
+// Fallback for small/local uploads.
+router.post('/tests/:testId/audio', uploadSingleAsset, uploadListeningAudio);
 
 // Asset File Upload Endpoint (Supabase storage gateway)
 router.post('/upload', uploadSingleAsset, uploadAsset);

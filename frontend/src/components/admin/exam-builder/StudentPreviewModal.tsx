@@ -3,7 +3,7 @@ import { X, Clock, HelpCircle, CheckCircle2, XCircle, RotateCcw, ClipboardCheck,
 import { normalizePassageHtml } from '../../../utils/passageHtml';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../../utils/textHighlighter';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
-import { renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
+import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
 
 interface StudentPreviewModalProps {
@@ -39,6 +39,23 @@ const getQuestionKind = (question: any, groupInstruction = ''): OrderedQuestionB
   if (isMatchingHeadingsQuestion(question, groupInstruction)) return 'matching';
   if (isSummaryCompletionQuestion(question)) return 'summary';
   return 'standard';
+};
+
+const getListeningAudioUrl = (audioFile?: string) => {
+  if (!audioFile) return '';
+  if (/^https?:\/\//i.test(audioFile) || audioFile.startsWith('/')) return audioFile;
+  const encodedPath = audioFile.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+
+  if (!audioFile.includes('/')) {
+    return `/audio/${encodedPath}`;
+  }
+
+  const explicitBaseUrl = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/$/, '');
+  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+  const storageBaseUrl = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ielts-assets` : '';
+  const baseUrl = explicitBaseUrl || storageBaseUrl;
+
+  return baseUrl ? `${baseUrl}/${encodedPath}` : `/audio/${encodedPath}`;
 };
 
 const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''): OrderedQuestionBlock[] => {
@@ -147,13 +164,16 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioAutoplayBlocked, setAudioAutoplayBlocked] = useState(false);
-  const previewAudioUrl = useMemo(() => (
-    test?.sections
+  const [audioLoadError, setAudioLoadError] = useState('');
+  const previewAudioUrl = useMemo(() => {
+    const legacyGroupAudio = test?.sections
       ?.filter((sec: any) => sec.type === 'listening')
       ?.flatMap((sec: any) => sec.question_groups || [])
       ?.find((grp: any) => grp.audio_url)
-      ?.audio_url || ''
-  ), [test]);
+      ?.audio_url || '';
+
+    return getListeningAudioUrl(test?.audio_file || legacyGroupAudio);
+  }, [test]);
   const normalizedPassages = useMemo(() => {
     const passages: Record<string, string> = {};
 
@@ -192,6 +212,10 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
 
   useEffect(() => {
     if (!previewAudioUrl || !audioRef.current) return;
+
+    setAudioLoadError('');
+    setAudioProgress(0);
+    audioRef.current.load();
 
     const playPromise = audioRef.current.play();
     if (playPromise) {
@@ -303,9 +327,13 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
 
   const startPreviewAudio = () => {
     if (!audioRef.current) return;
+    setAudioLoadError('');
     audioRef.current.play()
       .then(() => setAudioAutoplayBlocked(false))
-      .catch(() => setAudioAutoplayBlocked(true));
+      .catch((error) => {
+        setAudioAutoplayBlocked(true);
+        setAudioLoadError(error?.message || 'Audio could not start. Check that the audio file is reachable.');
+      });
   };
 
   const updateAudioProgress = () => {
@@ -474,10 +502,19 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                   <audio
                     ref={audioRef}
                     src={previewAudioUrl}
-                    autoPlay
+                    preload="auto"
                     controls={false}
                     controlsList="nodownload noplaybackrate noremoteplayback"
                     disableRemotePlayback
+                    onCanPlay={() => setAudioLoadError('')}
+                    onPlaying={() => {
+                      setAudioAutoplayBlocked(false);
+                      setAudioLoadError('');
+                    }}
+                    onError={() => {
+                      setAudioAutoplayBlocked(true);
+                      setAudioLoadError('Audio file could not be loaded. Re-upload the listening audio.');
+                    }}
                     onTimeUpdate={updateAudioProgress}
                     className="hidden"
                   />
@@ -486,10 +523,13 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                       <Headphones className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">Listening audio playing automatically</p>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {audioLoadError ? audioLoadError : audioAutoplayBlocked ? 'Click Start Audio to preview' : 'Listening audio playing'}
+                      </p>
                       <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full bg-[#1E3A6E]" style={{ width: `${audioProgress}%` }}></div>
                       </div>
+                      <p className="mt-2 text-[10px] font-semibold text-slate-400 truncate">{previewAudioUrl}</p>
                     </div>
                     {audioAutoplayBlocked && (
                       <button
@@ -595,7 +635,9 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                           {isWritingTask ? (isAnswered ? 'Ready for teacher review' : 'Unanswered') : isCorrect ? 'Correct' : isAnswered ? 'Incorrect' : 'Unanswered'}
                         </span>
                       </div>
-                      <p className="text-[13px] text-[#05162E] font-semibold mt-1 line-clamp-2">{question.question_text}</p>
+                      <div className="text-[13px] text-[#05162E] font-semibold mt-1 line-clamp-2">
+                        {renderFormattedBlockText(question.question_text, `preview-review-${question.id}`)}
+                      </div>
                       <div className={`grid gap-2 mt-3 ${isWritingTask ? 'grid-cols-1' : 'sm:grid-cols-2'}`}>
                         <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
                           <span className="block text-[10px] font-black uppercase text-slate-400">Your answer</span>
@@ -678,7 +720,9 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                                     Minimum {q.extra_data_json?.minimum_words || 250} words
                                   </span>
                                 </div>
-                                <p className="font-medium text-[15px] text-[#05162E] leading-relaxed whitespace-pre-wrap">{q.question_text}</p>
+                                <div className="font-medium text-[15px] text-[#05162E] leading-relaxed whitespace-pre-wrap">
+                                  {renderFormattedBlockText(q.question_text, `preview-writing-${q.id}`)}
+                                </div>
                               </div>
                               <textarea
                                 disabled={isSubmitted}
@@ -690,10 +734,10 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                               />
                             </div>
                           ) : (
-                          <p className="font-medium text-[15px] text-[#05162E] leading-relaxed mb-4">
+                          <div className="font-medium text-[15px] text-[#05162E] leading-relaxed mb-4 whitespace-pre-wrap">
                             {q.question_type === 'SHORT_ANSWER' ? (
                               <>
-                                {q.question_text}
+                                {renderFormattedText(q.question_text, `preview-short-${q.id}`)}
                                 <input
                                   type="text"
                                   disabled={isSubmitted}
@@ -705,7 +749,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                             ) : q.question_text.includes('[blank]') ? (
                               q.question_text.split('[blank]').map((part: string, i: number, arr: any[]) => (
                                 <React.Fragment key={i}>
-                                  {part}
+                                  {renderFormattedText(part, `preview-blank-${q.id}-${i}`)}
                                   {i !== arr.length - 1 && q.question_type === 'SUMMARY_COMPLETION_OPTIONS' ? (
                                     <select
                                       disabled={isSubmitted}
@@ -746,9 +790,9 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                                 </React.Fragment>
                               ))
                             ) : (
-                              q.question_text
+                              renderFormattedBlockText(q.question_text, `preview-question-${q.id}`)
                             )}
-                          </p>
+                          </div>
                           )}
 
                           {['MATCHING', 'MATCHING_INFORMATION', 'MATCHING_HEADINGS', 'SENTENCE_COMPLETION'].includes(q.question_type) && q.options_json && (
@@ -891,7 +935,7 @@ const MatchingHeadingsGroup = ({
             className="grid grid-cols-[44px_minmax(120px,1fr)_104px] sm:grid-cols-[48px_minmax(150px,1fr)_120px] items-center gap-3 py-1.5"
           >
             <span className="text-[14px] font-bold text-[#05162E]">{question.question_number}</span>
-            <span className="text-[14px] font-medium text-[#05162E] leading-snug">{question.question_text}</span>
+            <span className="text-[14px] font-medium text-[#05162E] leading-snug">{renderFormattedText(question.question_text, `preview-matching-heading-${question.id}`)}</span>
             <select
               disabled={disabled}
               value={answers[question.id] || ''}

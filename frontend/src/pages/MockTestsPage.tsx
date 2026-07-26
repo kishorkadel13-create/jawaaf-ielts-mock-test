@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
@@ -51,6 +51,14 @@ const READING_QUESTION_TYPES = [
 ] as const;
 
 type ReadingQuestionTypeKey = typeof READING_QUESTION_TYPES[number]['key'];
+type ReadingCategoryKey = 'complete' | 'passage-1' | 'passage-2' | 'passage-3';
+
+const READING_CATEGORY_META: Record<ReadingCategoryKey, { label: string; shortLabel: string }> = {
+  complete: { label: 'Complete Reading Test', shortLabel: 'Complete Test' },
+  'passage-1': { label: 'Passage 1', shortLabel: 'Passage 1' },
+  'passage-2': { label: 'Passage 2', shortLabel: 'Passage 2' },
+  'passage-3': { label: 'Passage 3', shortLabel: 'Passage 3' },
+};
 
 const normalizeReadingType = (value?: string) =>
   String(value || '')
@@ -70,6 +78,17 @@ const getReadingTypeMeta = (values: string[] = [], fallbackText = '') => {
   }) || READING_QUESTION_TYPES[0];
 };
 
+const getReadingTypeLabels = (values: string[] = [], fallbackText = '') => {
+  const normalizedValues = new Set(values.map(normalizeReadingType).filter(Boolean));
+  const normalizedText = normalizeReadingType(fallbackText);
+  const labels = READING_QUESTION_TYPES
+    .filter(type => type.key !== 'all')
+    .filter(type => type.aliases?.some(alias => normalizedValues.has(alias) || normalizedText.includes(alias)))
+    .map(type => type.label);
+
+  return [...new Set(labels)];
+};
+
 export default function MockTestsPage() {
   const { profile, logout } = useAuthStore();
   const [searchParams] = useSearchParams();
@@ -79,7 +98,7 @@ export default function MockTestsPage() {
   const [activeTab, setActiveTab] = useState<'mock' | 'practice'>(searchParams.get('mode') === 'practice' ? 'practice' : 'mock');
   const [practiceType, setPracticeType] = useState<'reading' | 'listening' | 'writing' | null>(null);
   const [writingPracticeType, setWritingPracticeType] = useState<'task1' | 'task2' | 'combo' | null>(null);
-  const [readingPassage, setReadingPassage] = useState<1 | 2 | 3>(1);
+  const [readingCategory, setReadingCategory] = useState<ReadingCategoryKey>('passage-1');
   const [readingQuestionType, setReadingQuestionType] = useState<ReadingQuestionTypeKey>('all');
   const navigate = useNavigate();
 
@@ -150,11 +169,40 @@ export default function MockTestsPage() {
 
   const mockTests = tests.filter(test => (test.sections?.length || 0) > 1);
   const practiceTests = tests.filter(test => (test.sections?.length || 0) <= 1);
-  const getReadingPassageNumber = (test: MockTest) => {
+  const getReadingPassageFromLabel = (labelText: string): 1 | 2 | 3 | null => {
+    const label = labelText.toLowerCase();
+    const match = label.match(/passage\s*([123])/i);
+    if (match) return Number(match[1]) as 1 | 2 | 3;
+
+    const questionRangeMatch = label.match(/questions?\s*(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?/i);
+    if (questionRangeMatch) {
+      const startNumber = Number(questionRangeMatch[1]);
+      if (startNumber >= 27) return 3;
+      if (startNumber >= 14) return 2;
+      return 1;
+    }
+
+    return null;
+  };
+
+  const getReadingPassageNumber = (test: MockTest): 1 | 2 | 3 | null => {
+    const section = test.sections?.find(item => item.type === 'reading');
+    return getReadingPassageFromLabel(`${test.title || ''} ${test.description || ''} ${section?.title || ''}`);
+  };
+
+  const getReadingCategory = (test: MockTest): ReadingCategoryKey => {
+    const passageNumber = getReadingPassageNumber(test);
+    if (passageNumber) return `passage-${passageNumber}` as ReadingCategoryKey;
+
     const section = test.sections?.find(item => item.type === 'reading');
     const label = `${test.title || ''} ${test.description || ''} ${section?.title || ''}`.toLowerCase();
-    const match = label.match(/passage\s*([123])/i);
-    return match ? Number(match[1]) as 1 | 2 | 3 : 1;
+    const duration = Number(section?.duration || test.duration || 0);
+
+    if (/complete|full|reading\s*test|academic\s*reading/.test(label) || duration >= 50) {
+      return 'complete';
+    }
+
+    return 'passage-1';
   };
 
   const getReadingDifficulty = (test: MockTest) => {
@@ -165,60 +213,130 @@ export default function MockTestsPage() {
     return 'Standard';
   };
 
+  const createReadingCard = (
+    test: MockTest,
+    section: NonNullable<MockTest['sections']>[number] | undefined,
+    category: ReadingCategoryKey,
+    passage: 1 | 2 | 3 | null,
+    title: string,
+    questionTypeKey: ReadingQuestionTypeKey,
+    questionTypeLabel: string,
+    questionTypeKeys: ReadingQuestionTypeKey[],
+    questionTypeLabels: string[],
+    questionCount: number,
+    duration?: number,
+    idSuffix = 'section'
+  ) => ({
+    id: `${test.id}-${idSuffix}`,
+    test,
+    category,
+    passage,
+    title,
+    questionTypeKey,
+    questionTypeLabel,
+    questionTypeKeys,
+    questionTypeLabels,
+    questionCount,
+    duration: duration || section?.duration || test.duration || 20,
+    difficulty: getReadingDifficulty(test)
+  });
+
   const readingPracticeCards = practiceTests
     .filter(test => (test.sections?.[0]?.type || 'reading') === 'reading')
     .flatMap(test => {
       const section = test.sections?.[0];
-      const passage = getReadingPassageNumber(test);
+      const baseCategory = getReadingCategory(test);
+      const testPassage = getReadingPassageNumber(test);
       const groups = section?.question_groups || [];
+      const sectionTypeMeta = getReadingTypeMeta(section?.question_types || [], `${test.title} ${section?.title || ''}`);
+      const sectionTypeLabels = getReadingTypeLabels(section?.question_types || [], `${test.title} ${section?.title || ''}`);
+      const wholeTestTypeKey = groups.length > 0 ? 'all' : sectionTypeMeta.key;
+      const wholeTestCard = createReadingCard(
+        test,
+        section,
+        baseCategory,
+        testPassage,
+        test.title,
+        wholeTestTypeKey,
+        sectionTypeLabels.length > 1 ? sectionTypeLabels.join(', ') : wholeTestTypeKey === 'all' ? 'Mixed Question Types' : sectionTypeMeta.label,
+        sectionTypeLabels.length > 0 ? sectionTypeLabels
+          .map(label => READING_QUESTION_TYPES.find(type => type.label === label)?.key)
+          .filter(Boolean) as ReadingQuestionTypeKey[] : [wholeTestTypeKey],
+        sectionTypeLabels.length > 0 ? sectionTypeLabels : [wholeTestTypeKey === 'all' ? 'Mixed Question Types' : sectionTypeMeta.label],
+        section?.question_count || 0,
+        section?.duration || test.duration || (baseCategory === 'complete' ? 60 : 20)
+      );
 
       if (groups.length === 0) {
-        const typeMeta = getReadingTypeMeta(section?.question_types || [], `${test.title} ${section?.title || ''}`);
-        return [{
-          id: `${test.id}-section`,
-          test,
-          passage,
-          title: test.title,
-          questionTypeKey: typeMeta.key,
-          questionTypeLabel: typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
-          questionCount: section?.question_count || 0,
-          duration: section?.duration || test.duration || 20,
-          difficulty: getReadingDifficulty(test)
-        }];
+        return [wholeTestCard];
       }
 
-      return groups.map(group => {
+      const groupCards = groups.map((group, index) => {
         const typeMeta = getReadingTypeMeta(group.question_types || [], `${group.title || ''} ${group.instruction || ''}`);
-        return {
-          id: `${test.id}-${group.id}`,
+        const typeLabels = getReadingTypeLabels(group.question_types || [], `${group.title || ''} ${group.instruction || ''}`);
+        const explicitPassage = getReadingPassageFromLabel(`${group.title || ''} ${group.instruction || ''}`);
+        const fallbackPassage = baseCategory === 'complete'
+          ? Math.min(3, Math.max(1, Math.ceil(((index + 1) / Math.max(groups.length, 1)) * 3))) as 1 | 2 | 3
+          : testPassage;
+        const passage = explicitPassage || fallbackPassage;
+        const category = passage ? `passage-${passage}` as ReadingCategoryKey : baseCategory;
+
+        return createReadingCard(
           test,
+          section,
+          category,
           passage,
-          title: group.title || test.title,
-          questionTypeKey: typeMeta.key,
-          questionTypeLabel: typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
-          questionCount: group.question_count || 0,
-          duration: section?.duration || test.duration || 20,
-          difficulty: getReadingDifficulty(test)
-        };
+          group.title || test.title,
+          typeMeta.key,
+          typeLabels.length > 1 ? typeLabels.join(', ') : typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
+          typeLabels.length > 0 ? typeLabels
+            .map(label => READING_QUESTION_TYPES.find(type => type.label === label)?.key)
+            .filter(Boolean) as ReadingQuestionTypeKey[] : [typeMeta.key],
+          typeLabels.length > 0 ? typeLabels : [typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label],
+          group.question_count || 0,
+          baseCategory === 'complete' ? 20 : section?.duration || test.duration || 20,
+          group.id
+        );
       });
+
+      return baseCategory === 'complete' ? [wholeTestCard, ...groupCards] : groupCards;
     });
 
-  const filteredReadingCards = readingPracticeCards.filter(card =>
-    card.passage === readingPassage && (
-      readingQuestionType === 'all' ||
-      card.questionTypeKey === readingQuestionType ||
-      card.questionTypeKey === 'all'
-    )
+  const readingCategories = useMemo(
+    () => (['complete', 'passage-1', 'passage-2', 'passage-3'] as ReadingCategoryKey[])
+      .filter(category => readingPracticeCards.some(card => card.category === category)),
+    [readingPracticeCards]
   );
+  const activeReadingCategory = readingCategories.includes(readingCategory)
+    ? readingCategory
+    : readingCategories[0] || 'passage-1';
+  const activeReadingCategoryMeta = READING_CATEGORY_META[activeReadingCategory];
+  const activeReadingQuestionTypeMeta = READING_QUESTION_TYPES.find(type => type.key === readingQuestionType) || READING_QUESTION_TYPES[0];
+
+  useEffect(() => {
+    if (practiceType !== 'reading') return;
+    if (readingCategories.length > 0 && !readingCategories.includes(readingCategory)) {
+      setReadingCategory(readingCategories[0]);
+      setReadingQuestionType('all');
+    }
+  }, [practiceType, readingCategories, readingCategory]);
+
+  const filteredReadingCards = readingPracticeCards.filter(card => {
+    if (readingQuestionType === 'all') {
+      return card.category === activeReadingCategory;
+    }
+
+    return card.questionTypeKeys.includes(readingQuestionType);
+  });
 
   const getReadingTypeCount = (typeKey: ReadingQuestionTypeKey) =>
-    readingPracticeCards.filter(card =>
-      card.passage === readingPassage && (
-        typeKey === 'all' ||
-        card.questionTypeKey === typeKey ||
-        card.questionTypeKey === 'all'
-      )
-    ).length;
+    readingPracticeCards.filter(card => {
+      if (typeKey === 'all') {
+        return card.category === activeReadingCategory;
+      }
+
+      return card.questionTypeKeys.includes(typeKey);
+    }).length;
 
   const getWritingPracticeKind = (test: MockTest) => {
     const section = test.sections?.[0];
@@ -502,35 +620,39 @@ export default function MockTestsPage() {
                   <ArrowLeft className="h-4 w-4" /> Back to practice sections
                 </button>
                 <h2 className="text-[28px] font-black text-[#05162E]">Reading Practice</h2>
-                <p className="text-[14px] text-slate-500 mt-1">Choose a passage, then filter by IELTS reading question type.</p>
+                <p className="text-[14px] text-slate-500 mt-1">Choose an available reading set, then filter by IELTS reading question type.</p>
               </div>
 
-              <div className="flex rounded-2xl bg-white border border-slate-200 p-1 shadow-sm">
-                {[1, 2, 3].map(passage => (
+              {readingCategories.length > 0 && (
+                <div className="flex rounded-2xl bg-white border border-slate-200 p-1 shadow-sm">
+                {readingCategories.map(category => (
                   <button
-                    key={passage}
+                    key={category}
                     type="button"
                     onClick={() => {
-                      setReadingPassage(passage as 1 | 2 | 3);
+                      setReadingCategory(category);
                       setReadingQuestionType('all');
                     }}
                     className={`px-4 sm:px-6 py-3 rounded-xl text-[13px] font-black transition-all ${
-                      readingPassage === passage
+                      activeReadingCategory === category
                         ? 'bg-[#294b77] text-white shadow-sm'
                         : 'text-slate-500 hover:bg-[#EFF4FB] hover:text-[#294b77]'
                     }`}
                   >
-                    Passage {passage}
+                    {READING_CATEGORY_META[category].shortLabel}
                   </button>
                 ))}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
               <aside className="lg:sticky lg:top-0 h-fit rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <div className="border-b border-slate-100 bg-[#294b77] px-5 py-4">
                   <h3 className="text-[15px] font-black text-white">Question Types</h3>
-                  <p className="text-[12px] font-semibold text-white/70 mt-1">Passage {readingPassage} practice sets</p>
+                  <p className="text-[12px] font-semibold text-white/70 mt-1">
+                    {readingQuestionType === 'all' ? `${activeReadingCategoryMeta.label} practice sets` : 'Filtering across all passages'}
+                  </p>
                 </div>
                 <div className="max-h-[calc(100vh-260px)] overflow-y-auto p-3">
                   {READING_QUESTION_TYPES.map(type => {
@@ -563,10 +685,13 @@ export default function MockTestsPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-[18px] font-black text-[#05162E]">
-                      Passage {readingPassage} Practice Sets
+                      {readingQuestionType === 'all'
+                        ? `${activeReadingCategoryMeta.label} Practice Sets`
+                        : `${activeReadingQuestionTypeMeta.label} Practice Sets`}
                     </h3>
                     <p className="text-[13px] text-slate-500 font-semibold">
                       {filteredReadingCards.length} set{filteredReadingCards.length === 1 ? '' : 's'} available
+                      {readingQuestionType !== 'all' ? ' across all passages' : ''}
                     </p>
                   </div>
                 </div>
@@ -578,7 +703,7 @@ export default function MockTestsPage() {
                     </div>
                     <h3 className="text-[19px] font-black text-[#05162E]">No practice set found</h3>
                     <p className="text-slate-500 mt-2 text-[14px] max-w-md">
-                      No reading practice is available for Passage {readingPassage} with this question type yet.
+                      No reading practice is available for {readingQuestionType === 'all' ? activeReadingCategoryMeta.label : activeReadingQuestionTypeMeta.label} yet.
                     </p>
                   </div>
                 ) : (
@@ -592,7 +717,7 @@ export default function MockTestsPage() {
                         <div className="p-5">
                           <div className="flex items-start justify-between gap-3 mb-4">
                             <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#EFF4FB] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#294b77]">
-                              <BookOpen className="h-3 w-3" /> Passage {card.passage}
+                              <BookOpen className="h-3 w-3" /> {card.category === 'complete' ? 'Complete Reading' : `Passage ${card.passage || 1}`}
                             </span>
                             {card.test.is_locked ? (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500">
@@ -609,9 +734,18 @@ export default function MockTestsPage() {
                           <p className="mt-2 text-[13px] font-bold text-slate-500">{card.test.title}</p>
 
                           <div className="mt-5 grid grid-cols-2 gap-3 text-[12px] font-black">
-                            <div className="rounded-xl bg-[#F8FAFC] p-3">
+                            <div className="col-span-2 rounded-xl bg-[#F8FAFC] p-3">
                               <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Question Type</span>
-                              <span className="mt-1 block text-[#05162E]">{card.questionTypeLabel}</span>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {card.questionTypeLabels.map((label: string) => (
+                                  <span
+                                    key={label}
+                                    className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-black text-[#05162E] ring-1 ring-slate-200"
+                                  >
+                                    {label}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                             <div className="rounded-xl bg-[#F8FAFC] p-3">
                               <span className="block text-slate-400 uppercase tracking-wider text-[10px]">Questions</span>

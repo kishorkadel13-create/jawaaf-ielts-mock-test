@@ -95,7 +95,8 @@ export const getTests = async (req, res) => {
             group_count: sectionGroups.length,
             question_count,
             question_groups: questionGroups,
-            question_types: questionTypes
+            question_types: questionTypes,
+            audio_file: section.type === 'listening' ? test.audio_file : null
           };
         });
 
@@ -338,6 +339,7 @@ export const duplicateTest = async (req, res) => {
       .insert([{
         title: `${sourceTest.title} (Copy)`,
         description: sourceTest.description,
+        audio_file: sourceTest.audio_file,
         is_demo: false,
         is_published: false,
         duration: sourceTest.duration,

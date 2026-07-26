@@ -14,7 +14,7 @@ export const useExamStore = create((set, get) => ({
   isFinished: false,
 
   // Initialize a new/resumed test session
-  startExam: (test, attempt, resumedState = null) => {
+  startExam: (test, attempt, resumedState = null, options = {}) => {
     const localStorageKey = `jawaaf_exam_state_${attempt.id}`;
     let savedState = null;
 
@@ -57,13 +57,18 @@ export const useExamStore = create((set, get) => ({
       secondsRemaining,
       flaggedQuestions,
       activeSectionIndex,
-      isActive: true,
+      isActive: options.isActive ?? true,
       isFinished: false,
       isSubmitting: false,
       autosaveStatus: 'idle'
     });
 
     // Write primary local storage key
+    get().saveToCache();
+  },
+
+  beginExam: () => {
+    set({ isActive: true });
     get().saveToCache();
   },
 

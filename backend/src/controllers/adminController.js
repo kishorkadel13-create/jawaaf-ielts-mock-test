@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
 const ASSET_BUCKET = 'ielts-assets';
-const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 50);
+const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 500);
 const AUDIO_MIME_TYPES = new Set([
   'audio/mpeg',
   'audio/mp3',
@@ -61,6 +61,30 @@ const getSafeFileName = (originalName) => {
 
   return `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext ? `.${ext}` : ''}`;
 };
+
+const encodeStoragePath = (storagePath) => (
+  String(storagePath || '')
+    .split('/')
+    .filter(Boolean)
+    .map(part => encodeURIComponent(part))
+    .join('/')
+);
+
+const getAudioUrl = (storagePath) => {
+  if (/^https?:\/\//i.test(storagePath)) return storagePath;
+
+  const explicitBaseUrl = (process.env.AUDIO_BASE_URL || '').replace(/\/$/, '');
+  const supabaseBaseUrl = process.env.SUPABASE_URL
+    ? `${process.env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${ASSET_BUCKET}`
+    : '';
+  const baseUrl = explicitBaseUrl || supabaseBaseUrl;
+
+  return baseUrl ? `${baseUrl}/${encodeStoragePath(storagePath)}` : `/audio/${encodeStoragePath(storagePath)}`;
+};
+
+const getListeningAudioStoragePath = (testId, originalName) => (
+  `audio/${testId}/${getSafeFileName(originalName)}`
+);
 
 export const createTeacher = async (req, res) => {
   try {
@@ -378,6 +402,151 @@ export const deleteQuestion = async (req, res) => {
   } catch (err) {
     console.error('deleteQuestion Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: 'Failed to delete question.' });
+  }
+};
+
+// ==========================================
+// LISTENING AUDIO CONTROLLER
+// ==========================================
+export const createListeningAudioUpload = async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const { file_name, content_type } = req.body;
+
+    if (!file_name || !content_type) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'Audio file name and content type are required.'
+      });
+    }
+
+    if (!AUDIO_MIME_TYPES.has(content_type)) {
+      return res.status(400).json({
+        error: 'InvalidFileType',
+        message: 'Only MP3, M4A, AAC, and WAV listening audio files are allowed.'
+      });
+    }
+
+    await ensureAssetBucket();
+
+    const audioPath = getListeningAudioStoragePath(testId, file_name);
+    const { data, error } = await supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .createSignedUploadUrl(audioPath, { upsert: true });
+
+    if (error) throw error;
+
+    res.status(200).json({
+      bucket: ASSET_BUCKET,
+      audio_file: data.path,
+      token: data.token,
+      signed_url: data.signedUrl,
+      url: getAudioUrl(data.path)
+    });
+  } catch (err) {
+    console.error('createListeningAudioUpload Error:', err);
+    res.status(500).json({
+      error: 'AudioUploadSignError',
+      message: err.message || 'Failed to prepare listening audio upload.'
+    });
+  }
+};
+
+export const saveListeningAudio = async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const { audio_file } = req.body;
+
+    if (!audio_file || /^https?:\/\//i.test(audio_file) || !audio_file.startsWith(`audio/${testId}/`)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'A valid listening audio storage path is required.'
+      });
+    }
+
+    const { data: test, error } = await supabaseAdmin
+      .from('mock_tests')
+      .update({ audio_file })
+      .eq('id', testId)
+      .select('id, title, audio_file, duration, created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      message: 'Listening audio saved successfully.',
+      audio_file,
+      url: getAudioUrl(audio_file),
+      test
+    });
+  } catch (err) {
+    console.error('saveListeningAudio Error:', err);
+    res.status(500).json({
+      error: 'AudioSaveError',
+      message: err.message || 'Failed to save listening audio.'
+    });
+  }
+};
+
+export const uploadListeningAudio = async (req, res) => {
+  try {
+    const { testId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'BadRequest', message: 'No audio file uploaded.' });
+    }
+
+    if (!AUDIO_MIME_TYPES.has(req.file.mimetype)) {
+      return res.status(400).json({
+        error: 'InvalidFileType',
+        message: 'Only MP3, M4A, AAC, and WAV listening audio files are allowed.'
+      });
+    }
+
+    const audioPath = getListeningAudioStoragePath(testId, req.file.originalname);
+
+    await ensureAssetBucket();
+
+    const { data: uploadedAudio, error: uploadError } = await supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .upload(audioPath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Listening Audio Storage Upload Error:', uploadError);
+      return res.status(500).json({
+        error: 'StorageError',
+        message: uploadError.message || 'Failed to upload listening audio to storage.'
+      });
+    }
+
+    const { data: test, error } = await supabaseAdmin
+      .from('mock_tests')
+      .update({ audio_file: uploadedAudio.path })
+      .eq('id', testId)
+      .select('id, title, audio_file, duration, created_at')
+      .single();
+
+    if (error) {
+      await supabaseAdmin.storage.from(ASSET_BUCKET).remove([uploadedAudio.path]).catch(() => {});
+      throw error;
+    }
+
+    res.status(200).json({
+      message: 'Listening audio uploaded successfully.',
+      bucket: ASSET_BUCKET,
+      audio_file: uploadedAudio.path,
+      url: getAudioUrl(uploadedAudio.path),
+      test
+    });
+  } catch (err) {
+    console.error('uploadListeningAudio Error:', err);
+    res.status(500).json({
+      error: 'AudioUploadError',
+      message: err.message || 'Failed to upload listening audio.'
+    });
   }
 };
 
