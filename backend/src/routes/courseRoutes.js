@@ -1,0 +1,23 @@
+import { Router } from 'express';
+import {
+  getCourseLibrary,
+  getLessonById,
+  getLessonQuestions,
+  getLessonResourceContent,
+  createLessonQuestion,
+  saveLessonProgress
+} from '../controllers/courseController.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+
+const router = Router();
+
+router.use(authMiddleware);
+
+router.get('/', getCourseLibrary);
+router.get('/lessons/:lessonId', getLessonById);
+router.put('/lessons/:lessonId/progress', saveLessonProgress);
+router.get('/lessons/:lessonId/questions', getLessonQuestions);
+router.post('/lessons/:lessonId/questions', createLessonQuestion);
+router.get('/resources/:resourceId/content', getLessonResourceContent);
+
+export default router;

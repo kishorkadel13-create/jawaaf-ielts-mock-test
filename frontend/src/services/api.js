@@ -29,6 +29,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response ? error.response.status : null;
+    const responseData = error.response?.data;
+    const serverMessage = responseData && typeof responseData === 'object' ? responseData.message : null;
+    const serverError = responseData && typeof responseData === 'object' ? responseData.error : null;
     
     if (status === 401) {
       console.warn('Session expired or unauthorized. Clearing session...');
@@ -40,9 +43,9 @@ api.interceptors.response.use(
     // Normalize server error responses
     const errorData = {
       status,
-      message: error.response?.data?.message || 'An unexpected networking error occurred.',
-      error: error.response?.data?.error || 'NetworkError',
-      details: error.response?.data?.details || null
+      message: serverMessage || error.message || 'An unexpected networking error occurred.',
+      error: serverError || (status ? `HTTP_${status}` : 'NetworkError'),
+      details: responseData && typeof responseData === 'object' ? responseData.details || null : responseData || null
     };
 
     return Promise.reject(errorData);

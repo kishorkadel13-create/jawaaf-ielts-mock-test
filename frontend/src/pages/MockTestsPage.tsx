@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
-import JawaafLogo from '../components/JawaafLogo';
-import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu } from 'lucide-react';
+import StudentSidebar from '../components/StudentSidebar';
+import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
 
 interface MockTest {
   id: string;
@@ -90,7 +90,7 @@ const getReadingTypeLabels = (values: string[] = [], fallbackText = '') => {
 };
 
 export default function MockTestsPage() {
-  const { profile, logout } = useAuthStore();
+  const { profile } = useAuthStore();
   const [searchParams] = useSearchParams();
   const [tests, setTests] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -411,46 +411,7 @@ export default function MockTestsPage() {
 
   return (
     <div className="h-screen overflow-hidden bg-[#F8FAFC] font-sans flex" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      <aside className="hidden lg:flex w-[305px] bg-white flex-col p-6 border-r border-slate-100 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        <Link to="/" className="mb-12 mt-2 px-2 block">
-          <JawaafLogo className="h-10 w-auto relative left-[-15px]" />
-        </Link>
-
-        <nav className="grid gap-3 text-[18px] font-bold text-slate-500">
-          <Link to="/dashboard" className="px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
-            <Monitor className="h-5 w-5" /> Dashboard
-          </Link>
-          <Link to="/tests?mode=practice" className={`px-5 py-4 rounded-2xl flex items-center gap-4 ${activeTab === 'practice' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'hover:bg-slate-50 hover:text-[#1E3A6E]'}`}>
-            <Target className="h-5 w-5" /> Practice Test
-          </Link>
-          <Link to="/tests?mode=mock" className={`px-5 py-4 rounded-2xl flex items-center gap-4 ${activeTab === 'mock' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'hover:bg-slate-50 hover:text-[#1E3A6E]'}`}>
-            <ClipboardList className="h-5 w-5" /> Mock Test
-          </Link>
-
-          <Link to="/history" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
-            <CheckSquare className="h-5 w-5" /> Results
-          </Link>
-          <Link to="/history" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
-            <History className="h-5 w-5" /> History
-          </Link>
-          <Link to="/dashboard" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
-            <User className="h-5 w-5" /> Profile
-          </Link>
-          <Link to="/dashboard" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
-            <Settings className="h-5 w-5" /> Settings
-          </Link>
-
-          {profile?.role === 'admin' && (
-            <Link to="/admin" className="px-5 py-4 mt-5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-2xl flex items-center gap-4 transition-colors border border-emerald-100">
-              <Award className="h-5 w-5" /> Admin Console
-            </Link>
-          )}
-        </nav>
-
-        <button onClick={logout} className="mt-auto px-5 py-4 rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-600 flex items-center gap-4 font-bold text-[18px]">
-          <LogOut className="h-5 w-5" /> Logout
-        </button>
-      </aside>
+      <StudentSidebar />
 
       <main className="flex-1 min-w-0 h-screen overflow-hidden">
         <header className="h-[68px] bg-white border-b border-slate-100 px-6 lg:px-10 flex items-center justify-between shadow-sm">

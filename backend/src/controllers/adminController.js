@@ -17,6 +17,26 @@ const IMAGE_MIME_TYPES = new Set([
   'image/gif',
   'image/webp'
 ]);
+const VIDEO_MIME_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-m4v'
+]);
+const DOCUMENT_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip'
+]);
+const ALL_ASSET_MIME_TYPES = [
+  ...AUDIO_MIME_TYPES,
+  ...IMAGE_MIME_TYPES,
+  ...VIDEO_MIME_TYPES,
+  ...DOCUMENT_MIME_TYPES
+];
 
 const ensureAssetBucket = async () => {
   const { error: getError } = await supabaseAdmin.storage.getBucket(ASSET_BUCKET);
@@ -24,7 +44,7 @@ const ensureAssetBucket = async () => {
   if (!getError) {
     const { error: updateError } = await supabaseAdmin.storage.updateBucket(ASSET_BUCKET, {
       public: true,
-      allowedMimeTypes: [...AUDIO_MIME_TYPES, ...IMAGE_MIME_TYPES],
+      allowedMimeTypes: ALL_ASSET_MIME_TYPES,
       fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
     });
 
@@ -34,7 +54,7 @@ const ensureAssetBucket = async () => {
 
   const { error: createError } = await supabaseAdmin.storage.createBucket(ASSET_BUCKET, {
     public: true,
-    allowedMimeTypes: [...AUDIO_MIME_TYPES, ...IMAGE_MIME_TYPES],
+    allowedMimeTypes: ALL_ASSET_MIME_TYPES,
     fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
   });
 
@@ -46,6 +66,8 @@ const ensureAssetBucket = async () => {
 const getAssetFolder = (mimeType) => {
   if (AUDIO_MIME_TYPES.has(mimeType)) return 'audio';
   if (IMAGE_MIME_TYPES.has(mimeType)) return 'images';
+  if (VIDEO_MIME_TYPES.has(mimeType)) return 'videos';
+  if (DOCUMENT_MIME_TYPES.has(mimeType)) return 'resources';
   return 'files';
 };
 
@@ -600,6 +622,45 @@ export const uploadAsset = async (req, res) => {
       message: process.env.NODE_ENV === 'production'
         ? 'Failed to upload file.'
         : err.message || 'Failed to upload file.'
+    });
+  }
+};
+
+export const createAssetUpload = async (req, res) => {
+  try {
+    const { file_name, content_type, folder } = req.body;
+    const contentType = String(content_type || '').trim();
+    const requestedFolder = String(folder || '').trim().replace(/[^a-z0-9_-]/gi, '');
+
+    if (!file_name || !contentType || !ALL_ASSET_MIME_TYPES.includes(contentType)) {
+      return res.status(400).json({
+        error: 'BadRequest',
+        message: 'A valid filename and supported content type are required.'
+      });
+    }
+
+    await ensureAssetBucket();
+
+    const assetFolder = requestedFolder || getAssetFolder(contentType);
+    const assetPath = `${assetFolder}/${getSafeFileName(file_name)}`;
+    const { data, error } = await supabaseAdmin.storage
+      .from(ASSET_BUCKET)
+      .createSignedUploadUrl(assetPath, { upsert: true });
+
+    if (error) throw error;
+
+    res.status(200).json({
+      bucket: ASSET_BUCKET,
+      path: assetPath,
+      token: data.token,
+      signed_url: data.signedUrl,
+      url: getAudioUrl(assetPath)
+    });
+  } catch (err) {
+    console.error('createAssetUpload Error:', err);
+    res.status(500).json({
+      error: 'AssetUploadSignError',
+      message: err.message || 'Failed to prepare asset upload.'
     });
   }
 };

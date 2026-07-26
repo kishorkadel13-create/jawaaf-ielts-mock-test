@@ -11,6 +11,7 @@ import RegisterPage from '../pages/RegisterPage';
 // Student pages
 import DashboardPage from '../pages/DashboardPage';
 import MockTestsPage from '../pages/MockTestsPage';
+import CoursesPage from '../pages/CoursesPage';
 import HistoryPage from '../pages/HistoryPage';
 import AccessRequestPage from '../pages/AccessRequestPage';
 import ExamInterface from '../pages/ExamInterface';
@@ -19,10 +20,11 @@ import ResultPage from '../pages/ResultPage';
 // Admin pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminTestsPage from '../pages/admin/AdminTestsPage';
+import AdminCoursesPage from '../pages/admin/AdminCoursesPage';
 import AdminTestDetailsPage from '../pages/admin/AdminTestDetailsPage';
 import AdminAccessPage from '../pages/admin/AdminAccessPage';
 import AdminSubmissionsPage from '../pages/admin/AdminSubmissionsPage';
-import TeacherStudentsPage from '../pages/admin/TeacherStudentsPage';
+import TeacherDashboardPage from '../pages/admin/TeacherDashboardPage';
 
 export default function AppRoutes() {
   return (
@@ -39,6 +41,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute roles={['student']}>
             <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/courses" 
+        element={
+          <ProtectedRoute roles={['student']}>
+            <CoursesPage />
           </ProtectedRoute>
         } 
       />
@@ -93,6 +103,14 @@ export default function AppRoutes() {
         } 
       />
       <Route 
+        path="/admin/courses" 
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminCoursesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/tests" 
         element={
           <ProtectedRoute adminOnly={true}>
@@ -130,7 +148,31 @@ export default function AppRoutes() {
         path="/teacher"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <AdminSubmissionsPage />
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/reviews"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/qa"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/courses"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <Navigate to="/teacher" replace />
           </ProtectedRoute>
         }
       />
@@ -138,7 +180,7 @@ export default function AppRoutes() {
         path="/teacher/students"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherStudentsPage />
+            <TeacherDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -146,7 +188,7 @@ export default function AppRoutes() {
         path="/teacher/students/:studentId"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherStudentsPage />
+            <TeacherDashboardPage />
           </ProtectedRoute>
         }
       />

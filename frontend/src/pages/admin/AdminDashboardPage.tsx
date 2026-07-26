@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  BookOpen,
   CalendarDays,
   ClipboardList,
   Grid2X2,
@@ -49,6 +50,7 @@ export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
   const [tests, setTests] = useState<AdminTest[]>([]);
+  const [courseSections, setCourseSections] = useState<any[]>([]);
   const [attempts, setAttempts] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [teacherCount, setTeacherCount] = useState(() => Number(localStorage.getItem('created_teacher_count') || '0'));
@@ -59,14 +61,16 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [{ data: testData }, { data: requestData }, { data: historyData }] = await Promise.all([
+        const [{ data: testData }, { data: requestData }, { data: historyData }, { data: courseData }] = await Promise.all([
           api.get('/tests'),
           api.get('/access/requests').catch(() => ({ data: [] })),
-          api.get('/attempts/history').catch(() => ({ data: [] }))
+          api.get('/attempts/history').catch(() => ({ data: [] })),
+          api.get('/admin/courses').catch(() => ({ data: [] }))
         ]);
 
         setTests(Array.isArray(testData) ? testData : []);
         setAttempts(Array.isArray(historyData) ? historyData : []);
+        setCourseSections(Array.isArray(courseData) ? courseData : []);
         setPendingRequests(Array.isArray(requestData) ? requestData.filter((request: any) => request.status === 'pending').length : 0);
       } catch (err) {
         console.warn('Unable to load admin dashboard:', err);
@@ -90,6 +94,10 @@ export default function AdminDashboardPage() {
   );
 
   const recentTests = useMemo(() => tests.slice(0, 4), [tests]);
+  const lessonCount = useMemo(
+    () => courseSections.reduce((total, section) => total + (section.lessons?.length || 0), 0),
+    [courseSections]
+  );
 
   const recentActivity: ActivityItem[] = useMemo(() => {
     const latestTests = tests.slice(0, 3).map((test, index) => ({
@@ -150,12 +158,21 @@ export default function AdminDashboardPage() {
       tone: 'green'
     },
     {
+      title: 'Recorded Lessons',
+      value: lessonCount,
+      subtitle: 'Course videos',
+      href: '/admin/courses',
+      action: 'Manage lessons',
+      icon: BookOpen,
+      tone: 'purple'
+    },
+    {
       title: 'Teachers',
       value: teacherCount,
       subtitle: 'Created teacher logins',
       action: 'Add teacher',
       icon: UsersRound,
-      tone: 'purple',
+      tone: 'green',
       onClick: () => setIsTeacherModalOpen(true)
     },
     {
@@ -200,6 +217,9 @@ export default function AdminDashboardPage() {
             </Link>
             <Link to="/admin/tests?create=practice" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
               <Target className="h-5 w-5" /> Practice Tests
+            </Link>
+            <Link to="/admin/courses" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
+              <BookOpen className="h-5 w-5" /> Recorded Courses
             </Link>
 
             <p className="px-4 pt-8 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
