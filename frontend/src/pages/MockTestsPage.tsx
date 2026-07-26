@@ -312,6 +312,7 @@ export default function MockTestsPage() {
     : readingCategories[0] || 'passage-1';
   const activeReadingCategoryMeta = READING_CATEGORY_META[activeReadingCategory];
   const activeReadingQuestionTypeMeta = READING_QUESTION_TYPES.find(type => type.key === readingQuestionType) || READING_QUESTION_TYPES[0];
+  const isCompleteReadingCategory = activeReadingCategory === 'complete';
 
   useEffect(() => {
     if (practiceType !== 'reading') return;
@@ -322,20 +323,20 @@ export default function MockTestsPage() {
   }, [practiceType, readingCategories, readingCategory]);
 
   const filteredReadingCards = readingPracticeCards.filter(card => {
-    if (readingQuestionType === 'all') {
+    if (isCompleteReadingCategory || readingQuestionType === 'all') {
       return card.category === activeReadingCategory;
     }
 
-    return card.questionTypeKeys.includes(readingQuestionType);
+    return card.category === activeReadingCategory && card.questionTypeKeys.includes(readingQuestionType);
   });
 
   const getReadingTypeCount = (typeKey: ReadingQuestionTypeKey) =>
     readingPracticeCards.filter(card => {
-      if (typeKey === 'all') {
+      if (isCompleteReadingCategory || typeKey === 'all') {
         return card.category === activeReadingCategory;
       }
 
-      return card.questionTypeKeys.includes(typeKey);
+      return card.category === activeReadingCategory && card.questionTypeKeys.includes(typeKey);
     }).length;
 
   const getWritingPracticeKind = (test: MockTest) => {
@@ -651,21 +652,30 @@ export default function MockTestsPage() {
                 <div className="border-b border-slate-100 bg-[#294b77] px-5 py-4">
                   <h3 className="text-[15px] font-black text-white">Question Types</h3>
                   <p className="text-[12px] font-semibold text-white/70 mt-1">
-                    {readingQuestionType === 'all' ? `${activeReadingCategoryMeta.label} practice sets` : 'Filtering across all passages'}
+                    {isCompleteReadingCategory || readingQuestionType === 'all'
+                      ? `${activeReadingCategoryMeta.label} practice sets`
+                      : `${activeReadingCategoryMeta.label} filtered by type`}
                   </p>
                 </div>
                 <div className="max-h-[calc(100vh-260px)] overflow-y-auto p-3">
                   {READING_QUESTION_TYPES.map(type => {
                     const count = getReadingTypeCount(type.key);
-                    const isActive = readingQuestionType === type.key;
+                    const isDisabled = isCompleteReadingCategory && type.key !== 'all';
+                    const isActive = isCompleteReadingCategory ? type.key === 'all' : readingQuestionType === type.key;
                     return (
                       <button
                         key={type.key}
                         type="button"
-                        onClick={() => setReadingQuestionType(type.key)}
+                        disabled={isDisabled}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          setReadingQuestionType(type.key);
+                        }}
                         className={`w-full rounded-xl px-3 py-3 text-left transition-all flex items-center justify-between gap-3 ${
                           isActive
                             ? 'bg-[#EFF4FB] text-[#294b77] ring-1 ring-[#294b77]/20'
+                            : isDisabled
+                            ? 'text-slate-300 cursor-not-allowed'
                             : 'text-slate-600 hover:bg-slate-50 hover:text-[#294b77]'
                         }`}
                       >
@@ -685,13 +695,13 @@ export default function MockTestsPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-[18px] font-black text-[#05162E]">
-                      {readingQuestionType === 'all'
+                      {isCompleteReadingCategory || readingQuestionType === 'all'
                         ? `${activeReadingCategoryMeta.label} Practice Sets`
                         : `${activeReadingQuestionTypeMeta.label} Practice Sets`}
                     </h3>
                     <p className="text-[13px] text-slate-500 font-semibold">
                       {filteredReadingCards.length} set{filteredReadingCards.length === 1 ? '' : 's'} available
-                      {readingQuestionType !== 'all' ? ' across all passages' : ''}
+                      {!isCompleteReadingCategory && readingQuestionType !== 'all' ? ` in ${activeReadingCategoryMeta.label}` : ''}
                     </p>
                   </div>
                 </div>
@@ -703,7 +713,7 @@ export default function MockTestsPage() {
                     </div>
                     <h3 className="text-[19px] font-black text-[#05162E]">No practice set found</h3>
                     <p className="text-slate-500 mt-2 text-[14px] max-w-md">
-                      No reading practice is available for {readingQuestionType === 'all' ? activeReadingCategoryMeta.label : activeReadingQuestionTypeMeta.label} yet.
+                      No reading practice is available for {isCompleteReadingCategory || readingQuestionType === 'all' ? activeReadingCategoryMeta.label : activeReadingQuestionTypeMeta.label} yet.
                     </p>
                   </div>
                 ) : (
