@@ -24,7 +24,7 @@ import AdminCoursesPage from '../pages/admin/AdminCoursesPage';
 import AdminTestDetailsPage from '../pages/admin/AdminTestDetailsPage';
 import AdminAccessPage from '../pages/admin/AdminAccessPage';
 import AdminSubmissionsPage from '../pages/admin/AdminSubmissionsPage';
-import TeacherStudentsPage from '../pages/admin/TeacherStudentsPage';
+import TeacherDashboardPage from '../pages/admin/TeacherDashboardPage';
 
 export default function AppRoutes() {
   return (
@@ -148,7 +148,31 @@ export default function AppRoutes() {
         path="/teacher"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <AdminSubmissionsPage />
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/reviews"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/qa"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/courses"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <Navigate to="/teacher" replace />
           </ProtectedRoute>
         }
       />
@@ -156,7 +180,7 @@ export default function AppRoutes() {
         path="/teacher/students"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherStudentsPage />
+            <TeacherDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -164,7 +188,7 @@ export default function AppRoutes() {
         path="/teacher/students/:studentId"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherStudentsPage />
+            <TeacherDashboardPage />
           </ProtectedRoute>
         }
       />

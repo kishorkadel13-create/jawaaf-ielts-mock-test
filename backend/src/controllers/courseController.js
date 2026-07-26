@@ -1,11 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
-const DEFAULT_COURSE_SECTIONS = [
-  { title: 'Reading', slug: 'reading', description: 'Recorded IELTS reading strategies, question types, and practice guidance.', order_no: 1, is_published: true },
-  { title: 'Listening', slug: 'listening', description: 'Recorded IELTS listening lessons with section-wise exam techniques.', order_no: 2, is_published: true },
-  { title: 'Writing', slug: 'writing', description: 'Task 1 and Task 2 writing lessons, structures, and band improvement guidance.', order_no: 3, is_published: true },
-  { title: 'Speaking', slug: 'speaking', description: 'Speaking Part 1, Part 2, and Part 3 recorded practice lessons.', order_no: 4, is_published: true }
-];
+const ASSET_BUCKET = 'ielts-assets';
 
 const isAdminLike = (user) => ['admin', 'teacher'].includes(user?.role);
 
@@ -16,17 +11,16 @@ const slugify = (value) => String(value || '')
   .replace(/^-+|-+$/g, '')
   .slice(0, 80);
 
-const ensureDefaultSections = async () => {
-  const { error } = await supabaseAdmin
-    .from('course_sections')
-    .upsert(DEFAULT_COURSE_SECTIONS, { onConflict: 'slug', ignoreDuplicates: true });
-
-  if (error) throw error;
+const getDriveDownloadUrl = (value) => {
+  const raw = String(value || '').trim();
+  const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/i) || raw.match(/[?&]id=([^&]+)/i);
+  if (raw.includes('drive.google.com') && driveMatch?.[1]) {
+    return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+  }
+  return raw;
 };
 
 const buildCourseResponse = async ({ includeDrafts = false, userId = null } = {}) => {
-  await ensureDefaultSections();
-
   let sectionQuery = supabaseAdmin
     .from('course_sections')
     .select('*')
@@ -186,6 +180,188 @@ export const saveLessonProgress = async (req, res) => {
   }
 };
 
+export const getLessonQuestions = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from('lesson_questions')
+      .select('*, profiles:user_id(full_name, email)')
+      .eq('lesson_id', lessonId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error('getLessonQuestions Error:', err);
+    res.status(500).json({ error: 'LessonQuestionsLoadError', message: 'Failed to load lesson questions.' });
+  }
+};
+
+export const createLessonQuestion = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const questionText = String(req.body.question_text || '').trim();
+
+    if (!questionText) {
+      return res.status(400).json({ error: 'BadRequest', message: 'Question text is required.' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('lesson_questions')
+      .insert({
+        lesson_id: lessonId,
+        user_id: req.user.id,
+        question_text: questionText
+      })
+      .select('*, profiles:user_id(full_name, email)')
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    console.error('createLessonQuestion Error:', err);
+    res.status(500).json({ error: 'LessonQuestionCreateError', message: err.message || 'Failed to post question.' });
+  }
+};
+
+export const getLessonResourceContent = async (req, res) => {
+  try {
+    const { resourceId } = req.params;
+    const { data: resource, error } = await supabaseAdmin
+      .from('lesson_resources')
+      .select('*, course_lessons!inner(is_published)')
+      .eq('id', resourceId)
+      .single();
+
+    if (error) throw error;
+    if (!resource.course_lessons?.is_published && !isAdminLike(req.user)) {
+      return res.status(403).json({ error: 'Forbidden', message: 'This lesson resource is not published yet.' });
+    }
+
+    let contentType = 'application/pdf';
+    let buffer;
+
+    if (resource.resource_file) {
+      const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+        .from(ASSET_BUCKET)
+        .download(resource.resource_file);
+
+      if (downloadError) throw downloadError;
+      contentType = fileData.type || contentType;
+      buffer = Buffer.from(await fileData.arrayBuffer());
+    } else if (resource.resource_url) {
+      const sourceUrl = getDriveDownloadUrl(resource.resource_url);
+      const upstream = await fetch(sourceUrl, {
+        headers: {
+          'User-Agent': 'JawaafIELTSLab/1.0'
+        }
+      });
+
+      if (!upstream.ok) {
+        return res.status(502).json({ error: 'ResourceFetchError', message: 'Could not load this notes file.' });
+      }
+
+      contentType = upstream.headers.get('content-type') || contentType;
+      buffer = Buffer.from(await upstream.arrayBuffer());
+    } else {
+      return res.status(404).json({ error: 'ResourceNotFound', message: 'This resource has no file.' });
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(resource.title || 'notes')}"`);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(buffer);
+  } catch (err) {
+    console.error('getLessonResourceContent Error:', err);
+    res.status(500).json({ error: 'LessonResourceContentError', message: err.message || 'Failed to load notes file.' });
+  }
+};
+
+export const getAdminLessonQuestions = async (req, res) => {
+  try {
+    const { section_id: sectionId, lesson_id: lessonId } = req.query;
+    let questionQuery = supabaseAdmin
+      .from('lesson_questions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (lessonId) {
+      questionQuery = questionQuery.eq('lesson_id', lessonId);
+    }
+
+    const { data: questionRows, error } = await questionQuery;
+    if (error) throw error;
+
+    const questions = questionRows || [];
+    const lessonIds = [...new Set(questions.map(question => question.lesson_id).filter(Boolean))];
+    const userIds = [...new Set(questions.flatMap(question => [question.user_id, question.answered_by]).filter(Boolean))];
+
+    const [{ data: lessons }, { data: profiles }] = await Promise.all([
+      lessonIds.length
+        ? supabaseAdmin.from('course_lessons').select('id, title, section_id, course_sections(title, slug)').in('id', lessonIds)
+        : Promise.resolve({ data: [] }),
+      userIds.length
+        ? supabaseAdmin.from('profiles').select('id, full_name, email, role').in('id', userIds)
+        : Promise.resolve({ data: [] })
+    ]);
+
+    const lessonsById = (lessons || []).reduce((acc, lesson) => {
+      acc[lesson.id] = lesson;
+      return acc;
+    }, {});
+    const profilesById = (profiles || []).reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {});
+
+    const enriched = questions
+      .filter(question => !sectionId || lessonsById[question.lesson_id]?.section_id === sectionId)
+      .map(question => ({
+        ...question,
+        lesson: lessonsById[question.lesson_id] || null,
+        student: profilesById[question.user_id] || null,
+        answered_by_profile: profilesById[question.answered_by] || null
+      }));
+
+    res.status(200).json(enriched);
+  } catch (err) {
+    console.error('getAdminLessonQuestions Error:', err);
+    res.status(500).json({ error: 'AdminLessonQuestionsLoadError', message: 'Failed to load student Q&A.' });
+  }
+};
+
+export const answerLessonQuestion = async (req, res) => {
+  try {
+    if (req.user?.role !== 'teacher') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Only teachers can reply to lesson questions.' });
+    }
+
+    const { questionId } = req.params;
+    const answerText = String(req.body.answer_text || '').trim();
+
+    if (!answerText) {
+      return res.status(400).json({ error: 'BadRequest', message: 'Reply text is required.' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('lesson_questions')
+      .update({
+        answer_text: answerText,
+        answered_by: req.user.id,
+        answered_at: new Date().toISOString()
+      })
+      .eq('id', questionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (err) {
+    console.error('answerLessonQuestion Error:', err);
+    res.status(500).json({ error: 'LessonQuestionAnswerError', message: err.message || 'Failed to save reply.' });
+  }
+};
+
 export const getAdminCourseLibrary = async (req, res) => {
   try {
     const sections = await buildCourseResponse({ includeDrafts: true });
@@ -255,6 +431,7 @@ export const createCourseLesson = async (req, res) => {
       description: req.body.description || '',
       video_url: req.body.video_url || '',
       video_file: req.body.video_file || '',
+      thumbnail_url: req.body.thumbnail_url || '',
       notes: req.body.notes || '',
       duration_minutes: Number(req.body.duration_minutes || 0),
       order_no: Number(req.body.order_no || 1),

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import JawaafLogo from '../../components/JawaafLogo';
-import { BookOpen, CheckSquare, ChevronLeft, FileText, Layers, PenLine, Save, ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, BookOpen, CheckSquare, ChevronLeft, FileText, Layers, MessageCircle, PenLine, Save, ShieldCheck, Users, Video } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 interface Submission {
@@ -267,6 +267,11 @@ export default function AdminSubmissionsPage() {
               </Link>
             </>
           )}
+          {isTeacher && (
+            <Link to="/teacher" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-bold rounded-xl flex items-center gap-3 transition-colors">
+              <BarChart3 className="h-5 w-5" /> Dashboard
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setActiveSubmissionTab('practice')}
@@ -304,9 +309,17 @@ export default function AdminSubmissionsPage() {
             </span>
           </button>
           {isTeacher && (
-            <Link to="/teacher/students" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-bold rounded-xl flex items-center gap-3 transition-colors">
-              <Users className="h-5 w-5" /> Students
-            </Link>
+            <>
+              <Link to="/teacher/students" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-bold rounded-xl flex items-center gap-3 transition-colors">
+                <Users className="h-5 w-5" /> Students
+              </Link>
+              <Link to="/teacher#video-qa" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-bold rounded-xl flex items-center gap-3 transition-colors">
+                <MessageCircle className="h-5 w-5" /> Video Q&amp;A
+              </Link>
+              <Link to="/teacher/courses" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-bold rounded-xl flex items-center gap-3 transition-colors">
+                <Video className="h-5 w-5" /> Video Lessons
+              </Link>
+            </>
           )}
           <button onClick={logout} className="mt-auto px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white font-semibold rounded-xl flex items-center gap-3 transition-colors">
             <ChevronLeft className="h-5 w-5" /> Logout

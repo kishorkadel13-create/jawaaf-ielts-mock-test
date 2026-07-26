@@ -20,6 +20,8 @@ import {
   deleteCourseLesson,
   createLessonResource,
   deleteLessonResource,
+  getAdminLessonQuestions,
+  answerLessonQuestion,
   getLearningProgressReport
 } from '../controllers/courseController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -84,6 +86,8 @@ router.put('/course-lessons/:lessonId', updateCourseLesson);
 router.delete('/course-lessons/:lessonId', deleteCourseLesson);
 router.post('/lesson-resources', createLessonResource);
 router.delete('/lesson-resources/:resourceId', deleteLessonResource);
+router.get('/lesson-questions', getAdminLessonQuestions);
+router.put('/lesson-questions/:questionId', answerLessonQuestion);
 
 // Sections CRUD
 router.post('/sections', validateBody(testSectionSchema), createSection);

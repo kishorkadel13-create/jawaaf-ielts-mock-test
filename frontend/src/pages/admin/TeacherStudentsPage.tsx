@@ -13,6 +13,7 @@ import {
   History,
   LogOut,
   Mail,
+  MessageCircle,
   PenLine,
   ShieldCheck,
   Star,
@@ -20,6 +21,7 @@ import {
   Timer,
   TrendingUp,
   User,
+  Video,
   Users,
 } from 'lucide-react';
 import JawaafLogo from '../../components/JawaafLogo';
@@ -55,11 +57,17 @@ const TeacherSidebar = ({ active }: { active: 'reviews' | 'students' }) => {
       <nav className="flex flex-col gap-2 flex-1">
         <Link
           to="/teacher"
+          className="px-4 py-3 font-bold rounded-xl flex items-center gap-3 transition-colors text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white"
+        >
+          <BarChart3 className="h-5 w-5" /> Dashboard
+        </Link>
+        <Link
+          to="/teacher/reviews"
           className={`px-4 py-3 font-bold rounded-xl flex items-center gap-3 transition-colors ${
             active === 'reviews' ? 'bg-[#1E3A6E] text-white' : 'text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white'
           }`}
         >
-          <PenLine className="h-5 w-5" /> Reviews
+          <PenLine className="h-5 w-5" /> Writing Reviews
         </Link>
         <Link
           to="/teacher/students"
@@ -68,6 +76,18 @@ const TeacherSidebar = ({ active }: { active: 'reviews' | 'students' }) => {
           }`}
         >
           <Users className="h-5 w-5" /> Students
+        </Link>
+        <Link
+          to="/teacher#video-qa"
+          className="px-4 py-3 font-bold rounded-xl flex items-center gap-3 transition-colors text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white"
+        >
+          <MessageCircle className="h-5 w-5" /> Video Q&amp;A
+        </Link>
+        <Link
+          to="/teacher/courses"
+          className="px-4 py-3 font-bold rounded-xl flex items-center gap-3 transition-colors text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white"
+        >
+          <Video className="h-5 w-5" /> Video Lessons
         </Link>
         <button onClick={logout} className="mt-auto px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white font-semibold rounded-xl flex items-center gap-3 transition-colors">
           <LogOut className="h-5 w-5" /> Logout

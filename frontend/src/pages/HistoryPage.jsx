@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import JawaafLogo from '../components/JawaafLogo';
+import StudentSidebar from '../components/StudentSidebar';
 import {
-  ArrowLeft,
   Award,
   BookOpen,
   Calendar,
@@ -110,17 +109,10 @@ export default function HistoryPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link to="/dashboard" className="flex items-center gap-2 text-sm font-black text-slate-500 hover:text-[#294b77]">
-            <ArrowLeft className="h-4 w-4" /> Dashboard
-          </Link>
-          <JawaafLogo className="h-9 w-auto" />
-        </div>
-      </header>
+    <div className="flex min-h-screen bg-[#F8FAFC] text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <StudentSidebar />
 
-      <main className="mx-auto grid w-full max-w-6xl gap-7 px-6 py-8">
+      <main className="grid min-w-0 flex-1 gap-7 px-6 py-8 lg:px-10">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>

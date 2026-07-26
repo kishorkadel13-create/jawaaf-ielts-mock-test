@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
-import JawaafLogo from '../components/JawaafLogo';
+import StudentSidebar from '../components/StudentSidebar';
 import { 
   Monitor, Headphones, BookOpen, History, Award, 
   Settings, LogOut, Lock, CheckSquare, Calendar, 
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target
 } from 'lucide-react';
 
 // Interfaces for typing
@@ -37,8 +37,33 @@ interface MockTest {
   }>;
 }
 
+interface CourseLessonPreview {
+  id: string;
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  sectionSlug: string;
+  sectionTitle: string;
+  completed: boolean;
+}
+
+interface CourseSectionPreview {
+  id: string;
+  title: string;
+  slug: string;
+  lessonCount: number;
+  completedCount: number;
+}
+
+const courseSectionIcon = (slug: string) => {
+  if (slug === 'listening') return Headphones;
+  if (slug.startsWith('writing-task')) return PenLine;
+  if (slug === 'speaking') return User;
+  return BookOpen;
+};
+
 export default function DashboardPage() {
-  const { profile, logout } = useAuthStore();
+  const { profile } = useAuthStore();
   const [stats, setStats] = useState({ 
     attempts: 0, 
     avgScore: '0.0', 
@@ -48,6 +73,8 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<TestAttempt[]>([]);
   const [availableTests, setAvailableTests] = useState<MockTest[]>([]);
   const [courseProgress, setCourseProgress] = useState({ total: 0, completed: 0, percent: 0 });
+  const [courseLessons, setCourseLessons] = useState<CourseLessonPreview[]>([]);
+  const [courseSections, setCourseSections] = useState<CourseSectionPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -64,8 +91,29 @@ export default function DashboardPage() {
       setAvailableTests(tests.filter((test: MockTest) => (test.sections?.length || 0) > 1).slice(0, 3));
 
       const { data: courses } = await api.get('/courses').catch(() => ({ data: [] }));
-      const lessons = (courses || []).flatMap((section: any) => section.lessons || []);
-      const completedLessons = lessons.filter((lesson: any) => lesson.progress?.completed).length;
+      const rawSections = courses || [];
+      const hasSplitWriting = rawSections.some((section: any) => section.slug === 'writing-task-1' || section.slug === 'writing-task-2');
+      const visibleSections = hasSplitWriting ? rawSections.filter((section: any) => section.slug !== 'writing') : rawSections;
+      const lessons = visibleSections.flatMap((section: any) =>
+        (section.lessons || []).map((lesson: any) => ({
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description,
+          duration_minutes: lesson.duration_minutes,
+          sectionSlug: section.slug,
+          sectionTitle: section.title,
+          completed: Boolean(lesson.progress?.completed)
+        }))
+      );
+      const completedLessons = lessons.filter((lesson: CourseLessonPreview) => lesson.completed).length;
+      setCourseLessons(lessons.slice(0, 3));
+      setCourseSections(visibleSections.map((section: any) => ({
+        id: section.id,
+        title: section.title,
+        slug: section.slug,
+        lessonCount: section.lessons?.length || 0,
+        completedCount: (section.lessons || []).filter((lesson: any) => lesson.progress?.completed).length
+      })));
       setCourseProgress({
         total: lessons.length,
         completed: completedLessons,
@@ -144,93 +192,7 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-screen bg-[#F8FAFC] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       
-      {/* SIDEBAR NAVIGATION - Modern Light Theme */}
-      <aside className="w-full md:w-64 bg-white flex flex-col p-5 border-r border-slate-100 flex-shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        
-        {/* Sidebar Logo */}
-        <div className="mb-10 mt-2 px-2">
-          <Link to="/">
-            <JawaafLogo className="h-10 w-auto relative left-[-15px]" />
-          </Link>
-        </div>
-
-        {/* Sidebar Links */}
-        <nav className="flex flex-col gap-2 flex-1">
-          <Link 
-            to="/dashboard" 
-            className="px-4 py-3 bg-[#EFF4FB] text-[#1E3A6E] font-bold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <Monitor className="h-5 w-5 text-[#1E3A6E]" /> Dashboard
-          </Link>
-          <Link 
-            to="/courses" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <Play className="h-5 w-5" /> Recorded Courses
-          </Link>
-          <Link 
-            to="/tests?mode=practice" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <BookOpen className="h-5 w-5" /> Practice Tests
-          </Link>
-          <Link 
-            to="/tests?mode=mock" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <PenLine className="h-5 w-5" /> Mock Tests
-          </Link>
-          <Link 
-            to="/history" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <CheckSquare className="h-5 w-5" /> Results
-          </Link>
-          <Link 
-            to="/history" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <History className="h-5 w-5" /> History
-          </Link>
-          <Link 
-            to="/dashboard" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <User className="h-5 w-5" /> Profile
-          </Link>
-          <Link 
-            to="/dashboard" 
-            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <Settings className="h-5 w-5" /> Settings
-          </Link>
-
-          {profile?.role === 'admin' && (
-            <Link 
-              to="/admin" 
-              className="px-4 py-3 mt-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-xl flex items-center gap-3 transition-colors border border-emerald-100"
-            >
-              <Award className="h-5 w-5" /> Admin Console
-            </Link>
-          )}
-          {profile?.role === 'teacher' && (
-            <Link 
-              to="/admin/submissions" 
-              className="px-4 py-3 mt-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-xl flex items-center gap-3 transition-colors border border-emerald-100"
-            >
-              <PenLine className="h-5 w-5" /> Teacher Review
-            </Link>
-          )}
-        </nav>
-
-        {/* Sidebar Footer Logout */}
-        <button 
-          onClick={logout}
-          className="mt-auto px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 font-semibold rounded-xl flex items-center gap-3 transition-colors"
-        >
-          <LogOut className="h-5 w-5" /> Logout
-        </button>
-      </aside>
+      <StudentSidebar />
 
       {/* MAIN PANEL CONTENT */}
       <main className="flex-grow p-6 md:p-10 flex flex-col gap-8 overflow-y-auto">
@@ -330,6 +292,86 @@ export default function DashboardPage() {
             <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-500">Simulate the computer-based IELTS test with timing and results.</p>
             <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-black text-[#1E3A6E]">Start Mock <ChevronRight className="h-4 w-4" /></span>
           </Link>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div>
+            <h3 className="text-[18px] font-black text-[#05162E]">Browse Recorded Course Videos</h3>
+            <p className="mt-1 text-[13px] font-semibold text-slate-500">Choose a skill and continue lessons section-wise.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            {courseSections.length > 0 ? courseSections.map(section => {
+              const Icon = courseSectionIcon(section.slug);
+              return (
+                <Link
+                  key={section.id}
+                  to={`/courses?section=${section.slug}`}
+                  className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-[#294b77]/30 hover:shadow-md"
+                >
+                  <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-[#EFF4FB] text-[#294b77]">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h4 className="text-[17px] font-black text-[#05162E]">{section.title}</h4>
+                  <p className="mt-1 text-[12px] font-bold text-slate-500">
+                    {section.completedCount}/{section.lessonCount} lessons completed
+                  </p>
+                </Link>
+              );
+            }) : (
+              <div className="rounded-2xl border border-slate-100 bg-white p-6 text-[14px] font-bold text-slate-500 shadow-sm sm:col-span-2 xl:col-span-5">
+                Recorded course sections will appear here after admin publishes lessons.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h3 className="text-[18px] font-black text-[#05162E]">Recorded Courses</h3>
+              <p className="mt-1 text-[13px] font-semibold text-slate-500">Latest published IELTS lessons from your course library.</p>
+            </div>
+            <Link to="/courses" className="text-[13px] text-[#1E3A6E] hover:text-[#EE6055] font-bold flex items-center gap-1 transition-colors">
+              View Lessons <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {courseLessons.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {courseLessons.map(lesson => (
+                <Link
+                  key={lesson.id}
+                  to={`/courses?section=${lesson.sectionSlug}&lesson=${lesson.id}`}
+                  className="group rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="rounded-lg bg-[#EFF4FB] px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-[#1E3A6E]">
+                      {lesson.sectionTitle}
+                    </span>
+                    {lesson.completed && (
+                      <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-600">
+                        Completed
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="line-clamp-2 text-[17px] font-black leading-snug text-[#05162E]">{lesson.title}</h4>
+                  <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-6 text-slate-500">
+                    {lesson.description || 'Continue your IELTS recorded lesson.'}
+                  </p>
+                  <div className="mt-5 flex items-center justify-between text-[12px] font-black text-slate-500">
+                    <span>{lesson.duration_minutes || 0} min</span>
+                    <span className="inline-flex items-center gap-1 text-[#1E3A6E] group-hover:text-[#EE6055]">
+                      Watch <Play className="h-3.5 w-3.5 fill-current" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-[14px] font-bold text-slate-500 shadow-sm">
+              No recorded lessons published yet.
+            </div>
+          )}
         </div>
 
         {/* Available Mock Tests */}

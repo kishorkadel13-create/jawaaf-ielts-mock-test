@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS course_lessons (
     description TEXT,
     video_url TEXT,
     video_file TEXT,
+    thumbnail_url TEXT,
     notes TEXT,
     duration_minutes INTEGER DEFAULT 0,
     order_no INTEGER NOT NULL DEFAULT 1,
@@ -212,6 +213,20 @@ CREATE TABLE IF NOT EXISTS student_lesson_progress (
 
 ALTER TABLE student_lesson_progress ENABLE ROW LEVEL SECURITY;
 
+-- 14. LESSON Q&A THREADS
+CREATE TABLE IF NOT EXISTS lesson_questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lesson_id UUID NOT NULL REFERENCES course_lessons(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    answer_text TEXT,
+    answered_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    answered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE lesson_questions ENABLE ROW LEVEL SECURITY;
+
 -- CREATE INDEXES FOR OPTIMAL RELATIONAL SEARCHES
 CREATE INDEX IF NOT EXISTS idx_mock_tests_published ON mock_tests(is_published, is_demo);
 CREATE INDEX IF NOT EXISTS idx_test_sections_test ON test_sections(mock_test_id);
@@ -224,6 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_course_sections_order ON course_sections(order_no
 CREATE INDEX IF NOT EXISTS idx_course_lessons_section ON course_lessons(section_id, order_no);
 CREATE INDEX IF NOT EXISTS idx_lesson_resources_lesson ON lesson_resources(lesson_id, order_no);
 CREATE INDEX IF NOT EXISTS idx_student_lesson_progress_user ON student_lesson_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_questions_lesson ON lesson_questions(lesson_id, created_at);
 
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -316,6 +332,18 @@ CREATE POLICY "Lesson resources are readable" ON lesson_resources
 CREATE POLICY "Students can manage their own lesson progress" ON student_lesson_progress
     FOR ALL USING (auth.uid() = user_id);
 
+CREATE POLICY "Students can read lesson questions" ON lesson_questions
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM course_lessons
+            WHERE course_lessons.id = lesson_questions.lesson_id
+              AND course_lessons.is_published = true
+        )
+    );
+
+CREATE POLICY "Students can create their own lesson questions" ON lesson_questions
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
 CREATE POLICY "Admins manage course sections" ON course_sections
     FOR ALL USING (
         EXISTS (
@@ -348,13 +376,13 @@ CREATE POLICY "Admins view all lesson progress" ON student_lesson_progress
         )
     );
 
-INSERT INTO course_sections (title, slug, description, order_no, is_published)
-VALUES
-  ('Reading', 'reading', 'Recorded IELTS reading strategies, question types, and practice guidance.', 1, TRUE),
-  ('Listening', 'listening', 'Recorded IELTS listening lessons with section-wise exam techniques.', 2, TRUE),
-  ('Writing', 'writing', 'Task 1 and Task 2 writing lessons, structures, and band improvement guidance.', 3, TRUE),
-  ('Speaking', 'speaking', 'Speaking Part 1, Part 2, and Part 3 recorded practice lessons.', 4, TRUE)
-ON CONFLICT (slug) DO NOTHING;
+CREATE POLICY "Admins manage lesson questions" ON lesson_questions
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'teacher')
+        )
+    );
 
 -- AUTOMATIC DATABASE PROFILE CREATION ON USER SIGNUP
 CREATE OR REPLACE FUNCTION public.handle_new_user()
