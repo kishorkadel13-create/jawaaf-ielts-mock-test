@@ -8,6 +8,7 @@ interface SummaryCompletionGroupProps {
   mode?: 'dark' | 'light';
   onActivateQuestion?: (questionId: string) => void;
   groupInstruction?: string;
+  onPasteText?: (event: React.ClipboardEvent<HTMLInputElement>) => string | null;
 }
 
 const blankTokenRe = /\b(\d{1,2})\s*[\.\)]?\s*(?:\[\s*blank\s*\]|\.{3,}|_+|-+|…+)/gi;
@@ -184,6 +185,7 @@ export const SummaryCompletionGroup = ({
   mode = 'light',
   onActivateQuestion,
   groupInstruction = '',
+  onPasteText,
 }: SummaryCompletionGroupProps) => {
   const orderedQuestions = [...questions].sort((a, b) => Number(a.question_number) - Number(b.question_number));
   const questionByNumber = new Map(orderedQuestions.map((question) => [Number(question.question_number), question]));
@@ -215,6 +217,28 @@ export const SummaryCompletionGroup = ({
     const pushFormattedText = (text: string, key: string) => {
       if (!text) return;
       parts.push(...(renderFormattedBlockText(text, key) || []));
+    };
+
+    const pasteTextIntoInput = (
+      event: React.ClipboardEvent<HTMLInputElement>,
+      answerKey: string
+    ) => {
+      if (!onPasteText) return;
+
+      const pasteText = onPasteText(event);
+      if (pasteText === null) return;
+
+      const input = event.currentTarget;
+      const currentValue = String(values[answerKey] || '');
+      const start = input.selectionStart ?? currentValue.length;
+      const end = input.selectionEnd ?? currentValue.length;
+      const nextValue = `${currentValue.slice(0, start)}${pasteText}${currentValue.slice(end)}`;
+      onChange(answerKey, nextValue);
+
+      window.requestAnimationFrame(() => {
+        const cursor = start + pasteText.length;
+        input.setSelectionRange(cursor, cursor);
+      });
     };
 
     while ((match = re.exec(source)) !== null) {
@@ -253,6 +277,8 @@ export const SummaryCompletionGroup = ({
                 value={values[answerKey] || ''}
                 onFocus={() => onActivateQuestion?.(answerKey)}
                 onChange={(event) => onChange(answerKey, event.target.value)}
+                onPaste={(event) => pasteTextIntoInput(event, answerKey)}
+                data-reading-answer={onPasteText ? 'true' : undefined}
                 className={inputClass}
               />
             )}

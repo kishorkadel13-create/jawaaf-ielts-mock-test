@@ -32,6 +32,7 @@ export default function AdminTestDetailsPage() {
   const [editingBatchKey, setEditingBatchKey] = useState<string | null>(null);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [audioUploading, setAudioUploading] = useState(false);
+  const [audioUrlInput, setAudioUrlInput] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
 
   // Forms

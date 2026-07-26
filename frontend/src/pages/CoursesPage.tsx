@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Bell, BookOpen, CheckCircle2, Clock, FileText, Headphones, History, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, Bell, BookOpen, CheckCircle2, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { api } from '../services/api';
@@ -21,6 +21,8 @@ type Lesson = {
   notes?: string;
   duration_minutes?: number;
   is_published: boolean;
+  is_locked?: boolean;
+  is_free_preview?: boolean;
   progress?: { watched_seconds: number; completed: boolean } | null;
   resources?: Array<{ id: string; title: string; resource_url?: string; resource_file?: string }>;
 };
@@ -39,6 +41,21 @@ type LessonQuestion = {
   answer_text?: string;
   created_at?: string;
   profiles?: { full_name?: string; email?: string } | null;
+};
+
+const formatLessonDuration = (seconds?: number) => {
+  const safeSeconds = Number(seconds || 0);
+  if (!Number.isFinite(safeSeconds) || safeSeconds <= 0) return 'Duration pending';
+
+  const roundedSeconds = Math.round(safeSeconds);
+  const hours = Math.floor(roundedSeconds / 3600);
+  const minutes = Math.floor((roundedSeconds % 3600) / 60);
+  const remainingSeconds = roundedSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 };
 
 const LessonThumbnail = ({ lesson, className = '' }: { lesson: Lesson; className?: string }) => {
@@ -182,6 +199,7 @@ export default function CoursesPage() {
   const [lessonQuestions, setLessonQuestions] = useState<LessonQuestion[]>([]);
   const [questionText, setQuestionText] = useState('');
   const [postingQuestion, setPostingQuestion] = useState(false);
+  const [detectedDurations, setDetectedDurations] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const saveTimerRef = useRef<number | null>(null);
@@ -212,7 +230,13 @@ export default function CoursesPage() {
   const allLessons = visibleSections.flatMap(section =>
     (section.lessons || []).map(lesson => ({ ...lesson, sectionTitle: section.title, sectionSlug: section.slug }))
   );
-  const continueLesson = allLessons.find(lesson => lesson.progress && !lesson.progress.completed) || allLessons[0];
+  const hasPremiumAccess = Boolean(profile?.has_full_access || profile?.role === 'admin' || profile?.role === 'teacher');
+  const isLessonUnlocked = (lesson?: Lesson | null) => Boolean(lesson && (hasPremiumAccess || !lesson.is_locked));
+  const accessibleLessons = allLessons.filter(lesson => isLessonUnlocked(lesson));
+  const durationProbeKey = accessibleLessons
+    .map(lesson => `${lesson.id}:${lesson.video_file || lesson.video_url || ''}:${lesson.duration_minutes || 0}`)
+    .join('|');
+  const continueLesson = accessibleLessons.find(lesson => lesson.progress && !lesson.progress.completed) || accessibleLessons[0] || allLessons[0];
   const recentLessons = allLessons.slice(0, 4);
 
   const loadCourses = async () => {
@@ -264,6 +288,7 @@ export default function CoursesPage() {
 
   const saveProgress = async (completed = false) => {
     if (!activeLesson) return;
+    if (!isLessonUnlocked(activeLesson)) return;
     if (!completed && !videoRef.current) return;
     const watchedSeconds = Math.floor(videoRef.current?.currentTime || activeLesson.progress?.watched_seconds || 0);
     await api.put(`/courses/lessons/${activeLesson.id}/progress`, {
@@ -285,12 +310,18 @@ export default function CoursesPage() {
   };
 
   const loadLessonQuestions = async (lessonId: string) => {
+    const targetLesson = allLessons.find(lesson => lesson.id === lessonId) || activeLesson;
+    if (!isLessonUnlocked(targetLesson)) {
+      setLessonQuestions([]);
+      return;
+    }
     const { data } = await api.get(`/courses/lessons/${lessonId}/questions`).catch(() => ({ data: [] }));
     setLessonQuestions(data || []);
   };
 
   const postLessonQuestion = async () => {
     if (!activeLesson || !questionText.trim()) return;
+    if (!isLessonUnlocked(activeLesson)) return;
     try {
       setPostingQuestion(true);
       const { data } = await api.post(`/courses/lessons/${activeLesson.id}/questions`, {
@@ -303,8 +334,9 @@ export default function CoursesPage() {
     }
   };
 
-  const rawVideoSource = activeLesson?.video_file || activeLesson?.video_url;
-  const videoSource = activeLesson?.video_file
+  const activeLessonUnlocked = isLessonUnlocked(activeLesson);
+  const rawVideoSource = activeLessonUnlocked ? activeLesson?.video_file || activeLesson?.video_url : '';
+  const videoSource = activeLessonUnlocked && activeLesson?.video_file
     ? resolveStorageUrl(activeLesson.video_file, 'uploads')
     : getEmbeddableVideoUrl(rawVideoSource);
   const usesIframePlayer = shouldUseVideoIframe(rawVideoSource);
@@ -312,6 +344,11 @@ export default function CoursesPage() {
   const activeSectionCompleted = activeSection?.lessons?.filter(lesson => lesson.progress?.completed).length || 0;
   const activeSectionTotal = activeSection?.lessons?.length || 0;
   const activeSectionProgress = activeSectionTotal ? Math.round((activeSectionCompleted / activeSectionTotal) * 100) : 0;
+  const getLessonDurationSeconds = (lesson?: Lesson | null) => {
+    if (!lesson?.id) return 0;
+    return detectedDurations[lesson.id] || Number(lesson.duration_minutes || 0) * 60;
+  };
+  const getLessonDurationLabel = (lesson?: Lesson | null) => formatLessonDuration(getLessonDurationSeconds(lesson));
 
   useEffect(() => {
     if (!activeLesson?.id) return;
@@ -321,6 +358,42 @@ export default function CoursesPage() {
   useEffect(() => {
     setActiveResourceId(activeLesson?.resources?.[0]?.id || '');
   }, [activeLesson?.id, activeLesson?.resources?.length]);
+
+  useEffect(() => {
+    const probes = accessibleLessons
+      .filter(lesson => {
+        if (!lesson.id || detectedDurations[lesson.id] || Number(lesson.duration_minutes || 0) > 0) return false;
+        const raw = lesson.video_file || lesson.video_url || '';
+        return Boolean(raw) && !shouldUseVideoIframe(raw);
+      })
+      .map(lesson => {
+        const raw = lesson.video_file || lesson.video_url || '';
+        const source = lesson.video_file ? resolveStorageUrl(lesson.video_file, 'uploads') : raw;
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.src = source;
+
+        const handleLoadedMetadata = () => {
+          const duration = video.duration;
+          if (Number.isFinite(duration) && duration > 0) {
+            setDetectedDurations(previous => ({ ...previous, [lesson.id]: duration }));
+          }
+        };
+
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.load();
+
+        return () => {
+          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          video.removeAttribute('src');
+          video.load();
+        };
+      });
+
+    return () => {
+      probes.forEach(cleanup => cleanup());
+    };
+  }, [durationProbeKey]);
 
   const activeResource = activeLesson?.resources?.find(resource => resource.id === activeResourceId) || activeLesson?.resources?.[0] || null;
 
@@ -380,27 +453,44 @@ export default function CoursesPage() {
             </div>
 
             <div className="grid gap-1 p-3">
-              {activeSection?.lessons?.length ? activeSection.lessons.map((lesson, index) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => {
-                    setActiveLessonId(lesson.id);
-                    if (activeSection) setSearchParams({ section: activeSection.slug, lesson: lesson.id });
-                  }}
-                  className={`rounded-xl p-4 text-left transition-all ${activeLesson?.id === lesson.id ? 'bg-[#EFF4FB]' : 'hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <LessonThumbnail lesson={lesson} className="h-14 w-20 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-1 h-4 w-4 shrink-0 rounded-full ${lesson.progress?.completed ? 'bg-emerald-500' : 'bg-slate-100 ring-1 ring-slate-200'}`} />
-                        <h3 className="font-black leading-snug">{index + 1}. {lesson.title}</h3>
+              {activeSection?.lessons?.length ? activeSection.lessons.map((lesson, index) => {
+                const unlocked = isLessonUnlocked(lesson);
+                return (
+                  <button
+                    key={lesson.id}
+                    onClick={() => {
+                      setActiveLessonId(lesson.id);
+                      if (activeSection) setSearchParams({ section: activeSection.slug, lesson: lesson.id });
+                    }}
+                    className={`rounded-xl p-4 text-left transition-all ${activeLesson?.id === lesson.id ? 'bg-[#EFF4FB]' : 'hover:bg-slate-50'} ${!unlocked ? 'opacity-80' : ''}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <LessonThumbnail lesson={lesson} className="h-14 w-20 shrink-0" />
+                        {!unlocked && (
+                          <span className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full border border-white bg-[#061A36]/90 text-white shadow-sm">
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
+                        )}
                       </div>
-                      <p className="mt-1 text-[13px] font-semibold text-slate-500">Video • {lesson.duration_minutes || 0} min</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-2">
+                          <span className={`mt-1 h-4 w-4 shrink-0 rounded-full ${lesson.progress?.completed ? 'bg-emerald-500' : unlocked ? 'bg-slate-100 ring-1 ring-slate-200' : 'bg-amber-100 ring-1 ring-amber-200'}`} />
+                          <h3 className="font-black leading-snug">{index + 1}. {lesson.title}</h3>
+                        </div>
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] font-semibold text-slate-500">
+                          Video • {getLessonDurationLabel(lesson)}
+                          {unlocked ? (
+                            lesson.is_free_preview && !hasPremiumAccess ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600">Free Demo</span> : null
+                          ) : (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-700">Premium</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              )) : (
+                  </button>
+                );
+              }) : (
                 <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-[13px] font-bold text-slate-400">
                   Lessons coming soon.
                 </div>
@@ -411,6 +501,22 @@ export default function CoursesPage() {
           <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             {loading ? (
               <div className="grid min-h-[420px] place-items-center text-[14px] font-bold text-slate-400">Loading courses...</div>
+            ) : activeLesson && !activeLessonUnlocked ? (
+              <div className="grid min-h-[560px] place-items-center text-center">
+                <div className="max-w-lg rounded-3xl border border-amber-100 bg-amber-50/70 p-8">
+                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-white text-[#EE6055] shadow-sm">
+                    <Lock className="h-8 w-8" />
+                  </div>
+                  <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-[#EE6055]">Premium Lesson</p>
+                  <h2 className="mt-2 text-[26px] font-black">{activeLesson.title}</h2>
+                  <p className="mt-3 text-[14px] font-semibold leading-7 text-slate-600">
+                    This lesson is marked as premium by the admin. Upgrade to premium access to unlock this video, notes, and Q&amp;A.
+                  </p>
+                  <Link to="/access-request" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#294b77] px-6 py-3 text-[13px] font-black text-white hover:bg-[#EE6055]">
+                    <Crown className="h-4 w-4" /> Request Premium Access
+                  </Link>
+                </div>
+              </div>
             ) : activeLesson ? (
               <div className="grid gap-5">
                 <div className="aspect-video overflow-hidden rounded-2xl border-2 border-[#2F80ED]/50 bg-[#061A36] shadow-sm">
@@ -440,6 +546,12 @@ export default function CoursesPage() {
                       preload="metadata"
                       className="h-full w-full"
                       onContextMenu={event => event.preventDefault()}
+                      onLoadedMetadata={event => {
+                        const duration = event.currentTarget.duration;
+                        if (activeLesson?.id && Number.isFinite(duration) && duration > 0) {
+                          setDetectedDurations(previous => ({ ...previous, [activeLesson.id]: duration }));
+                        }
+                      }}
                       onTimeUpdate={queueProgressSave}
                       onEnded={markComplete}
                     />
@@ -490,7 +602,7 @@ export default function CoursesPage() {
                       <div className="flex items-center gap-3">
                         <Clock className="h-8 w-8 text-slate-500" />
                         <div>
-                          <p className="text-[15px] font-black">{activeLesson.duration_minutes || 0}:00</p>
+                          <p className="text-[15px] font-black">{getLessonDurationLabel(activeLesson)}</p>
                           <p className="text-[12px] font-semibold text-slate-500">Duration</p>
                         </div>
                       </div>
@@ -709,7 +821,7 @@ export default function CoursesPage() {
                         <span className="rounded-lg bg-[#EFF4FB] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#294b77]">{lesson.sectionTitle}</span>
                         <span className="truncate text-[14px] font-black text-[#05162E]">{lesson.title}</span>
                       </div>
-                      <span className="flex items-center gap-1 text-[12px] font-bold text-slate-500"><Clock className="h-3.5 w-3.5" /> {lesson.duration_minutes || 0} min</span>
+                      <span className="flex items-center gap-1 text-[12px] font-bold text-slate-500"><Clock className="h-3.5 w-3.5" /> {getLessonDurationLabel(lesson)}</span>
                       <span className="rounded-xl border border-[#294b77]/20 px-4 py-2 text-center text-[12px] font-black text-[#294b77]">
                         Watch <Play className="ml-1 inline h-3.5 w-3.5 fill-current" />
                       </span>
@@ -765,30 +877,45 @@ export default function CoursesPage() {
               </div>
 
               <div className="grid gap-1 p-3">
-                {activeSection?.lessons?.length ? activeSection.lessons.map((lesson, index) => (
+                {activeSection?.lessons?.length ? activeSection.lessons.map((lesson, index) => {
+                  const unlocked = isLessonUnlocked(lesson);
+                  return (
                   <button
                     key={lesson.id}
                     onClick={() => {
                       setActiveLessonId(lesson.id);
                       if (activeSection) setSearchParams({ section: activeSection.slug, lesson: lesson.id });
                     }}
-                    className={`rounded-xl p-4 text-left transition-all ${activeLesson?.id === lesson.id ? 'bg-[#EFF4FB]' : 'hover:bg-slate-50'}`}
+                    className={`rounded-xl p-4 text-left transition-all ${activeLesson?.id === lesson.id ? 'bg-[#EFF4FB]' : 'hover:bg-slate-50'} ${!unlocked ? 'opacity-80' : ''}`}
                   >
                     <div className="flex items-start gap-3">
-                      <LessonThumbnail lesson={lesson} className="h-14 w-20 shrink-0" />
+                      <div className="relative">
+                        <LessonThumbnail lesson={lesson} className="h-14 w-20 shrink-0" />
+                        {!unlocked && (
+                          <span className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full border border-white bg-[#061A36]/90 text-white shadow-sm">
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-2">
-                          <span className={`mt-1 h-4 w-4 shrink-0 rounded-full ${lesson.progress?.completed ? 'bg-emerald-500' : 'bg-slate-100 ring-1 ring-slate-200'}`} />
+                          <span className={`mt-1 h-4 w-4 shrink-0 rounded-full ${lesson.progress?.completed ? 'bg-emerald-500' : unlocked ? 'bg-slate-100 ring-1 ring-slate-200' : 'bg-amber-100 ring-1 ring-amber-200'}`} />
                           <h3 className="font-black leading-snug">{index + 1}. {lesson.title}</h3>
                         </div>
-                        <p className="mt-1 flex items-center gap-2 text-[13px] font-semibold text-slate-500">
-                          Video • {lesson.duration_minutes || 0} min
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] font-semibold text-slate-500">
+                          Video • {getLessonDurationLabel(lesson)}
+                          {unlocked ? (
+                            lesson.is_free_preview && !hasPremiumAccess ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600">Free Demo</span> : null
+                          ) : (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-700">Premium</span>
+                          )}
                           {lesson.progress?.completed && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                         </p>
                       </div>
                     </div>
                   </button>
-                )) : (
+                  );
+                }) : (
                   <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-[13px] font-bold text-slate-400">
                     Lessons coming soon.
                   </div>
@@ -835,6 +962,12 @@ export default function CoursesPage() {
                         preload="metadata"
                         className="h-full w-full"
                         onContextMenu={event => event.preventDefault()}
+                        onLoadedMetadata={event => {
+                          const duration = event.currentTarget.duration;
+                          if (activeLesson?.id && Number.isFinite(duration) && duration > 0) {
+                            setDetectedDurations(previous => ({ ...previous, [activeLesson.id]: duration }));
+                          }
+                        }}
                         onTimeUpdate={queueProgressSave}
                         onEnded={markComplete}
                       />

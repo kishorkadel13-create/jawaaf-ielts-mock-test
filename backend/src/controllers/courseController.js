@@ -1,8 +1,14 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
 const ASSET_BUCKET = 'ielts-assets';
-
 const isAdminLike = (user) => ['admin', 'teacher'].includes(user?.role);
+const hasPremiumCourseAccess = (user) => Boolean(user?.has_full_access || isAdminLike(user));
+const COURSE_DEMO_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260726_add_course_lesson_demo_access.sql in Supabase, then reload the API schema cache.';
+
+const isMissingDemoColumnError = (error) => {
+  const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
+  return error?.code === 'PGRST204' || /is_demo/i.test(message) && /schema cache|column/i.test(message);
+};
 
 const slugify = (value) => String(value || '')
   .trim()
@@ -20,7 +26,62 @@ const getDriveDownloadUrl = (value) => {
   return raw;
 };
 
-const buildCourseResponse = async ({ includeDrafts = false, userId = null } = {}) => {
+const getLessonThumbnailUrl = (lesson) => {
+  const thumbnail = String(lesson?.thumbnail_url || '').trim();
+  if (thumbnail) return thumbnail;
+
+  const raw = String(lesson?.video_file || lesson?.video_url || '').trim();
+  if (!raw) return '';
+
+  const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/i) || raw.match(/[?&]id=([^&]+)/i);
+  if (raw.includes('drive.google.com') && driveMatch?.[1]) {
+    return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
+  }
+
+  const youtubeMatch =
+    raw.match(/youtube\.com\/watch\?v=([^&]+)/i) ||
+    raw.match(/youtu\.be\/([^?&]+)/i) ||
+    raw.match(/youtube\.com\/embed\/([^?&]+)/i);
+  if (youtubeMatch?.[1]) return `https://img.youtube.com/vi/${youtubeMatch[1]}/hqdefault.jpg`;
+
+  return '';
+};
+
+const getAccessibleLessonIds = async (user) => {
+  if (hasPremiumCourseAccess(user)) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('course_lessons')
+    .select('id, course_sections!inner(is_published)')
+    .eq('is_published', true)
+    .eq('is_demo', true)
+    .eq('course_sections.is_published', true);
+
+  if (error) {
+    if (isMissingDemoColumnError(error)) return new Set();
+    throw error;
+  }
+  return new Set((data || []).map(lesson => lesson.id));
+};
+
+const canAccessLesson = async (lessonId, user) => {
+  if (hasPremiumCourseAccess(user)) return true;
+  const accessibleLessonIds = await getAccessibleLessonIds(user);
+  return accessibleLessonIds?.has(lessonId) || false;
+};
+
+const sanitizeLockedLesson = (lesson) => ({
+  ...lesson,
+  thumbnail_url: getLessonThumbnailUrl(lesson),
+  video_url: '',
+  video_file: '',
+  notes: '',
+  resources: [],
+  is_locked: true,
+  is_free_preview: false
+});
+
+const buildCourseResponse = async ({ includeDrafts = false, user = null } = {}) => {
   let sectionQuery = supabaseAdmin
     .from('course_sections')
     .select('*')
@@ -35,6 +96,7 @@ const buildCourseResponse = async ({ includeDrafts = false, userId = null } = {}
   let lessons = [];
   let resources = [];
   let progress = [];
+  const accessibleLessonIds = user ? await getAccessibleLessonIds(user) : null;
 
   if (sectionIds.length > 0) {
     let lessonQuery = supabaseAdmin
@@ -60,11 +122,11 @@ const buildCourseResponse = async ({ includeDrafts = false, userId = null } = {}
       if (resourceError) throw resourceError;
       resources = resourceList || [];
 
-      if (userId) {
+      if (user?.id) {
         const { data: progressList, error: progressError } = await supabaseAdmin
           .from('student_lesson_progress')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .in('lesson_id', lessonIds);
 
         if (progressError) throw progressError;
@@ -85,12 +147,17 @@ const buildCourseResponse = async ({ includeDrafts = false, userId = null } = {}
   }, {});
 
   const lessonsBySectionId = lessons.reduce((acc, lesson) => {
-    acc[lesson.section_id] = acc[lesson.section_id] || [];
-    acc[lesson.section_id].push({
+    const isFreePreview = accessibleLessonIds === null || accessibleLessonIds.has(lesson.id);
+    const lessonPayload = {
       ...lesson,
       resources: resourcesByLessonId[lesson.id] || [],
-      progress: progressByLessonId[lesson.id] || null
-    });
+      progress: progressByLessonId[lesson.id] || null,
+      is_locked: !isFreePreview,
+      is_free_preview: isFreePreview
+    };
+
+    acc[lesson.section_id] = acc[lesson.section_id] || [];
+    acc[lesson.section_id].push(isFreePreview ? lessonPayload : sanitizeLockedLesson(lessonPayload));
     return acc;
   }, {});
 
@@ -104,7 +171,7 @@ export const getCourseLibrary = async (req, res) => {
   try {
     const sections = await buildCourseResponse({
       includeDrafts: isAdminLike(req.user),
-      userId: req.user.id
+      user: req.user
     });
 
     res.status(200).json(sections);
@@ -127,6 +194,9 @@ export const getLessonById = async (req, res) => {
     if (!lesson.is_published && !isAdminLike(req.user)) {
       return res.status(403).json({ error: 'Forbidden', message: 'This lesson is not published yet.' });
     }
+    if (!(await canAccessLesson(lessonId, req.user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
+    }
 
     const { data: progress } = await supabaseAdmin
       .from('student_lesson_progress')
@@ -147,6 +217,10 @@ export const saveLessonProgress = async (req, res) => {
     const { lessonId } = req.params;
     const watchedSeconds = Math.max(0, Number(req.body.watched_seconds || 0));
     const requestedCompleted = Boolean(req.body.completed);
+
+    if (!(await canAccessLesson(lessonId, req.user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
+    }
 
     const { data: existingProgress } = await supabaseAdmin
       .from('student_lesson_progress')
@@ -183,6 +257,10 @@ export const saveLessonProgress = async (req, res) => {
 export const getLessonQuestions = async (req, res) => {
   try {
     const { lessonId } = req.params;
+    if (!(await canAccessLesson(lessonId, req.user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('lesson_questions')
       .select('*, profiles:user_id(full_name, email)')
@@ -201,6 +279,10 @@ export const createLessonQuestion = async (req, res) => {
   try {
     const { lessonId } = req.params;
     const questionText = String(req.body.question_text || '').trim();
+
+    if (!(await canAccessLesson(lessonId, req.user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
+    }
 
     if (!questionText) {
       return res.status(400).json({ error: 'BadRequest', message: 'Question text is required.' });
@@ -236,6 +318,9 @@ export const getLessonResourceContent = async (req, res) => {
     if (error) throw error;
     if (!resource.course_lessons?.is_published && !isAdminLike(req.user)) {
       return res.status(403).json({ error: 'Forbidden', message: 'This lesson resource is not published yet.' });
+    }
+    if (!(await canAccessLesson(resource.lesson_id, req.user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
     }
 
     let contentType = 'application/pdf';
@@ -435,10 +520,14 @@ export const createCourseLesson = async (req, res) => {
       notes: req.body.notes || '',
       duration_minutes: Number(req.body.duration_minutes || 0),
       order_no: Number(req.body.order_no || 1),
+      is_demo: Boolean(req.body.is_demo),
       is_published: Boolean(req.body.is_published)
     };
 
     const { data, error } = await supabaseAdmin.from('course_lessons').insert(payload).select().single();
+    if (isMissingDemoColumnError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_DEMO_MIGRATION_MESSAGE });
+    }
     if (error) throw error;
     res.status(201).json(data);
   } catch (err) {
@@ -462,6 +551,9 @@ export const updateCourseLesson = async (req, res) => {
       .select()
       .single();
 
+    if (isMissingDemoColumnError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_DEMO_MIGRATION_MESSAGE });
+    }
     if (error) throw error;
     res.status(200).json(data);
   } catch (err) {

@@ -220,6 +220,7 @@ export default function ExamInterface() {
   // Floating Highlighter logic for Reading passages
   const passageRef = useRef<HTMLDivElement>(null);
   const highlightTargetRef = useRef<HighlightTarget | null>(null);
+  const selectedPassageTextRef = useRef('');
   const [highlightCoords, setHighlightCoords] = useState<{top: number, left: number} | null>(null);
   const [highlightedPassages, setHighlightedPassages] = useState<Record<string, string>>({});
 
@@ -257,6 +258,7 @@ export default function ExamInterface() {
 
       const rect = range.getBoundingClientRect();
       highlightTargetRef.current = target;
+      selectedPassageTextRef.current = text;
       
       setHighlightCoords({
         top: Math.max(72, rect.top - 42),
@@ -264,6 +266,7 @@ export default function ExamInterface() {
       });
     } else {
       highlightTargetRef.current = null;
+      selectedPassageTextRef.current = '';
       setHighlightCoords(null);
     }
   };
@@ -292,8 +295,41 @@ export default function ExamInterface() {
     }
     
     highlightTargetRef.current = null;
+    selectedPassageTextRef.current = '';
     setHighlightCoords(null);
   };
+
+  const copySelectedPassageText = async (event?: React.MouseEvent | React.PointerEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    const selectedText = selectedPassageTextRef.current || window.getSelection()?.toString().trim() || '';
+    if (!selectedText) return;
+
+    try {
+      await navigator.clipboard.writeText(selectedText);
+      setClipboardMessage('Copied from passage. You can paste it into an answer blank.');
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = selectedText;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setClipboardMessage('Copied from passage. You can paste it into an answer blank.');
+    }
+
+    window.setTimeout(() => setClipboardMessage(''), 1800);
+    window.getSelection()?.removeAllRanges();
+    highlightTargetRef.current = null;
+    selectedPassageTextRef.current = '';
+    setHighlightCoords(null);
+  };
+
+  const currentSectionTypeForClipboard = activeTest?.sections?.[activeSectionIndex]?.type;
 
   const blockClipboard = (event: React.ClipboardEvent) => {
     event.preventDefault();
@@ -303,6 +339,35 @@ export default function ExamInterface() {
     setClipboardMessage('External content cannot be pasted during the writing test.');
     window.setTimeout(() => setClipboardMessage(''), 2800);
   }, []);
+
+  const showReadingClipboardWarning = useCallback(() => {
+    setClipboardMessage('Only text copied from the reading passage can be pasted into answers.');
+    window.setTimeout(() => setClipboardMessage(''), 2800);
+  }, []);
+
+  const handleReadingAnswerPaste = useCallback((
+    event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const pastedText = event.clipboardData.getData('text/plain').trim();
+    const passageText = passageRef.current?.innerText || '';
+    const normalizedPassageText = passageText.replace(/\s+/g, ' ').trim();
+    const normalizedPastedText = pastedText.replace(/\s+/g, ' ').trim();
+    const wasCopiedFromPassage = Boolean(
+      normalizedPastedText &&
+      normalizedPassageText.includes(normalizedPastedText)
+    );
+
+    if (!wasCopiedFromPassage) {
+      showReadingClipboardWarning();
+      return null;
+    }
+
+    setClipboardMessage('');
+    return pastedText;
+  }, [showReadingClipboardWarning]);
 
   const getSelectedTextareaText = (textarea: HTMLTextAreaElement) => (
     textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
@@ -617,8 +682,9 @@ export default function ExamInterface() {
 
   return (
     <div
-      className="flex-1 flex flex-col h-screen bg-[#F8FAFC] select-none"
-      onCopy={blockClipboard}
+      className="fixed inset-0 z-0 flex flex-col bg-[#F8FAFC] select-none"
+      style={{ height: '100dvh', width: '100vw', overflow: 'hidden' }}
+      onCopy={currentSectionTypeForClipboard === 'writing' ? blockClipboard : undefined}
       onCut={blockClipboard}
       onPaste={blockClipboard}
     >
@@ -839,24 +905,37 @@ export default function ExamInterface() {
       </header>
 
       {/* 2. Main CBT Split Screen Layout */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex flex-row overflow-hidden relative">
         
         {/* Highlighter Tooltip overlay */}
         {highlightCoords && (
-          <button
-            type="button"
-            onPointerDown={applyHighlight}
-            onMouseDown={applyHighlight}
+          <div
             style={{ top: highlightCoords.top, left: highlightCoords.left }}
-            className="fixed z-50 px-3 py-1.5 bg-yellow-300 text-slate-950 text-xs font-bold rounded-lg shadow-lg border border-yellow-400 transition-transform active:scale-95 cursor-pointer"
+            className="fixed z-50 flex overflow-hidden rounded-lg border border-slate-900/10 bg-slate-950 text-xs font-black text-white shadow-lg"
           >
-            Highlight
-          </button>
+            <button
+              type="button"
+              onPointerDown={copySelectedPassageText}
+              onMouseDown={copySelectedPassageText}
+              className="px-3 py-1.5 hover:bg-[#294b77] transition-colors"
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              onPointerDown={applyHighlight}
+              onMouseDown={applyHighlight}
+              className="border-l border-white/15 bg-yellow-300 px-3 py-1.5 text-slate-950 hover:bg-yellow-200 transition-colors"
+            >
+              Highlight
+            </button>
+          </div>
         )}
 
         {/* LEFT COLUMN: Passage (Reading) or Audio Deck (Listening) */}
         <div 
-          className="flex-1 w-full md:w-1/2 border-r border-slate-200 bg-[#fbfbfa] overflow-y-auto px-8 py-7 relative"
+          className="min-h-0 w-1/2 border-r border-slate-200 bg-[#fbfbfa] overflow-y-scroll px-8 py-7 relative"
+          style={{ height: '100%', flex: '0 0 50%', maxWidth: '50%', overflowY: 'scroll', overflowX: 'hidden' }}
           onMouseUp={handleSelection}
           onKeyUp={handleSelection}
         >
@@ -1020,7 +1099,11 @@ export default function ExamInterface() {
         </div>
 
         {/* RIGHT COLUMN: Interactive Questions column */}
-        <div className="flex-1 w-full md:w-1/2 bg-[#F8FAFC] overflow-y-auto p-8">
+        <div
+          className="min-h-0 w-1/2 bg-[#F8FAFC] overflow-y-scroll p-8"
+          style={{ height: '100%', flex: '0 0 50%', maxWidth: '50%', overflowY: 'scroll', overflowX: 'hidden' }}
+        >
+          <div style={{ display: 'none' }} aria-hidden="true" data-reading-layout-marker="split-scroll-active" />
           {activeSection?.type === 'writing' ? (
             <div className="h-full flex flex-col gap-5">
               <div className="flex gap-2">
@@ -1094,6 +1177,12 @@ export default function ExamInterface() {
             </div>
           ) : (
           <div className="space-y-10">
+            {activeSection?.type === 'reading' && clipboardMessage && (
+              <div className="sticky top-0 z-20 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055] shadow-sm">
+                <ClipboardX className="h-4 w-4 shrink-0" />
+                {clipboardMessage}
+              </div>
+            )}
             {activeGroups.map((group: any) => (
               <div key={group.id} className="space-y-6 mb-10">
                 {/* Group instruction banner */}
@@ -1132,6 +1221,7 @@ export default function ExamInterface() {
                           mode="light"
                           onActivateQuestion={setActiveQuestionId}
                           groupInstruction={group.instruction || ''}
+                          onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
                         />
                       );
                     }
@@ -1176,6 +1266,7 @@ export default function ExamInterface() {
                                 value={answers[question.id]} 
                                 onChange={(val) => setAnswer(question.id, val)}
                                 mode="light"
+                                onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
                               />
                             </div>
                           </div>

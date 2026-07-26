@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS course_lessons (
     notes TEXT,
     duration_minutes INTEGER DEFAULT 0,
     order_no INTEGER NOT NULL DEFAULT 1,
+    is_demo BOOLEAN NOT NULL DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -70,7 +71,10 @@ ALTER TABLE student_lesson_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lesson_questions ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE course_lessons
-ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
+  ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
+
+ALTER TABLE course_lessons
+  ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE POLICY "Published course sections are readable" ON course_sections
     FOR SELECT USING (is_published = true);

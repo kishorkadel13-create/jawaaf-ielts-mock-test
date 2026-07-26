@@ -15,9 +15,20 @@ interface TestAttempt {
   score: string | number;
   status: string;
   submitted_at: string;
+  attempt_mode?: 'mock' | 'practice';
+  result_status?: string;
+  reading_score?: string | number | null;
+  listening_score?: string | number | null;
+  writing_score?: string | number | null;
+  feedback?: {
+    band_score?: string | number | null;
+  } | null;
+  sections?: Array<{
+    type: 'reading' | 'listening' | 'writing';
+  }>;
   mock_tests?: {
     title: string;
-    type: string;
+    type?: string;
   };
 }
 
@@ -68,7 +79,8 @@ export default function DashboardPage() {
     attempts: 0, 
     avgScore: '0.0', 
     readingScore: '0.0', 
-    listeningScore: '0.0' 
+    listeningScore: '0.0',
+    writingScore: '0.0'
   });
   const [history, setHistory] = useState<TestAttempt[]>([]);
   const [availableTests, setAvailableTests] = useState<MockTest[]>([]);
@@ -120,36 +132,56 @@ export default function DashboardPage() {
         percent: lessons.length ? Math.round((completedLessons / lessons.length) * 100) : 0
       });
 
-      // Calculate statistics dynamically
-      const completed = attempts.filter((a: any) => a.status === 'completed');
-      const totalScore = completed.reduce((sum: number, a: any) => sum + parseFloat(a.score || 0), 0);
-      const avg = completed.length > 0 ? (totalScore / completed.length).toFixed(1) : '0.0';
+      // Calculate dashboard statistics from real submitted attempts.
+      const completed = (attempts || []).filter((a: TestAttempt) => a.status === 'completed');
+      const mockAttempts = completed.filter((a: TestAttempt) => a.attempt_mode === 'mock');
+      const readyMockAttempts = mockAttempts.filter((a: TestAttempt) => a.result_status !== 'Pending teacher review');
+      const parseScore = (value: any) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const formatScore = (value: number | null) => (value === null ? '0.0' : value.toFixed(1));
+      const averageScore = (items: number[]) =>
+        items.length ? Number((items.reduce((sum, value) => sum + value, 0) / items.length).toFixed(1)) : null;
+      const highestScore = (values: Array<string | number | null | undefined>) => {
+        const numericValues = values
+          .map(parseScore)
+          .filter((value): value is number => value !== null);
+        return numericValues.length ? Math.max(...numericValues) : null;
+      };
 
-      const readingAttempts = completed.filter((a: any) => a.mock_tests?.type === 'reading');
-      const readingAvg = readingAttempts.length > 0 
-        ? (readingAttempts.reduce((sum: number, a: any) => sum + parseFloat(a.score || 0), 0) / readingAttempts.length).toFixed(1) 
-        : '0.0';
+      const mockScores = readyMockAttempts
+        .map((a: TestAttempt) => parseScore(a.feedback?.band_score ?? a.score))
+        .filter((value): value is number => value !== null);
 
-      const listeningAttempts = completed.filter((a: any) => a.mock_tests?.type === 'listening');
-      const listeningAvg = listeningAttempts.length > 0 
-        ? (listeningAttempts.reduce((sum: number, a: any) => sum + parseFloat(a.score || 0), 0) / listeningAttempts.length).toFixed(1) 
-        : '0.0';
+      const sectionHighest = (sectionType: 'reading' | 'listening' | 'writing') => {
+        const explicitScores = completed.map((a: TestAttempt) => {
+          if (sectionType === 'reading') return a.reading_score;
+          if (sectionType === 'listening') return a.listening_score;
+          return a.writing_score ?? a.feedback?.band_score;
+        });
+        const singleSectionFallbacks = completed
+          .filter((a: TestAttempt) => (a.sections || []).length === 1 && a.sections?.[0]?.type === sectionType)
+          .map((a: TestAttempt) => a.feedback?.band_score ?? a.score);
+        return highestScore([...explicitScores, ...singleSectionFallbacks]);
+      };
       
       setStats({
-        attempts: attempts.length,
-        avgScore: avg === '0.0' ? '6.5' : avg, // fallback to mockup values if no data
-        readingScore: readingAvg === '0.0' ? '7.0' : readingAvg,
-        listeningScore: listeningAvg === '0.0' ? '6.0' : listeningAvg
+        attempts: mockAttempts.length,
+        avgScore: formatScore(averageScore(mockScores)),
+        readingScore: formatScore(sectionHighest('reading')),
+        listeningScore: formatScore(sectionHighest('listening')),
+        writingScore: formatScore(sectionHighest('writing'))
       });
       setLoading(false);
     } catch (err) {
       console.warn('Dashboard data fetch warning:', err);
-      // Fallbacks
       setStats({
-        attempts: 12,
-        avgScore: '6.5',
-        readingScore: '7.0',
-        listeningScore: '6.0'
+        attempts: 0,
+        avgScore: '0.0',
+        readingScore: '0.0',
+        listeningScore: '0.0',
+        writingScore: '0.0'
       });
       setLoading(false);
     }
@@ -219,7 +251,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 4 Cards Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 flex-shrink-0">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-5 flex-shrink-0">
           
           {/* Stat 1 */}
           <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -263,6 +295,17 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-3xl font-black text-[#05162E]">{stats.listeningScore}</div>
+          </div>
+
+          {/* Stat 5 */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Writing Score</span>
+              <div className="h-10 w-10 bg-[#EE6055]/10 text-[#EE6055] rounded-xl flex items-center justify-center">
+                <PenLine className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="text-3xl font-black text-[#05162E]">{stats.writingScore}</div>
           </div>
 
         </div>

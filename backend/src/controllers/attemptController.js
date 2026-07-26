@@ -320,6 +320,7 @@ export const getAttemptHistory = async (req, res) => {
     let sections = [];
     let groups = [];
     let questions = [];
+    let answers = [];
     let feedbackList = [];
 
     if (testIds.length > 0) {
@@ -356,6 +357,14 @@ export const getAttemptHistory = async (req, res) => {
     }
 
     if (attemptIds.length > 0) {
+      const { data: answerRows, error: answerError } = await supabaseAdmin
+        .from('attempt_answers')
+        .select('attempt_id, question_id, is_correct')
+        .in('attempt_id', attemptIds);
+
+      if (answerError) throw answerError;
+      answers = answerRows || [];
+
       const { data: feedbackRows, error: feedbackError } = await supabaseAdmin
         .from('writing_feedback')
         .select('*')
@@ -388,6 +397,40 @@ export const getAttemptHistory = async (req, res) => {
       return acc;
     }, {});
 
+    const groupById = groups.reduce((acc, group) => {
+      acc[group.id] = group;
+      return acc;
+    }, {});
+
+    const questionById = questions.reduce((acc, question) => {
+      acc[question.id] = question;
+      return acc;
+    }, {});
+
+    const sectionById = sections.reduce((acc, section) => {
+      acc[section.id] = section;
+      return acc;
+    }, {});
+
+    const answersByAttemptId = answers.reduce((acc, answer) => {
+      acc[answer.attempt_id] = acc[answer.attempt_id] || [];
+      acc[answer.attempt_id].push(answer);
+      return acc;
+    }, {});
+
+    const getSectionBand = (attemptId, sectionType) => {
+      const sectionAnswers = (answersByAttemptId[attemptId] || []).filter(answer => {
+        const question = questionById[answer.question_id];
+        const group = question ? groupById[question.group_id] : null;
+        const section = group ? sectionById[group.section_id] : null;
+        return section?.type === sectionType && question?.question_type !== 'WRITING_TASK';
+      });
+
+      if (sectionAnswers.length === 0) return null;
+      const correct = sectionAnswers.filter(answer => answer.is_correct).length;
+      return convertScoreToIeltsBand(correct, sectionAnswers.length);
+    };
+
     const formattedAttempts = (attempts || []).map(attempt => {
       const testSections = sectionsByTestId[attempt.mock_test_id] || [];
       const sectionSummaries = testSections.map(section => {
@@ -405,11 +448,16 @@ export const getAttemptHistory = async (req, res) => {
       const sectionTypes = new Set(sectionSummaries.map(section => section.type));
       const attemptMode = sectionSummaries.length <= 1 || sectionTypes.size === 1 ? 'practice' : 'mock';
       const feedback = feedbackByAttemptId[attempt.id] || null;
+      const writingSection = sectionSummaries.some(section => section.type === 'writing');
 
       return {
         ...attempt,
         sections: sectionSummaries,
         attempt_mode: attemptMode,
+        reading_score: getSectionBand(attempt.id, 'reading'),
+        listening_score: getSectionBand(attempt.id, 'listening'),
+        writing_score: feedback?.band_score ?? null,
+        result_status: writingSection && !feedback ? 'Pending teacher review' : 'Ready',
         writing_task_count: writingTaskCount,
         objective_question_count: objectiveQuestionCount,
         review_status: writingTaskCount > 0

@@ -43,6 +43,7 @@ type CourseLesson = {
   notes?: string;
   duration_minutes?: number;
   order_no: number;
+  is_demo: boolean;
   is_published: boolean;
   resources?: LessonResource[];
 };
@@ -85,6 +86,7 @@ const emptyLesson = {
   notes: '',
   duration_minutes: 0,
   order_no: 1,
+  is_demo: false,
   is_published: false
 };
 
@@ -103,7 +105,15 @@ const courseColor = (slug: string) => {
 };
 
 const getErrorMessage = (err: any, fallback: string) =>
-  err?.response?.data?.message || err?.message || err?.details || fallback;
+  err?.response?.data?.error === 'MigrationRequired' || /is_demo.*schema cache|schema cache.*is_demo/i.test(`${err?.response?.data?.message || ''} ${err?.message || ''}`)
+    ? 'Database migration required for lesson demo access. Run backend/src/config/migrations/20260726_add_course_lesson_demo_access.sql in Supabase, then reload the API schema cache.'
+    : err?.response?.data?.message || err?.message || err?.details || fallback;
+
+const formatAdminDuration = (minutes?: number) => {
+  const safeMinutes = Number(minutes || 0);
+  if (!Number.isFinite(safeMinutes) || safeMinutes <= 0) return 'Duration pending';
+  return `${safeMinutes} min`;
+};
 
 export default function AdminCoursesPage() {
   const { profile } = useAuthStore();
@@ -179,6 +189,7 @@ export default function AdminCoursesPage() {
         notes: activeLesson.notes || '',
         duration_minutes: activeLesson.duration_minutes || 0,
         order_no: activeLesson.order_no || 1,
+        is_demo: Boolean(activeLesson.is_demo),
         is_published: Boolean(activeLesson.is_published)
       });
       return;
@@ -289,6 +300,7 @@ export default function AdminCoursesPage() {
         section_id: activeCourse.id,
         duration_minutes: Number(lessonForm.duration_minutes || 0),
         order_no: Number(lessonForm.order_no || 1),
+        is_demo: Boolean(lessonForm.is_demo),
         is_published: Boolean(lessonForm.is_published)
       };
 
@@ -404,6 +416,7 @@ export default function AdminCoursesPage() {
                   <tr>
                     <th className="px-4 py-3">Lesson</th>
                     <th className="px-4 py-3">Duration</th>
+                    <th className="px-4 py-3">Access</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -416,7 +429,12 @@ export default function AdminCoursesPage() {
                         {lesson.video_url && <span className="ml-2 rounded-md bg-blue-50 px-2 py-1 text-[10px] text-blue-600">Drive/URL</span>}
                         {lesson.video_file && <span className="ml-2 rounded-md bg-emerald-50 px-2 py-1 text-[10px] text-emerald-600">Uploaded</span>}
                       </td>
-                      <td className="px-4 py-4 font-bold text-slate-500">{lesson.duration_minutes || 0} min</td>
+                      <td className="px-4 py-4 font-bold text-slate-500">{formatAdminDuration(lesson.duration_minutes)}</td>
+                      <td className="px-4 py-4">
+                        <span className={`rounded-lg px-3 py-1 text-[11px] font-black ${lesson.is_demo ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-700'}`}>
+                          {lesson.is_demo ? 'Free Demo' : 'Premium'}
+                        </span>
+                      </td>
                       <td className="px-4 py-4">
                         <span className={`rounded-lg px-3 py-1 text-[11px] font-black ${lesson.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
                           {lesson.is_published ? 'Published' : 'Draft'}
@@ -430,7 +448,7 @@ export default function AdminCoursesPage() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={4} className="px-4 py-14 text-center text-[14px] font-bold text-slate-400">
+                      <td colSpan={5} className="px-4 py-14 text-center text-[14px] font-bold text-slate-400">
                         No lessons yet. Click Add Lesson to paste a Drive link or upload a video.
                       </td>
                     </tr>
@@ -534,13 +552,65 @@ export default function AdminCoursesPage() {
                 )}
               </div>
 
-              <div className="grid gap-3 md:grid-cols-[1fr_150px_150px]">
-                <input type="number" value={lessonForm.duration_minutes} onChange={event => setLessonForm({ ...lessonForm, duration_minutes: event.target.value })} placeholder="Duration minutes" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
-                <input type="number" value={lessonForm.order_no} onChange={event => setLessonForm({ ...lessonForm, order_no: event.target.value })} placeholder="Order" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
-                <label className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-black">
+              <div className="grid gap-3">
+                <label className="grid min-w-0 gap-2 rounded-2xl border border-slate-200 bg-white p-4">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Duration (minutes)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={lessonForm.duration_minutes}
+                    onChange={event => setLessonForm({ ...lessonForm, duration_minutes: event.target.value })}
+                    placeholder="e.g. 26"
+                    className="rounded-xl border border-slate-200 px-4 py-3 text-[15px] font-black outline-none focus:border-[#294b77]"
+                  />
+                  <span className="text-[11px] font-bold leading-5 text-slate-500">Drive videos cannot auto-detect time. Enter the exact lesson length here.</span>
+                </label>
+                <label className="grid min-w-0 gap-2 rounded-2xl border border-slate-200 bg-white p-4">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Order</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={lessonForm.order_no}
+                    onChange={event => setLessonForm({ ...lessonForm, order_no: event.target.value })}
+                    placeholder="Order"
+                    className="rounded-xl border border-slate-200 px-4 py-3 text-[15px] font-black outline-none focus:border-[#294b77]"
+                  />
+                </label>
+                <label className="flex min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-4 text-[13px] font-black">
                   <input type="checkbox" checked={lessonForm.is_published} onChange={event => setLessonForm({ ...lessonForm, is_published: event.target.checked })} />
                   Published
                 </label>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[13px] font-black uppercase tracking-wider text-slate-500">Student Access</p>
+                    <p className="mt-1 text-[12px] font-bold text-slate-500">
+                      Demo lessons open for all users. Premium lessons show with a lock until premium access is active.
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase ${lessonForm.is_demo ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-700'}`}>
+                    {lessonForm.is_demo ? 'Free Demo' : 'Premium'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-1">
+                  <button
+                    type="button"
+                    onClick={() => setLessonForm({ ...lessonForm, is_demo: true })}
+                    className={`rounded-lg px-4 py-3 text-[13px] font-black transition-colors ${lessonForm.is_demo ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                  >
+                    Free Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLessonForm({ ...lessonForm, is_demo: false })}
+                    className={`rounded-lg px-4 py-3 text-[13px] font-black transition-colors ${!lessonForm.is_demo ? 'bg-[#294b77] text-white' : 'text-slate-500 hover:bg-[#EFF4FB] hover:text-[#294b77]'}`}
+                  >
+                    Premium Locked
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4">

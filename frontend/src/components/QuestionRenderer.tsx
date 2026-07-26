@@ -7,9 +7,10 @@ interface QuestionRendererProps {
   value: any;
   onChange: (value: any) => void;
   mode?: 'dark' | 'light';
+  onPasteText?: (event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => string | null;
 }
 
-export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: QuestionRendererProps) => {
+export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onPasteText }: QuestionRendererProps) => {
   const { question_type, question_text, options_json } = question;
   const options = options_json || [];
   const isLight = mode === 'light';
@@ -28,10 +29,33 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
     : selected
       ? 'bg-emerald-600/10 border-emerald-500 text-white'
       : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900';
+  const readingPasteProps = onPasteText ? { onPaste: (event: React.ClipboardEvent<HTMLInputElement>) => pasteTextIntoInput(event, String(value || ''), onChange) } : {};
 
   const renderQuestionText = (keyPrefix: string) => (
     renderFormattedBlockText(question_text, keyPrefix)
   );
+
+  const pasteTextIntoInput = (
+    event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    currentValue: string,
+    commitValue: (nextValue: string) => void
+  ) => {
+    if (!onPasteText) return;
+
+    const pasteText = onPasteText(event);
+    if (pasteText === null) return;
+
+    const input = event.currentTarget;
+    const start = input.selectionStart ?? currentValue.length;
+    const end = input.selectionEnd ?? currentValue.length;
+    const nextValue = `${currentValue.slice(0, start)}${pasteText}${currentValue.slice(end)}`;
+    commitValue(nextValue);
+
+    window.requestAnimationFrame(() => {
+      const cursor = start + pasteText.length;
+      input.setSelectionRange(cursor, cursor);
+    });
+  };
 
   const renderInlineFormattedText = (text: string, keyPrefix: string) => (
     text.split('\n').map((line, index) => {
@@ -65,6 +89,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
             type="text"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
+            {...readingPasteProps}
+            data-reading-answer={onPasteText ? 'true' : undefined}
             placeholder={placeholder}
             className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all ${inputClass}`}
           />
@@ -90,6 +116,20 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
                     onChange(e.target.value);
                   }
                 }}
+                onPaste={(event) => {
+                  if (!onPasteText) return;
+                  const currentValue = Array.isArray(value) ? String(value[idx] || '') : (idx === 0 ? String(value || '') : '');
+                  pasteTextIntoInput(event, currentValue, (nextValue) => {
+                    if (parts.length > 2) {
+                      const arr = Array.isArray(value) ? [...value] : [];
+                      arr[idx] = nextValue;
+                      onChange(arr);
+                    } else {
+                      onChange(nextValue);
+                    }
+                  });
+                }}
+                data-reading-answer={onPasteText ? 'true' : undefined}
                 className={`inline-block w-36 mx-2 border-b-2 px-2 py-1 text-center outline-none transition-colors rounded-t-sm ${inlineInputClass}`}
               />
             )}
@@ -106,6 +146,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
         type="text"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
+        {...readingPasteProps}
+        data-reading-answer={onPasteText ? 'true' : undefined}
         aria-label={`Answer for question ${question.question_number}`}
         className={`inline-block w-48 max-w-full ml-3 border-0 border-b-2 px-2 py-1 text-center outline-none transition-colors rounded-none ${inlineInputClass}`}
       />
@@ -368,6 +410,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
         type="text"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
+        {...readingPasteProps}
+        data-reading-answer={onPasteText ? 'true' : undefined}
         placeholder="Type your answer here..."
         className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all ${inputClass}`}
       />
