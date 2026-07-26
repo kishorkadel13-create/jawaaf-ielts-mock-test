@@ -8,6 +8,7 @@ import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction
 import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
+import { resolveListeningAudioUrl } from '../utils/audioUrl';
 import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2 } from 'lucide-react';
 
 type OrderedQuestionBlock = {
@@ -100,23 +101,6 @@ const PassageIntroCard = ({ title, instruction }: { title: string; instruction?:
     )}
   </div>
 );
-
-const getListeningAudioUrl = (audioFile?: string) => {
-  if (!audioFile) return '';
-  if (/^https?:\/\//i.test(audioFile) || audioFile.startsWith('/')) return audioFile;
-  const encodedPath = audioFile.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-
-  if (!audioFile.includes('/')) {
-    return `/audio/${encodedPath}`;
-  }
-
-  const explicitBaseUrl = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/$/, '');
-  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-  const storageBaseUrl = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ielts-assets` : '';
-  const baseUrl = explicitBaseUrl || storageBaseUrl;
-
-  return baseUrl ? `${baseUrl}/${encodedPath}` : `/audio/${encodedPath}`;
-};
 
 export default function ExamInterface() {
   const { id } = useParams(); // attempt_id
@@ -385,7 +369,7 @@ export default function ExamInterface() {
   const nextSection = activeTest?.sections?.[activeSectionIndex + 1];
   const activeGroups = activeSection?.question_groups || [];
   const listeningAudioUrl = activeSection?.type === 'listening'
-    ? getListeningAudioUrl(activeTest?.audio_file || activeSection?.audio_file || activeGroups.find((group: any) => group.audio_url)?.audio_url || '')
+    ? resolveListeningAudioUrl(activeTest?.audio_file || activeSection?.audio_file || activeGroups.find((group: any) => group.audio_url)?.audio_url || '')
     : '';
   const sectionQuestions = activeGroups.flatMap((g: any) => g.questions || []).sort((a: any, b: any) => a.question_number - b.question_number);
   const writingTasks = activeSection?.type === 'writing'

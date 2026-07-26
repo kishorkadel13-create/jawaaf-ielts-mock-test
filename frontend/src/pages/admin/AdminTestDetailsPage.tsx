@@ -6,7 +6,7 @@ import { supabase } from '../../services/supabase';
 import { 
   ArrowLeft, Layers, Plus, Trash2, Edit2, Play,
   ChevronRight, GripVertical, Wand2,
-  Upload, Headphones, CheckCircle2, Loader2, Link2, Image as ImageIcon, X, PenLine
+  Upload, Headphones, CheckCircle2, Loader2, Link2, Save, Image as ImageIcon, X, PenLine
 } from 'lucide-react';
 import PassageEditor from '../../components/admin/exam-builder/PassageEditor';
 import QuestionBuilder, { QuestionData } from '../../components/admin/exam-builder/QuestionBuilder';
@@ -14,26 +14,10 @@ import BulkQuestionBuilder from '../../components/admin/exam-builder/BulkQuestio
 import StudentPreviewModal from '../../components/admin/exam-builder/StudentPreviewModal';
 import { normalizeMatchingQuestionType } from '../../utils/matchingHeadings';
 import { renderFormattedBlockText, renderFormattedText } from '../../utils/renderFormattedText';
+import { resolveListeningAudioUrl } from '../../utils/audioUrl';
 
 const MAX_UPLOAD_SIZE_MB = Number(import.meta.env.VITE_UPLOAD_MAX_SIZE_MB || 500);
 const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
-
-const getListeningAudioUrl = (audioFile?: string) => {
-  if (!audioFile) return '';
-  if (/^https?:\/\//i.test(audioFile) || audioFile.startsWith('/')) return audioFile;
-  const encodedPath = audioFile.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-
-  if (!audioFile.includes('/')) {
-    return `/audio/${encodedPath}`;
-  }
-
-  const explicitBaseUrl = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/$/, '');
-  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-  const storageBaseUrl = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ielts-assets` : '';
-  const baseUrl = explicitBaseUrl || storageBaseUrl;
-
-  return baseUrl ? `${baseUrl}/${encodedPath}` : `/audio/${encodedPath}`;
-};
 
 export default function AdminTestDetailsPage() {
   const { id } = useParams();
@@ -83,8 +67,12 @@ export default function AdminTestDetailsPage() {
     : 'full';
   const maxWritingTasks = writingPracticeMode === 'full' ? 2 : 1;
   const requiredWritingTaskNumber = writingPracticeMode === 'task_2' ? 2 : 1;
-  const listeningAudioFile = test?.audio_file || '';
-  const listeningAudioUrl = getListeningAudioUrl(listeningAudioFile);
+  const storedListeningAudioFile = test?.audio_file || test?.sections
+    ?.filter((sec: any) => sec.type === 'listening')
+    ?.flatMap((sec: any) => sec.question_groups || [])
+    ?.find((grp: any) => grp.audio_url)
+    ?.audio_url || '';
+  const listeningAudioUrl = resolveListeningAudioUrl(storedListeningAudioFile);
   const [expandedBatchKey, setExpandedBatchKey] = useState<string | null>(null);
   
   const fetchTestDetails = async () => {
@@ -133,6 +121,10 @@ export default function AdminTestDetailsPage() {
   useEffect(() => {
     fetchTestDetails();
   }, [id]);
+
+  useEffect(() => {
+    setAudioUrlInput(storedListeningAudioFile);
+  }, [storedListeningAudioFile]);
 
   // Section Handlers
   const handleSaveSection = async (e: React.FormEvent) => {
@@ -248,6 +240,12 @@ export default function AdminTestDetailsPage() {
     }
   };
 
+  const saveListeningAudioUrl = async (audioUrl: string) => {
+    if (!activeSection || activeSection.type !== 'listening') return;
+    await api.put(`/admin/tests/${id}/audio`, { audio_file: audioUrl });
+    await fetchTestDetails();
+  };
+
   const handleUploadListeningAudio = async (file?: File | null) => {
     if (!file || !activeSection || activeSection.type !== 'listening') return;
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
@@ -262,9 +260,10 @@ export default function AdminTestDetailsPage() {
         content_type: file.type || 'audio/mpeg',
       });
 
+      const uploadPath = uploadSession.audio_file || uploadSession.path;
       const { error: uploadError } = await supabase.storage
         .from(uploadSession.bucket)
-        .uploadToSignedUrl(uploadSession.audio_file, uploadSession.token, file, {
+        .uploadToSignedUrl(uploadPath, uploadSession.token, file, {
           contentType: file.type || 'audio/mpeg',
         });
 
@@ -273,7 +272,7 @@ export default function AdminTestDetailsPage() {
       }
 
       await api.put(`/admin/tests/${id}/audio`, {
-        audio_file: uploadSession.audio_file,
+        audio_file: uploadPath,
       });
 
       await fetchTestDetails();
@@ -353,6 +352,24 @@ export default function AdminTestDetailsPage() {
       alert(err.message || 'Failed to remove group image');
     } finally {
       setImageUploading(false);
+    }
+  };
+
+  const handleSaveListeningAudioUrl = async () => {
+    const url = audioUrlInput.trim();
+
+    if (!url) {
+      alert('Paste the Supabase audio storage path first.');
+      return;
+    }
+
+    try {
+      setAudioUploading(true);
+      await saveListeningAudioUrl(url);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save audio URL');
+    } finally {
+      setAudioUploading(false);
     }
   };
 
@@ -875,12 +892,38 @@ export default function AdminTestDetailsPage() {
                       </label>
                     </div>
 
+                    <div className="grid gap-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Link2 className="h-3.5 w-3.5" /> Audio Storage Path
+                      </label>
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={audioUrlInput}
+                          onChange={(event) => setAudioUrlInput(event.target.value)}
+                          placeholder="audio/test-id/listening-track.mp3"
+                          className="flex-1 min-w-0 px-3 py-2.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold outline-none focus:border-[#1E3A6E]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveListeningAudioUrl}
+                          disabled={audioUploading || !audioUrlInput.trim() || audioUrlInput.trim() === storedListeningAudioFile}
+                          className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-[#05162E] rounded-xl text-[12px] font-black flex items-center justify-center gap-2 shrink-0"
+                        >
+                          <Save className="h-4 w-4" /> Save URL
+                        </button>
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-400">
+                        For non-technical admins, use Upload Audio. This field stores only the relative Supabase/CDN path in the database.
+                      </p>
+                    </div>
+
                     {listeningAudioUrl ? (
                       <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-[12px] font-black text-emerald-700">Audio ready for student preview</p>
-                          <p className="text-[11px] font-semibold text-emerald-700/70 truncate">{listeningAudioFile}</p>
+                          <p className="text-[11px] font-semibold text-emerald-700/70 truncate">{storedListeningAudioFile}</p>
                         </div>
                       </div>
                     ) : (

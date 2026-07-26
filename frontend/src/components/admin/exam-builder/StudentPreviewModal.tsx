@@ -5,6 +5,7 @@ import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
 import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
+import { resolveListeningAudioUrl } from '../../../utils/audioUrl';
 
 interface StudentPreviewModalProps {
   test: any;
@@ -39,23 +40,6 @@ const getQuestionKind = (question: any, groupInstruction = ''): OrderedQuestionB
   if (isMatchingHeadingsQuestion(question, groupInstruction)) return 'matching';
   if (isSummaryCompletionQuestion(question)) return 'summary';
   return 'standard';
-};
-
-const getListeningAudioUrl = (audioFile?: string) => {
-  if (!audioFile) return '';
-  if (/^https?:\/\//i.test(audioFile) || audioFile.startsWith('/')) return audioFile;
-  const encodedPath = audioFile.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-
-  if (!audioFile.includes('/')) {
-    return `/audio/${encodedPath}`;
-  }
-
-  const explicitBaseUrl = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/$/, '');
-  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-  const storageBaseUrl = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ielts-assets` : '';
-  const baseUrl = explicitBaseUrl || storageBaseUrl;
-
-  return baseUrl ? `${baseUrl}/${encodedPath}` : `/audio/${encodedPath}`;
 };
 
 const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''): OrderedQuestionBlock[] => {
@@ -172,7 +156,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
       ?.find((grp: any) => grp.audio_url)
       ?.audio_url || '';
 
-    return getListeningAudioUrl(test?.audio_file || legacyGroupAudio);
+    return resolveListeningAudioUrl(test?.audio_file || legacyGroupAudio);
   }, [test]);
   const normalizedPassages = useMemo(() => {
     const passages: Record<string, string> = {};

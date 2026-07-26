@@ -187,7 +187,11 @@ export const getTestById = async (req, res) => {
           const grpQuestions = questions.filter(q => q.group_id === grp.id);
           return { ...grp, questions: grpQuestions };
         });
-      return { ...sec, question_groups: secGroups };
+      return {
+        ...sec,
+        question_groups: secGroups,
+        audio_file: sec.type === 'listening' ? test.audio_file : null
+      };
     });
 
     res.status(200).json({
