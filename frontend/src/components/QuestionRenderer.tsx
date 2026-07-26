@@ -1,5 +1,6 @@
 import React from 'react';
 import { isMatchingHeadingsQuestion, toRoman } from '../utils/matchingHeadings';
+import { renderFormattedBlockText, renderFormattedText } from '../utils/renderFormattedText';
 
 interface QuestionRendererProps {
   question: any;
@@ -28,13 +29,38 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
       ? 'bg-emerald-600/10 border-emerald-500 text-white'
       : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900';
 
+  const renderQuestionText = (keyPrefix: string) => (
+    renderFormattedBlockText(question_text, keyPrefix)
+  );
+
+  const renderInlineFormattedText = (text: string, keyPrefix: string) => (
+    text.split('\n').map((line, index) => {
+      const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+
+      if (headingMatch) {
+        return (
+          <span key={`${keyPrefix}-${index}`} className="block text-[20px] font-black leading-snug text-inherit mb-2">
+            {renderFormattedText(headingMatch[1], `${keyPrefix}-heading-${index}`)}
+          </span>
+        );
+      }
+
+      return (
+        <React.Fragment key={`${keyPrefix}-${index}`}>
+          {renderFormattedText(line, `${keyPrefix}-line-${index}`)}
+          {index < text.split('\n').length - 1 ? '\n' : null}
+        </React.Fragment>
+      );
+    })
+  );
+
   const renderInlineTextInputs = (placeholder = 'Answer') => {
     const parts = question_text.split('[blank]');
 
     if (parts.length < 2) {
       return (
         <div className="flex flex-col gap-3">
-          <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+          <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-inline`)}</div>
           <input
             type="text"
             value={value || ''}
@@ -50,7 +76,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
       <div className={`text-[15px] ${mutedTextClass} leading-loose font-medium`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
-            {part}
+            {renderInlineFormattedText(part, `question-${question.id}-part-${idx}`)}
             {idx < parts.length - 1 && (
               <input
                 type="text"
@@ -75,7 +101,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
 
   const renderShortAnswer = () => (
     <div className={`text-[15px] ${bodyTextClass} font-medium leading-loose`}>
-      <span>{question_text}</span>
+      <span className="whitespace-pre-wrap">{renderInlineFormattedText(question_text, `question-${question.id}-short`)}</span>
       <input
         type="text"
         value={value || ''}
@@ -97,7 +123,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
       <div className={`text-[15px] ${mutedTextClass} leading-loose font-medium`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
-            {part}
+            {renderInlineFormattedText(part, `question-${question.id}-select-part-${idx}`)}
             {idx < parts.length - 1 && (
               <select
                 value={Array.isArray(value) ? (value[idx] || '') : (idx === 0 ? (value || '') : '')}
@@ -134,7 +160,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
 
   const renderSelectAnswer = (placeholder = 'Select answer') => (
     <div className="flex flex-col gap-3">
-      <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+      <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-select`)}</div>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
@@ -165,7 +191,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
               Minimum {minimumWords} words
             </span>
           </div>
-          <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{question_text}</p>
+          <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-writing`)}</div>
         </div>
         <textarea
           value={value || ''}
@@ -210,7 +236,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
     
     return (
       <div className="flex flex-col gap-4">
-        <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-tf`)}</div>
         <div className="flex gap-2">
           {options.map((opt) => (
             <button
@@ -248,7 +274,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
   if (question_type === 'SINGLE_MCQ') {
     return (
       <div className="flex flex-col gap-4">
-        <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-mcq`)}</div>
         <div className="flex flex-col gap-2">
           {options.map((opt: string, idx: number) => {
             const isSelected = value === opt;
@@ -299,7 +325,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
 
     return (
       <div className="flex flex-col gap-4">
-        <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-multi`)}</div>
         <div className="flex flex-col gap-2">
           {options.map((opt: string, idx: number) => {
             const isSelected = selectedValues.includes(opt);
@@ -337,7 +363,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark' }: Q
   // ─── DEFAULT FALLBACK ───
   return (
     <div className="flex flex-col gap-4">
-      <p className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>{question_text}</p>
+      <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-fallback`)}</div>
       <input
         type="text"
         value={value || ''}

@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
@@ -11,6 +13,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '127.0.0.1';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const audioDirectory = process.env.AUDIO_DIR
+  ? path.resolve(process.env.AUDIO_DIR)
+  : path.resolve(__dirname, '..', 'audio');
 
 // Security Middlewares
 app.use(helmet());
@@ -38,6 +45,16 @@ app.use(morgan('dev'));
 
 // Static files for uploads (fallback)
 app.use('/uploads', express.static('uploads'));
+app.use('/audio', express.static(audioDirectory, {
+  acceptRanges: true,
+  etag: true,
+  immutable: true,
+  maxAge: '30d',
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
 
 import testRoutes from './src/routes/testRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';

@@ -4,11 +4,11 @@ import { useExamStore } from '../store/examStore';
 import { api } from '../services/api';
 import { QuestionRenderer } from '../components/QuestionRenderer';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../components/SummaryCompletionGroup';
-import { renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
+import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
 import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
-import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX } from 'lucide-react';
+import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2 } from 'lucide-react';
 
 type OrderedQuestionBlock = {
   id: string;
@@ -101,6 +101,23 @@ const PassageIntroCard = ({ title, instruction }: { title: string; instruction?:
   </div>
 );
 
+const getListeningAudioUrl = (audioFile?: string) => {
+  if (!audioFile) return '';
+  if (/^https?:\/\//i.test(audioFile) || audioFile.startsWith('/')) return audioFile;
+  const encodedPath = audioFile.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+
+  if (!audioFile.includes('/')) {
+    return `/audio/${encodedPath}`;
+  }
+
+  const explicitBaseUrl = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/$/, '');
+  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+  const storageBaseUrl = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ielts-assets` : '';
+  const baseUrl = explicitBaseUrl || storageBaseUrl;
+
+  return baseUrl ? `${baseUrl}/${encodedPath}` : `/audio/${encodedPath}`;
+};
+
 export default function ExamInterface() {
   const { id } = useParams(); // attempt_id
   const navigate = useNavigate();
@@ -117,6 +134,7 @@ export default function ExamInterface() {
     isFinished,
     isSubmitting,
     startExam,
+    beginExam,
     setAnswer,
     toggleFlag,
     tick,
@@ -137,6 +155,14 @@ export default function ExamInterface() {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioAutoplayBlocked, setAudioAutoplayBlocked] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioLoadingMessage, setAudioLoadingMessage] = useState('Loading listening audio...');
+  const [audioLoadError, setAudioLoadError] = useState('');
+  const [startGateRequired, setStartGateRequired] = useState(false);
+  const [examStartedByStudent, setExamStartedByStudent] = useState(false);
+  const [audioCheckPlaying, setAudioCheckPlaying] = useState(false);
+  const [audioCheckProgress, setAudioCheckProgress] = useState(0);
+  const [audioCheckComplete, setAudioCheckComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Load attempt and test on mount
@@ -169,8 +195,13 @@ export default function ExamInterface() {
           });
         }
 
-        // 3. Initialize Zustand store
-        startExam(test, attempt.attempt);
+        const firstSection = test.sections?.[0];
+        const firstSectionNeedsAudio = firstSection?.type === 'listening';
+
+        // 3. Initialize Zustand store. Listening tests wait for audio preload before the clock starts.
+        startExam(test, attempt.attempt, null, { isActive: !firstSectionNeedsAudio });
+        setStartGateRequired(firstSectionNeedsAudio);
+        setExamStartedByStudent(!firstSectionNeedsAudio);
         setLoading(false);
       } catch (err) {
         console.error('Failed to initialize exam interface:', err);
@@ -354,7 +385,7 @@ export default function ExamInterface() {
   const nextSection = activeTest?.sections?.[activeSectionIndex + 1];
   const activeGroups = activeSection?.question_groups || [];
   const listeningAudioUrl = activeSection?.type === 'listening'
-    ? activeGroups.find((group: any) => group.audio_url)?.audio_url || ''
+    ? getListeningAudioUrl(activeTest?.audio_file || activeSection?.audio_file || activeGroups.find((group: any) => group.audio_url)?.audio_url || '')
     : '';
   const sectionQuestions = activeGroups.flatMap((g: any) => g.questions || []).sort((a: any, b: any) => a.question_number - b.question_number);
   const writingTasks = activeSection?.type === 'writing'
@@ -465,8 +496,19 @@ export default function ExamInterface() {
     setAudioProgress(0);
     setAudioPlaying(false);
     setAudioAutoplayBlocked(false);
+    setAudioReady(false);
+    setAudioLoadError('');
+    setAudioCheckPlaying(false);
+    setAudioCheckProgress(0);
+    setAudioCheckComplete(false);
+    setAudioLoadingMessage('Loading listening audio...');
     audioRef.current.currentTime = 0;
     audioRef.current.playbackRate = 1;
+    audioRef.current.load();
+  }, [activeSection?.id, activeSection?.type, listeningAudioUrl, isFinished]);
+
+  useEffect(() => {
+    if (!examStartedByStudent || activeSection?.type !== 'listening' || !listeningAudioUrl || !audioRef.current || isFinished) return;
 
     const playPromise = audioRef.current.play();
     if (playPromise) {
@@ -480,7 +522,7 @@ export default function ExamInterface() {
           setAudioAutoplayBlocked(true);
         });
     }
-  }, [activeSection?.id, activeSection?.type, listeningAudioUrl, isFinished]);
+  }, [activeSection?.id, activeSection?.type, examStartedByStudent, listeningAudioUrl, isFinished]);
 
   if (loading) {
     return (
@@ -502,8 +544,55 @@ export default function ExamInterface() {
       .catch(() => setAudioAutoplayBlocked(true));
   };
 
+  const stopAudioCheck = (completed = false) => {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    setAudioPlaying(false);
+    setAudioAutoplayBlocked(false);
+    setAudioCheckPlaying(false);
+    setAudioCheckProgress(completed ? 100 : 0);
+    if (completed) setAudioCheckComplete(true);
+  };
+
+  const startAudioCheck = () => {
+    const audio = audioRef.current;
+    if (!audio || !audioReady) return;
+
+    setAudioLoadError('');
+    setAudioAutoplayBlocked(false);
+    setAudioCheckComplete(false);
+    setAudioCheckProgress(0);
+    audio.pause();
+    audio.currentTime = 0;
+    audio.playbackRate = 1;
+
+    audio.play()
+      .then(() => {
+        setAudioPlaying(true);
+        setAudioCheckPlaying(true);
+      })
+      .catch((error) => {
+        setAudioCheckPlaying(false);
+        setAudioAutoplayBlocked(true);
+        setAudioLoadError(error?.message || 'Audio check could not start. Try again after checking your browser audio settings.');
+      });
+  };
+
   const updateAudioProgress = () => {
     if (!audioRef.current || !audioRef.current.duration) return;
+    if (audioCheckPlaying) {
+      const sampleProgress = Math.min((audioRef.current.currentTime / 15) * 100, 100);
+      setAudioCheckProgress(sampleProgress);
+      if (audioRef.current.currentTime >= 15) {
+        stopAudioCheck(true);
+      }
+      return;
+    }
     setAudioProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
   };
 
@@ -511,6 +600,29 @@ export default function ExamInterface() {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
+  };
+
+  const handleAudioReady = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const bufferedEnd = audio.buffered.length > 0 ? audio.buffered.end(audio.buffered.length - 1) : 0;
+    const bufferedPercent = audio.duration ? (bufferedEnd / audio.duration) * 100 : 0;
+    setAudioProgress(Math.max(0, Math.min(100, bufferedPercent)));
+
+    if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA || bufferedPercent >= 90) {
+      setAudioReady(true);
+      setAudioLoadingMessage('Listening audio is ready.');
+    } else if (bufferedPercent > 0) {
+      setAudioLoadingMessage(`Buffering listening audio... ${Math.round(bufferedPercent)}%`);
+    }
+  };
+
+  const handleStartExam = () => {
+    if (activeSection?.type === 'listening' && (!listeningAudioUrl || !audioReady)) return;
+    stopAudioCheck(false);
+    beginExam();
+    setExamStartedByStudent(true);
   };
 
   const submitButtonLabel = !isLastSection
@@ -526,6 +638,142 @@ export default function ExamInterface() {
       onCut={blockClipboard}
       onPaste={blockClipboard}
     >
+      {startGateRequired && !examStartedByStudent && (
+        <div className="fixed inset-0 z-[100] bg-[#F8FAFC] text-[#05162E] flex flex-col">
+          <div
+            className="h-[72px] text-white px-6 md:px-10 flex items-center justify-between shrink-0 border-b border-[#294b77]/40"
+            style={{ background: 'linear-gradient(to right, #294b77 0%, #294b77 100%)' }}
+          >
+            <div className="min-w-0">
+              <h2 className="truncate text-[15px] font-black tracking-wide">{activeTest?.title || 'Listening Test'}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/65">Audio Readiness Check</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white/85">
+              <Headphones className="h-4 w-4 text-emerald-300" /> IELTS Listening
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 py-6 md:px-10 md:py-10">
+            <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+              <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
+                <div className="flex flex-col items-center text-center gap-5">
+                  <div className="h-20 w-20 rounded-2xl bg-[#EFF4FB] border border-[#2C4B78]/20 text-[#2C4B78] flex items-center justify-center shadow-sm">
+                    <Headphones className="h-10 w-10" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Before You Begin</p>
+                    <h1 className="mt-2 text-[26px] md:text-[32px] font-black text-[#05162E]">Listening Audio Check</h1>
+                    <p className="mt-3 max-w-2xl text-[14px] font-semibold leading-7 text-slate-500">
+                      Your exam will unlock only after the complete listening track is ready. Once you start, the recording plays continuously like the official computer-based test.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8 rounded-2xl border border-slate-200 bg-[#F8FAFC] p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Audio Status</p>
+                      <p className={`mt-1 text-[13px] font-black ${audioLoadError ? 'text-[#EE6055]' : audioReady ? 'text-[#2C4B78]' : 'text-[#1E3A6E]'}`}>
+                        {audioLoadError || (listeningAudioUrl ? audioLoadingMessage : 'Listening audio has not been uploaded.')}
+                      </p>
+                    </div>
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      audioReady ? 'bg-[#EFF4FB] text-[#2C4B78]' : audioLoadError ? 'bg-[#FFF3F2] text-[#EE6055]' : 'bg-[#EFF4FB] text-[#1E3A6E]'
+                    }`}>
+                      {listeningAudioUrl && !audioReady && !audioLoadError && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {audioReady && <CheckCircle2 className="h-5 w-5" />}
+                      {audioLoadError && <ClipboardX className="h-5 w-5" />}
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2.5 rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      style={{ width: `${audioReady ? 100 : Math.max(audioProgress, 8)}%` }}
+                      className="h-full bg-[#2C4B78] transition-all duration-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-[#294b77]/15 bg-white p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Headphone Check</p>
+                      <p className="mt-1 text-[13px] font-black text-[#05162E]">
+                        {audioCheckPlaying
+                          ? 'Playing a 15-second audio sample...'
+                          : audioCheckComplete
+                          ? 'Audio check complete. You can start the exam.'
+                          : 'Play a short sample before starting the exam.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={audioCheckPlaying ? () => stopAudioCheck(false) : startAudioCheck}
+                      disabled={!audioReady}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-[#EEF4FB] hover:bg-[#E5EEF9] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-[#294b77] rounded-xl text-[12px] font-black flex items-center justify-center gap-2 border border-[#294b77]/10"
+                    >
+                      {audioCheckPlaying ? <Volume2 className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+                      {audioCheckPlaying ? 'Stop Check' : 'Play Audio Check'}
+                    </button>
+                  </div>
+                  <div className="mt-4 h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      style={{ width: `${audioCheckProgress}%` }}
+                      className="h-full bg-[#EE6055] transition-all duration-300"
+                    />
+                  </div>
+                  <p className="mt-2 text-[11px] font-bold text-slate-400">
+                    This check does not start the timer. The exam recording will restart from the beginning after Start Exam.
+                  </p>
+                </div>
+
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleStartExam}
+                    disabled={!listeningAudioUrl || !audioReady}
+                    className="w-full sm:w-auto px-8 py-3 bg-[#2C4B78] hover:bg-[#1E3A6E] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-xl text-[13px] font-black flex items-center justify-center gap-2 shadow-sm shadow-[#2C4B78]/20"
+                  >
+                    <Play className="h-4 w-4 fill-current" /> Start Exam
+                  </button>
+                  <p className="text-[11px] font-bold text-slate-400">The timer starts after this button is pressed.</p>
+                </div>
+              </section>
+
+              <aside
+                className="text-white rounded-2xl border border-[#294b77]/30 shadow-sm p-6 md:p-7"
+                style={{ background: 'linear-gradient(to right, #294b77 0%, #294b77 100%)' }}
+              >
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="h-10 w-1.5 rounded-full bg-[#EE6055]" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#EE6055]">Listening Rules</p>
+                    <h3 className="mt-1 text-[20px] font-black">Terms and Conditions</h3>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-4 text-[13px] font-semibold leading-6 text-slate-300">
+                  {[
+                    'The recording will play once only and will continue until it finishes.',
+                    'Pause, rewind, forward, seeking, speed control, and download are disabled.',
+                    'Keep this tab open and do not refresh the page during the listening section.',
+                    'Check your headphones and system volume before pressing Start Exam.',
+                    'Answer questions while the audio is playing. The section timer starts with the exam.',
+                  ].map((rule, index) => (
+                    <div key={rule} className="grid grid-cols-[28px_1fr] gap-3">
+                      <span className="h-7 w-7 rounded-lg bg-[#2C4B78]/45 border border-white/10 text-[#EE6055] flex items-center justify-center text-[11px] font-black">
+                        {index + 1}
+                      </span>
+                      <p>{rule}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 border-t border-white/10 pt-5 text-[12px] font-bold leading-6 text-slate-400">
+                  By starting the exam, you confirm that your audio device is ready and you understand the listening playback rules.
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* 1. Header Toolbar */}
       <header className="bg-slate-900 border-b border-white/5 px-6 py-3.5 flex items-center justify-between text-slate-200 shrink-0">
@@ -654,10 +902,18 @@ export default function ExamInterface() {
                     <audio 
                       ref={audioRef}
                       src={listeningAudioUrl}
-                      autoPlay
+                      preload="auto"
                       controls={false}
                       controlsList="nodownload noplaybackrate noremoteplayback"
                       disableRemotePlayback
+                      onCanPlayThrough={handleAudioReady}
+                      onProgress={handleAudioReady}
+                      onLoadedData={handleAudioReady}
+                      onWaiting={() => setAudioLoadingMessage('Buffering listening audio...')}
+                      onError={() => {
+                        setAudioLoadError('Listening audio could not be loaded. Ask the admin to upload the file again.');
+                        setAudioReady(false);
+                      }}
                       onTimeUpdate={updateAudioProgress}
                       onEnded={() => setAudioPlaying(false)}
                       onRateChange={() => {
@@ -666,7 +922,7 @@ export default function ExamInterface() {
                         }
                       }}
                       onPause={() => {
-                        if (!audioRef.current?.ended && !isFinished) {
+                        if (examStartedByStudent && !audioRef.current?.ended && !isFinished) {
                           audioRef.current?.play().catch(() => setAudioAutoplayBlocked(true));
                         }
                       }}
@@ -722,9 +978,9 @@ export default function ExamInterface() {
 
                   <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Prompt</h3>
-                    <p className="text-[15px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap">
-                      {activeWritingTask.question_text}
-                    </p>
+                    <div className="text-[15px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap">
+                      {renderFormattedBlockText(activeWritingTask.question_text, `writing-prompt-${activeWritingTask.id}`)}
+                    </div>
                   </div>
 
                   {activeWritingTask.extra_data_json?.task_type === 'Task 1' && activeWritingGroup?.image_url && (
@@ -1057,7 +1313,7 @@ const MatchingHeadingsGroup = ({
             onClick={() => onActivateQuestion(question.id)}
           >
             <span className="text-[14px] font-bold text-[#05162E]">{question.question_number}</span>
-            <span className="text-[14px] font-medium text-[#05162E] leading-snug">{question.question_text}</span>
+            <span className="text-[14px] font-medium text-[#05162E] leading-snug">{renderFormattedText(question.question_text, `matching-heading-${question.id}`)}</span>
             <select
               value={answers[question.id] || ''}
               onChange={(event) => onAnswer(question.id, event.target.value)}

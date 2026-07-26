@@ -16,6 +16,33 @@ export const renderFormattedText = (text: string, keyPrefix = 'formatted') => {
 
 export const stripBoldMarkers = (text: string) => text.replace(/\*\*/g, '');
 
+export const stripHeadingMarkers = (text: string) => text.replace(/^#{1,3}\s+/, '');
+
+export const renderFormattedBlockText = (text: string, keyPrefix = 'formatted-block') => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  return lines.map((line, index) => {
+    const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+
+    if (headingMatch) {
+      return (
+        <h4 key={`${keyPrefix}-${index}`} className="text-[20px] font-black leading-snug text-inherit mb-3">
+          {renderFormattedText(headingMatch[1], `${keyPrefix}-heading-${index}`)}
+        </h4>
+      );
+    }
+
+    return (
+      <React.Fragment key={`${keyPrefix}-${index}`}>
+        {renderFormattedText(line, `${keyPrefix}-line-${index}`)}
+        {index < lines.length - 1 ? '\n' : null}
+      </React.Fragment>
+    );
+  });
+};
+
 export const splitQuestionInstruction = (instruction: string) => {
   const normalized = instruction.trim();
 

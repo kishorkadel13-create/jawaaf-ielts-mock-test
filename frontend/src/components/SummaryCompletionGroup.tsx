@@ -1,5 +1,5 @@
 import React from 'react';
-import { renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
+import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
 
 interface SummaryCompletionGroupProps {
   questions: any[];
@@ -214,7 +214,7 @@ export const SummaryCompletionGroup = ({
     let match: RegExpExecArray | null;
     const pushFormattedText = (text: string, key: string) => {
       if (!text) return;
-      parts.push(...(renderFormattedText(text, key) || []));
+      parts.push(...(renderFormattedBlockText(text, key) || []));
     };
 
     while ((match = re.exec(source)) !== null) {

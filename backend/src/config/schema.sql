@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS mock_tests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
     description TEXT,
+    audio_file TEXT, -- Listening audio storage path, e.g. audio/<test-id>/cam18-test1.mp3; never stores audio bytes
     is_demo BOOLEAN NOT NULL DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
     duration INTEGER NOT NULL, -- duration in minutes
