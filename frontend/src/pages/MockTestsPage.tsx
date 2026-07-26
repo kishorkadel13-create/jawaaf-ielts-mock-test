@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import JawaafLogo from '../components/JawaafLogo';
-import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu } from 'lucide-react';
+import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
 
 interface MockTest {
   id: string;
@@ -419,6 +419,9 @@ export default function MockTestsPage() {
         <nav className="grid gap-3 text-[18px] font-bold text-slate-500">
           <Link to="/dashboard" className="px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
             <Monitor className="h-5 w-5" /> Dashboard
+          </Link>
+          <Link to="/courses" className="px-5 py-4 rounded-2xl hover:bg-slate-50 hover:text-[#1E3A6E] flex items-center gap-4">
+            <Video className="h-5 w-5" /> Recorded Courses
           </Link>
           <Link to="/tests?mode=practice" className={`px-5 py-4 rounded-2xl flex items-center gap-4 ${activeTab === 'practice' ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'hover:bg-slate-50 hover:text-[#1E3A6E]'}`}>
             <Target className="h-5 w-5" /> Practice Test

@@ -8,8 +8,20 @@ import {
   createListeningAudioUpload,
   saveListeningAudio,
   uploadListeningAudio,
-  uploadAsset
+  uploadAsset,
+  createAssetUpload
 } from '../controllers/adminController.js';
+import {
+  getAdminCourseLibrary,
+  createCourseSection,
+  updateCourseSection,
+  createCourseLesson,
+  updateCourseLesson,
+  deleteCourseLesson,
+  createLessonResource,
+  deleteLessonResource,
+  getLearningProgressReport
+} from '../controllers/courseController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 import { validateBody } from '../middleware/validationMiddleware.js';
@@ -36,7 +48,17 @@ const upload = multer({
       'image/png',
       'image/jpeg',
       'image/gif',
-      'image/webp'
+      'image/webp',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-m4v',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip'
     ];
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -51,6 +73,17 @@ router.use(authMiddleware);
 router.use(adminMiddleware);
 
 router.post('/teachers', createTeacher);
+
+// Recorded Course / LMS management
+router.get('/courses', getAdminCourseLibrary);
+router.get('/learning-progress', getLearningProgressReport);
+router.post('/course-sections', createCourseSection);
+router.put('/course-sections/:sectionId', updateCourseSection);
+router.post('/course-lessons', createCourseLesson);
+router.put('/course-lessons/:lessonId', updateCourseLesson);
+router.delete('/course-lessons/:lessonId', deleteCourseLesson);
+router.post('/lesson-resources', createLessonResource);
+router.delete('/lesson-resources/:resourceId', deleteLessonResource);
 
 // Sections CRUD
 router.post('/sections', validateBody(testSectionSchema), createSection);
@@ -95,6 +128,7 @@ router.put('/tests/:testId/audio', saveListeningAudio);
 router.post('/tests/:testId/audio', uploadSingleAsset, uploadListeningAudio);
 
 // Asset File Upload Endpoint (Supabase storage gateway)
+router.post('/assets/sign', createAssetUpload);
 router.post('/upload', uploadSingleAsset, uploadAsset);
 
 export default router;

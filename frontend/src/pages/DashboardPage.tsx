@@ -47,6 +47,7 @@ export default function DashboardPage() {
   });
   const [history, setHistory] = useState<TestAttempt[]>([]);
   const [availableTests, setAvailableTests] = useState<MockTest[]>([]);
+  const [courseProgress, setCourseProgress] = useState({ total: 0, completed: 0, percent: 0 });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -61,6 +62,15 @@ export default function DashboardPage() {
       // Load available tests
       const { data: tests } = await api.get('/tests').catch(() => ({ data: [] }));
       setAvailableTests(tests.filter((test: MockTest) => (test.sections?.length || 0) > 1).slice(0, 3));
+
+      const { data: courses } = await api.get('/courses').catch(() => ({ data: [] }));
+      const lessons = (courses || []).flatMap((section: any) => section.lessons || []);
+      const completedLessons = lessons.filter((lesson: any) => lesson.progress?.completed).length;
+      setCourseProgress({
+        total: lessons.length,
+        completed: completedLessons,
+        percent: lessons.length ? Math.round((completedLessons / lessons.length) * 100) : 0
+      });
 
       // Calculate statistics dynamically
       const completed = attempts.filter((a: any) => a.status === 'completed');
@@ -151,6 +161,12 @@ export default function DashboardPage() {
             className="px-4 py-3 bg-[#EFF4FB] text-[#1E3A6E] font-bold rounded-xl flex items-center gap-3 transition-colors"
           >
             <Monitor className="h-5 w-5 text-[#1E3A6E]" /> Dashboard
+          </Link>
+          <Link 
+            to="/courses" 
+            className="px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A6E] font-semibold rounded-xl flex items-center gap-3 transition-colors"
+          >
+            <Play className="h-5 w-5" /> Recorded Courses
           </Link>
           <Link 
             to="/tests?mode=practice" 
@@ -289,6 +305,33 @@ export default function DashboardPage() {
 
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <Link to="/courses" className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
+            <div className="h-12 w-12 rounded-xl bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center mb-5">
+              <Play className="h-6 w-6 fill-current" />
+            </div>
+            <h3 className="text-[20px] font-black text-[#05162E]">Recorded Courses</h3>
+            <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-500">Watch IELTS lessons across Reading, Listening, Writing, and Speaking.</p>
+            <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-black text-[#1E3A6E]">Continue Learning <ChevronRight className="h-4 w-4" /></span>
+          </Link>
+          <Link to="/tests?mode=practice" className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
+            <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5">
+              <Target className="h-6 w-6" />
+            </div>
+            <h3 className="text-[20px] font-black text-[#05162E]">Practice Tests</h3>
+            <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-500">Practice individual IELTS skills with section-wise question sets.</p>
+            <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-black text-[#1E3A6E]">Open Practice <ChevronRight className="h-4 w-4" /></span>
+          </Link>
+          <Link to="/tests?mode=mock" className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
+            <div className="h-12 w-12 rounded-xl bg-[#EE6055]/10 text-[#EE6055] flex items-center justify-center mb-5">
+              <PenLine className="h-6 w-6" />
+            </div>
+            <h3 className="text-[20px] font-black text-[#05162E]">Full Mock Tests</h3>
+            <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-500">Simulate the computer-based IELTS test with timing and results.</p>
+            <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-black text-[#1E3A6E]">Start Mock <ChevronRight className="h-4 w-4" /></span>
+          </Link>
+        </div>
+
         {/* Available Mock Tests */}
         <div className="flex flex-col gap-5 mt-2">
           <div className="flex justify-between items-end">
@@ -416,7 +459,7 @@ export default function DashboardPage() {
                   />
                   <path
                     className="text-[#22C55E]"
-                    strokeDasharray="75, 100"
+                    strokeDasharray={`${courseProgress.percent || 0}, 100`}
                     strokeWidth="3"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -425,14 +468,14 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <div className="flex flex-col items-center justify-center">
-                  <span className="text-[28px] font-black text-[#05162E] leading-none">75%</span>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Overall</span>
+                  <span className="text-[28px] font-black text-[#05162E] leading-none">{courseProgress.percent}%</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Learning</span>
                 </div>
               </div>
 
               <div>
-                <h5 className="font-extrabold text-[14px] text-[#05162E]">IELTS Score Pace</h5>
-                <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">You are pacing well towards your target Band Score of 7.5+</p>
+                <h5 className="font-extrabold text-[14px] text-[#05162E]">Learning Progress</h5>
+                <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">{courseProgress.completed}/{courseProgress.total} recorded lessons completed.</p>
               </div>
 
             </div>

@@ -11,6 +11,7 @@ import RegisterPage from '../pages/RegisterPage';
 // Student pages
 import DashboardPage from '../pages/DashboardPage';
 import MockTestsPage from '../pages/MockTestsPage';
+import CoursesPage from '../pages/CoursesPage';
 import HistoryPage from '../pages/HistoryPage';
 import AccessRequestPage from '../pages/AccessRequestPage';
 import ExamInterface from '../pages/ExamInterface';
@@ -19,6 +20,7 @@ import ResultPage from '../pages/ResultPage';
 // Admin pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminTestsPage from '../pages/admin/AdminTestsPage';
+import AdminCoursesPage from '../pages/admin/AdminCoursesPage';
 import AdminTestDetailsPage from '../pages/admin/AdminTestDetailsPage';
 import AdminAccessPage from '../pages/admin/AdminAccessPage';
 import AdminSubmissionsPage from '../pages/admin/AdminSubmissionsPage';
@@ -39,6 +41,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute roles={['student']}>
             <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/courses" 
+        element={
+          <ProtectedRoute roles={['student']}>
+            <CoursesPage />
           </ProtectedRoute>
         } 
       />
@@ -89,6 +99,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute adminOnly={true}>
             <AdminDashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/courses" 
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminCoursesPage />
           </ProtectedRoute>
         } 
       />
