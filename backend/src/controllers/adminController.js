@@ -598,7 +598,7 @@ export const uploadAsset = async (req, res) => {
       console.error('Supabase Storage Upload Error:', error);
       return res.status(500).json({
         error: 'StorageError',
-        message: error.message || 'Failed to upload asset to storage.'
+        message: `${error.message || 'Failed to upload asset to storage.'} File size: ${(file.size / 1024 / 1024).toFixed(2)}MB. Bucket limit should be ${UPLOAD_MAX_SIZE_MB}MB.`
       });
     }
 

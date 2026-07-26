@@ -295,6 +295,77 @@ export default function AdminTestDetailsPage() {
     return data;
   };
 
+  const prepareImageForUpload = async (file: File) => {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+
+    try {
+      const imageUrl = URL.createObjectURL(file);
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      const maxDimension = 1800;
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+      if (scale >= 1 && file.size < 350 * 1024) {
+        URL.revokeObjectURL(imageUrl);
+        return file;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        URL.revokeObjectURL(imageUrl);
+        return file;
+      }
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(imageUrl);
+
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+      if (!blob || blob.size >= file.size) return file;
+
+      const fileName = file.name.replace(/\.[^.]+$/, '') || 'task-visual';
+      return new File([blob], `${fileName}.jpg`, { type: 'image/jpeg' });
+    } catch {
+      return file;
+    }
+  };
+
+  const createInlineImageDataUrl = async (file: File) => {
+    const imageUrl = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      const maxDimension = 1400;
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not prepare image preview.');
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      return canvas.toDataURL('image/jpeg', 0.82);
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  };
+
   const handleUploadGroupImage = async (file?: File | null) => {
     if (!file || !activeGroup) return;
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
@@ -304,12 +375,26 @@ export default function AdminTestDetailsPage() {
 
     try {
       setImageUploading(true);
-      const data = await uploadAssetFile(file);
-      await api.put(`/admin/groups/${activeGroup.id}`, { image_url: data.url });
-      setSelectedGroup({ ...activeGroup, image_url: data.url });
+      const uploadFile = await prepareImageForUpload(file);
+      let imageUrl = '';
+
+      try {
+        const data = await uploadAssetFile(uploadFile);
+        imageUrl = data.url;
+      } catch (uploadErr: any) {
+        const message = `${uploadErr.response?.data?.message || uploadErr.message || ''}`;
+        if (!/maximum allowed size|failed to fetch|network|storage/i.test(message)) {
+          throw uploadErr;
+        }
+        imageUrl = await createInlineImageDataUrl(file);
+      }
+
+      await api.put(`/admin/groups/${activeGroup.id}`, { image_url: imageUrl });
+      setSelectedGroup({ ...activeGroup, image_url: imageUrl });
       await fetchTestDetails();
     } catch (err: any) {
-      alert(err.message || 'Failed to upload group image');
+      const fileSize = `${(file.size / 1024).toFixed(0)}KB`;
+      alert(`${err.response?.data?.message || err.message || 'Failed to upload group image'}\nSelected file size: ${fileSize}`);
     } finally {
       setImageUploading(false);
     }
