@@ -190,9 +190,9 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
       isAnswered: hasPreviewAnswer(studentAnswer),
     };
   }), [allQuestions, previewAnswers]);
-  const answeredCount = reviewRows.filter((row) => row.isAnswered).length;
-  const objectiveRows = reviewRows.filter((row) => !row.isWritingTask);
-  const correctCount = objectiveRows.filter((row) => row.isCorrect).length;
+  const answeredCount = reviewRows.filter((row: any) => row.isAnswered).length;
+  const objectiveRows = reviewRows.filter((row: any) => !row.isWritingTask);
+  const correctCount = objectiveRows.filter((row: any) => row.isCorrect).length;
 
   useEffect(() => {
     if (!previewAudioUrl || !audioRef.current) return;
@@ -489,7 +489,6 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                     preload="auto"
                     controls={false}
                     controlsList="nodownload noplaybackrate noremoteplayback"
-                    disableRemotePlayback
                     onCanPlay={() => setAudioLoadError('')}
                     onPlaying={() => {
                       setAudioAutoplayBlocked(false);
@@ -599,7 +598,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
               </div>
 
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                {reviewRows.map(({ question, studentAnswer, isCorrect, isAnswered, isWritingTask }) => (
+                {reviewRows.map(({ question, studentAnswer, isCorrect, isAnswered, isWritingTask }: any) => (
                   <div key={question.id} className="p-4 flex items-start gap-3">
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-black shrink-0 ${
                       isWritingTask ? 'bg-rose-50 text-rose-600' : isCorrect ? 'bg-emerald-50 text-emerald-700' : isAnswered ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'

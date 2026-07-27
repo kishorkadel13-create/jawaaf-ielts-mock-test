@@ -39,8 +39,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Request parsing & logging
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('dev'));
 
 // Static files for uploads (fallback)

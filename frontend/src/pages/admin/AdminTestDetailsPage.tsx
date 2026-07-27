@@ -16,7 +16,7 @@ import { normalizeMatchingQuestionType } from '../../utils/matchingHeadings';
 import { renderFormattedBlockText, renderFormattedText } from '../../utils/renderFormattedText';
 import { resolveListeningAudioUrl } from '../../utils/audioUrl';
 
-const MAX_UPLOAD_SIZE_MB = Number(import.meta.env.VITE_UPLOAD_MAX_SIZE_MB || 500);
+const MAX_UPLOAD_SIZE_MB = Number((import.meta as any).env.VITE_UPLOAD_MAX_SIZE_MB || 500);
 const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 
 export default function AdminTestDetailsPage() {

@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
       const mockScores = readyMockAttempts
         .map((a: TestAttempt) => parseScore(a.feedback?.band_score ?? a.score))
-        .filter((value): value is number => value !== null);
+        .filter((value: any): value is number => value !== null);
 
       const sectionHighest = (sectionType: 'reading' | 'listening' | 'writing') => {
         const explicitScores = completed.map((a: TestAttempt) => {
