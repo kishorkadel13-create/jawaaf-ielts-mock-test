@@ -285,14 +285,27 @@ export default function AdminTestDetailsPage() {
   };
 
   const uploadAssetFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const { data } = await api.post('/admin/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    // Get signed URL for direct upload to bypass Vercel 4.5MB payload limit
+    const { data: uploadSession } = await api.post('/admin/assets/sign', {
+      file_name: file.name,
+      content_type: file.type || 'image/jpeg',
+      folder: 'images',
     });
 
-    return data;
+    const { error: uploadError } = await supabase.storage
+      .from(uploadSession.bucket)
+      .uploadToSignedUrl(uploadSession.path, uploadSession.token, file, {
+        contentType: file.type || 'image/jpeg',
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message || 'Failed to upload asset to storage.');
+    }
+
+    return {
+      url: uploadSession.url,
+      path: uploadSession.path
+    };
   };
 
   const prepareImageForUpload = async (file: File) => {
