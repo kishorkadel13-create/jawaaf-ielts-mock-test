@@ -894,13 +894,6 @@ export default function ExamInterface() {
             <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-4 py-1.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5"
-          >
-            <CheckCircle2 className="h-4 w-4" /> {submitButtonLabel}
-          </button>
         </div>
       </header>
 
@@ -968,7 +961,6 @@ export default function ExamInterface() {
                       preload="auto"
                       controls={false}
                       controlsList="nodownload noplaybackrate noremoteplayback"
-                      disableRemotePlayback
                       onCanPlayThrough={handleAudioReady}
                       onProgress={handleAudioReady}
                       onLoadedData={handleAudioReady}
@@ -1332,6 +1324,14 @@ export default function ExamInterface() {
             <span>Unanswered</span>
           </div>
         </div>
+        
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="px-8 py-3 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[14px] font-black rounded-2xl transition-all shadow-md flex items-center gap-2 uppercase tracking-wide shrink-0"
+        >
+          <CheckCircle2 className="h-5 w-5" /> {submitButtonLabel}
+        </button>
       </footer>
 
     </div>
