@@ -47,6 +47,7 @@ export default function AdminTestsPage() {
   // Form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [chartCategory, setChartCategory] = useState('Bar Graph');
   const [isDemo, setIsDemo] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [duration, setDuration] = useState(60);
@@ -126,7 +127,20 @@ export default function AdminTestsPage() {
     setCreateContext('mock');
     setEditingTestId(test.id);
     setTitle(test.title);
-    setDescription(test.description || '');
+    
+    let parsedDesc = test.description || '';
+    let parsedCategory = 'Bar Graph';
+    try {
+      if (parsedDesc.trim().startsWith('{') && parsedDesc.includes('"chartCategory"')) {
+        const parsed = JSON.parse(parsedDesc);
+        parsedDesc = parsed.text || '';
+        parsedCategory = parsed.chartCategory || 'Bar Graph';
+      }
+    } catch (e) {}
+
+    setDescription(parsedDesc);
+    setChartCategory(parsedCategory);
+    
     setIsDemo(test.is_demo);
     setIsPublished(test.is_published);
     setDuration(test.duration);
@@ -138,9 +152,15 @@ export default function AdminTestsPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
+      
+      const isWritingTask1 = sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && chartCategory !== 'Bar Graph');
+      const finalDescription = isWritingTask1 
+        ? JSON.stringify({ text: description, chartCategory })
+        : description;
+
       const payload = {
         title,
-        description,
+        description: finalDescription,
         is_demo: isDemo,
         is_published: isPublished,
         duration: Number(duration),
@@ -569,6 +589,24 @@ export default function AdminTestsPage() {
                         className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#1E3A6E] focus:ring-4 focus:ring-[#1E3A6E]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all"
                       />
                     </div>
+                    
+                    {(sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && chartCategory !== 'Bar Graph')) && (
+                      <div className="flex flex-col gap-2">
+                        <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-[#F9544F]">Chart Category</label>
+                        <select
+                          value={chartCategory}
+                          onChange={(e) => setChartCategory(e.target.value)}
+                          className="w-full px-4 py-3 bg-white border border-[#F9544F]/30 focus:border-[#F9544F] focus:ring-4 focus:ring-[#F9544F]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
+                        >
+                          <option value="Bar Graph">Bar Graph</option>
+                          <option value="Line Graph">Line Graph</option>
+                          <option value="Pie Chart">Pie Chart</option>
+                          <option value="Table">Table</option>
+                          <option value="Map">Map</option>
+                          <option value="Process">Process Diagram</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-3 mt-1">

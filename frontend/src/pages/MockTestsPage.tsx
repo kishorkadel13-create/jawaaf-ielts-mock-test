@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import StudentSidebar from '../components/StudentSidebar';
-import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
+import WritingTask1Practice from '../components/WritingTask1Practice';
+import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
 
 interface MockTest {
   id: string;
@@ -102,19 +103,32 @@ export default function MockTestsPage() {
   const [readingQuestionType, setReadingQuestionType] = useState<ReadingQuestionTypeKey>('all');
   const navigate = useNavigate();
 
+  const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
-    const fetchTests = async () => {
+    const fetchTestsAndAttempts = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get('/tests');
-        setTests(data);
+        const [testsRes, attemptsRes] = await Promise.all([
+          api.get('/tests'),
+          api.get('/attempts/history').catch(() => ({ data: [] }))
+        ]);
+        
+        setTests(testsRes.data);
+        const attemptIds = new Set(
+          (attemptsRes.data || [])
+            .map((a: any) => a.mock_test_id)
+            .filter(Boolean)
+        );
+        setCompletedTestIds(attemptIds as Set<string>);
+        
         setLoading(false);
       } catch (err) {
-        console.error('Failed to load tests:', err);
+        console.error('Failed to load data:', err);
         setLoading(false);
       }
     };
-    fetchTests();
+    fetchTestsAndAttempts();
   }, []);
 
   useEffect(() => {
@@ -438,7 +452,7 @@ export default function MockTestsPage() {
         <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && !practiceType ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         
         {/* Header Section */}
-        {!(activeTab === 'practice' && !practiceType) && (
+        {!(activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && (!writingPracticeType || writingPracticeType === 'task1')))) && (
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h1 className="text-[28px] md:text-[34px] font-black text-[#05162E] tracking-tight leading-tight">
@@ -474,6 +488,12 @@ export default function MockTestsPage() {
             <h3 className="text-[20px] font-black text-[#05162E]">No Mock Tests Available</h3>
             <p className="text-slate-500 mt-2 text-[15px]">There are currently no mock tests available in the system. Please check back later or contact your administrator.</p>
           </div>
+        ) : activeTab === 'practice' && practiceType === 'writing' && writingPracticeType === 'task1' ? (
+          <WritingTask1Practice 
+            tests={visibleTests} 
+            onBack={() => setWritingPracticeType(null)} 
+            onStartTest={(testId) => navigate(`/practice/writing/${testId}`)} 
+          />
         ) : activeTab === 'practice' && !practiceType ? (
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="grid xl:grid-cols-[minmax(0,1fr)_330px] gap-8 p-7 md:p-8">
@@ -699,6 +719,11 @@ export default function MockTestsPage() {
                                 Free Demo
                               </span>
                             ) : null}
+                            {completedTestIds.has(card.test.id) && (
+                              <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700 ml-auto">
+                                Completed ✅
+                              </span>
+                            )}
                           </div>
 
                           <h4 className="text-[18px] font-black text-[#05162E] leading-snug">{card.title}</h4>
@@ -745,7 +770,7 @@ export default function MockTestsPage() {
                               onClick={() => handleStartTest(card.test.id)}
                               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#294b77] py-3 text-[13px] font-black text-white shadow-sm hover:bg-[#203d63] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {startingTestId === card.test.id ? 'Starting Practice...' : <>Start Practice <Play className="h-3 w-3 fill-current" /></>}
+                              {startingTestId === card.test.id ? 'Starting Practice...' : completedTestIds.has(card.test.id) ? <>Retake Practice <Play className="h-3 w-3 fill-current" /></> : <>Start Practice <Play className="h-3 w-3 fill-current" /></>}
                             </button>
                           )}
                         </div>
@@ -757,54 +782,178 @@ export default function MockTestsPage() {
             </div>
           </div>
 	        ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
-	          <div className="grid gap-6">
-	            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-	              <div>
-	                <button
-	                  type="button"
-	                  onClick={() => {
-	                    setPracticeType(null);
-	                    setWritingPracticeType(null);
-	                  }}
-	                  className="mb-3 inline-flex items-center gap-2 text-[13px] font-black text-slate-500 hover:text-[#1E3A6E]"
-	                >
-	                  <ArrowLeft className="h-4 w-4" /> Back to practice sections
-	                </button>
-	                <h2 className="text-[26px] font-black text-[#05162E]">Writing Practice Types</h2>
-	                <p className="text-[14px] text-slate-500 mt-1">Choose Task 1, Task 2, or the combined writing practice.</p>
-	              </div>
-	            </div>
+          <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full pt-4 pb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPracticeType(null);
+                  setWritingPracticeType(null);
+                }}
+                className="inline-flex items-center gap-1.5 text-[12px] font-black text-slate-500 hover:text-[#1E3A6E]"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+              </button>
+            </div>
 
-	            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-	              {writingPracticeCards.map(card => {
-	                const count = getWritingPracticeTestsByKind(card.type).length;
-	                return (
-	                  <button
-	                    key={card.type}
-	                    type="button"
-	                    onClick={() => setWritingPracticeType(card.type)}
-	                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 text-left transition-all overflow-hidden"
-	                  >
-	                    <div className="h-2 w-full bg-[#1E3A6E]"></div>
-	                    <div className="p-6">
-	                      <div className="h-16 w-16 rounded-2xl bg-[#FFF3F2] text-[#EE6055] flex items-center justify-center mb-5">
-	                        {card.icon}
-	                      </div>
-	                      <h3 className="text-[20px] font-black text-[#05162E]">{card.title}</h3>
-	                      <p className="text-[13px] text-slate-500 leading-relaxed mt-2 min-h-[64px]">{card.description}</p>
-	                      <div className="mt-6 flex items-center justify-between text-[12px] font-black text-slate-500">
-	                        <span className="flex items-center gap-1.5"><ClipboardList className="h-4 w-4" /> {count} tests</span>
-	                        <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {card.duration}</span>
-	                      </div>
-	                      <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] py-3 text-[13px] font-black text-white">
-	                        Open {card.title} <Play className="h-3 w-3 fill-current" />
-	                      </span>
-	                    </div>
-	                  </button>
-	                );
-	              })}
-	            </div>
-	          </div>
+            {/* Header Banner */}
+            <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center rounded-2xl bg-white shadow-sm border border-slate-100 p-6 overflow-hidden shrink-0">
+              {/* Left Side: Greeting */}
+              <div className="relative z-10">
+                <h1 className="text-[28px] font-black text-[#05162E] flex items-center gap-2">
+                  Hi, {profile?.first_name || 'Kishor'}! 👋
+                </h1>
+                <p className="text-[14px] font-medium text-slate-500 mt-1">
+                  Let's sharpen your writing skills and boost your <span className="font-bold text-[#294b77]">IELTS</span> score.
+                </p>
+              </div>
+              
+              {/* Right Side: Your Goal Box & Decorations */}
+              <div className="relative z-20 mt-4 md:mt-0 flex items-center pr-2 -translate-y-2">
+                <div className="flex items-center gap-4 bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-50 relative z-20">
+                  <div className="h-10 w-10 rounded-full bg-[#294b77]/10 flex items-center justify-center shrink-0">
+                    <Target className="h-5 w-5 text-[#294b77]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Your Goal</p>
+                    <p className="text-[14px] font-black text-[#294b77]">Band 7.0+</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative background shapes inside the banner */}
+              <div className="absolute right-0 bottom-0 top-0 w-1/2 pointer-events-none overflow-hidden rounded-r-2xl">
+                {/* Large pale curve */}
+                <div className="absolute top-0 right-0 bottom-0 w-[400px] bg-slate-100/80 rounded-tl-full translate-x-12"></div>
+                
+                {/* Navy Blue Rectangles (exactly as in the screenshot) */}
+                <div className="absolute right-0 bottom-0 flex items-end opacity-60">
+                  {/* Left shorter block */}
+                  <div className="w-16 h-10 bg-[#294b77] rounded-tl-md"></div>
+                  {/* Middle taller block */}
+                  <div className="w-10 h-16 bg-[#294b77]"></div>
+                  {/* Right block */}
+                  <div className="w-16 h-12 bg-[#294b77] opacity-80"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Title Section with Mascot */}
+            <div className="mt-2 relative z-10 flex justify-between items-end">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#294b77]">Writing Practice</span>
+                <h2 className="text-[32px] font-black text-[#05162E] mt-1 tracking-tight leading-tight">Choose Your Writing Practice</h2>
+                <p className="text-[14px] font-medium text-slate-500 mt-1.5">Select the type of writing practice you want to focus on today.</p>
+                <div className="w-12 h-1 bg-[#294b77] rounded-full mt-3"></div>
+              </div>
+              
+              {/* Mascot Floating between Goal and Combo Card */}
+              <div className="hidden lg:flex absolute right-10 bottom-0 translate-y-8 items-center justify-center animate-pulse-subtle z-20">
+                <span className="text-[120px] drop-shadow-2xl" style={{ filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.15))' }}>🦉</span>
+              </div>
+            </div>
+
+            {/* Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+              {writingPracticeCards.map((card, idx) => {
+                const count = getWritingPracticeTestsByKind(card.type).length;
+                
+                // Determine styling based on card type utilizing brand colors
+                let theme = {
+                  border: 'border-[#294b77]/10',
+                  bg: 'bg-[#294b77]/[0.02]',
+                  iconBg: 'bg-white',
+                  iconShadow: 'shadow-[0_4px_12px_rgb(41,75,119,0.15)]', // #294b77 shadow
+                  iconText: 'text-[#294b77]',
+                  btnGrad: 'from-[#294b77] to-[#294b77]',
+                  shadow: 'hover:shadow-[0_12px_24px_rgb(41,75,119,0.12)]',
+                  tipBadge: 'bg-[#294b77]/10 text-[#294b77]',
+                  tipText: 'Improve data description skills'
+                };
+                
+                if (card.type === 'task2') {
+                  theme = {
+                    border: 'border-teal-100',
+                    bg: 'bg-teal-50/30',
+                    iconBg: 'bg-white',
+                    iconShadow: 'shadow-[0_4px_12px_rgb(13,148,136,0.1)]', // teal-600 shadow
+                    iconText: 'text-teal-600',
+                    btnGrad: 'from-teal-500 to-teal-600',
+                    shadow: 'hover:shadow-[0_12px_24px_rgb(13,148,136,0.08)]',
+                    tipBadge: 'bg-teal-50 text-teal-700',
+                    tipText: 'Build strong essay writing skills'
+                  };
+                } else if (card.type === 'combo') {
+                  theme = {
+                    border: 'border-[#ef5f55]/10',
+                    bg: 'bg-[#ef5f55]/[0.02]',
+                    iconBg: 'bg-white',
+                    iconShadow: 'shadow-[0_4px_12px_rgb(239,95,85,0.15)]', // #ef5f55 shadow
+                    iconText: 'text-[#ef5f55]',
+                    btnGrad: 'from-[#ef5f55] to-[#ef5f55]',
+                    shadow: 'hover:shadow-[0_12px_24px_rgb(239,95,85,0.12)]',
+                    tipBadge: 'bg-[#ef5f55]/10 text-[#ef5f55]',
+                    tipText: 'Simulate real IELTS writing test'
+                  };
+                }
+
+                return (
+                  <button
+                    key={card.type}
+                    type="button"
+                    onClick={() => setWritingPracticeType(card.type)}
+                    className={`relative rounded-[24px] border ${theme.border} ${theme.bg} shadow-sm hover:-translate-y-1.5 transition-all duration-300 overflow-hidden text-center flex flex-col items-center p-6 group ${theme.shadow}`}
+                  >
+                    <div className="absolute top-4 left-0 right-0 flex justify-center opacity-[0.03] pointer-events-none">
+                      <span className="font-black text-3xl tracking-widest uppercase">JAWAAF</span>
+                    </div>
+
+                    <div className={`relative h-16 w-16 rounded-full ${theme.iconBg} ${theme.iconShadow} flex items-center justify-center mb-6 shrink-0`}>
+                      {card.type === 'task1' ? <PenLine className={`h-6 w-6 ${theme.iconText}`} /> :
+                       card.type === 'task2' ? <PenLine className={`h-6 w-6 ${theme.iconText} rotate-12`} /> :
+                       <ClipboardList className={`h-6 w-6 ${theme.iconText}`} />}
+                    </div>
+                    
+                    <h3 className="text-[20px] font-black text-[#05162E]">{card.title}</h3>
+                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2 min-h-[48px]">
+                      {card.description}
+                    </p>
+                    
+                    <div className="w-full flex items-center justify-center gap-4 text-[11px] font-bold text-slate-400 mt-5 mb-6">
+                      <span className="flex items-center gap-1.5"><ClipboardList className="h-3.5 w-3.5" /> {count} Tests</span>
+                      <div className="w-[1px] h-3 bg-slate-200"></div>
+                      <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {card.duration}</span>
+                    </div>
+                    
+                    <div className="w-full flex flex-col items-center mt-auto">
+                      <span className={`w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.btnGrad} py-3 text-[14px] font-black text-white shadow-sm transition-transform group-hover:scale-[1.02]`}>
+                        Start {card.title} <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                      
+                      <div className={`mt-4 px-4 py-1.5 rounded-full ${theme.tipBadge}`}>
+                        <span className="text-[10px] font-bold">{theme.tipText}</span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Bottom Tip Bar */}
+            <div className="mt-2 bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
+                  <span className="text-lg">🚀</span>
+                </div>
+                <p className="text-[13px] font-medium text-slate-600 text-left">
+                  <span className="font-bold text-[#F59E0B]">💡 Tip:</span> Practice regularly and review your answers to improve faster! Consistency is the key to success.
+                </p>
+              </div>
+              <button className="whitespace-nowrap px-4 py-2.5 bg-white border border-slate-200 text-[#1E3A6E] text-[12px] font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2 shrink-0 shadow-sm">
+                <BookOpen className="h-3.5 w-3.5" /> View Writing Tips <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
 	        ) : visibleTests.length === 0 ? (
           <div className="bg-white border border-slate-100 rounded-2xl p-16 text-center shadow-sm flex flex-col items-center">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
@@ -875,6 +1024,11 @@ export default function MockTestsPage() {
                         Free Demo
                       </span>
                     ) : null}
+                    {completedTestIds.has(test.id) && (
+                      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-md uppercase tracking-wider ml-auto">
+                        Completed ✅
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-[18px] font-black text-[#05162E] leading-snug mb-2">{test.title}</h3>
@@ -905,6 +1059,8 @@ export default function MockTestsPage() {
                       >
                         {startingTestId === test.id ? (
                           <>Starting Exam...</>
+                        ) : completedTestIds.has(test.id) ? (
+                          <>{activeTab === 'mock' ? 'Retake Exam' : 'Retake Practice'} <Play className="h-3.5 w-3.5 fill-current" /></>
                         ) : (
                           <>{activeTab === 'mock' ? 'Start Mock Test' : 'Open Questions'} <Play className="h-3 w-3 fill-current" /></>
                         )}
