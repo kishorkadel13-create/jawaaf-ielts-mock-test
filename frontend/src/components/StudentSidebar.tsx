@@ -27,10 +27,11 @@ const navItems = [
   { label: 'Settings', to: '/dashboard', icon: Settings, match: () => false }
 ];
 
-export default function StudentSidebar() {
+export default function StudentSidebar({ variant = 'default' }: { variant?: 'default' | 'cinema' }) {
   const location = useLocation();
   const { profile, logout } = useAuthStore();
   const [dailyGoalMet, setDailyGoalMet] = useState(false);
+  const isCinema = variant === 'cinema';
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -54,12 +55,18 @@ export default function StudentSidebar() {
 
   return (
     <aside 
-      className="hidden w-[280px] shrink-0 flex-col p-6 text-white shadow-xl lg:flex h-screen sticky top-0 overflow-y-auto custom-scrollbar"
-      style={{ background: 'linear-gradient(to right, #16243a 0%, #16243a 100%)' }}
+      className={`hidden w-[280px] shrink-0 flex-col p-6 shadow-xl lg:flex h-screen sticky top-0 overflow-y-auto custom-scrollbar ${
+        isCinema ? 'border-r border-[#E2CFB6] text-[#352216]' : 'text-white'
+      }`}
+      style={{
+        background: isCinema
+          ? 'linear-gradient(180deg, #FFF8EC 0%, #F7E8D1 100%)'
+          : 'linear-gradient(to right, #16243a 0%, #16243a 100%)'
+      }}
     >
       {/* Logo Area */}
       <div className="flex items-center gap-3 mb-8 px-2">
-        <JawaafLogo isWhite={true} className="w-[180px] mt-2 mb-2" />
+        <JawaafLogo isWhite={!isCinema} className="w-[180px] mt-2 mb-2" />
       </div>
 
       <nav className="grid flex-none content-start gap-1 text-[15px] font-bold">
@@ -71,8 +78,12 @@ export default function StudentSidebar() {
               key={item.label}
               to={item.to}
               className={`flex items-center gap-3 rounded-[14px] px-4 py-3 mx-2 transition-all ${
-                active 
-                  ? 'bg-gradient-to-r from-[#EE6055] to-[#EE6055]/80 text-white shadow-md' 
+                active
+                  ? isCinema
+                    ? 'bg-[#F7DBB6] text-[#3A2417] shadow-sm'
+                    : 'bg-gradient-to-r from-[#EE6055] to-[#EE6055]/80 text-white shadow-md'
+                  : isCinema
+                  ? 'text-[#3A2417] hover:bg-[#F7DBB6]/60'
                   : 'text-white/60 hover:bg-white/10 hover:text-white'
               }`}
             >
@@ -82,7 +93,9 @@ export default function StudentSidebar() {
         })}
 
         {profile?.role === 'admin' && (
-          <Link to="/admin" className="mt-4 flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 font-bold text-white transition-colors hover:bg-white/20">
+          <Link to="/admin" className={`mt-4 flex items-center gap-3 rounded-xl px-4 py-3 font-bold transition-colors ${
+            isCinema ? 'bg-[#F7DBB6]/70 text-[#3A2417] hover:bg-[#F7DBB6]' : 'bg-white/10 text-white hover:bg-white/20'
+          }`}>
             <Award className="h-5 w-5" /> Admin Console
           </Link>
         )}
@@ -90,18 +103,26 @@ export default function StudentSidebar() {
 
       {/* Daily Goal Widget (Replaced Mascot) */}
       <div className="mt-8 flex flex-col items-center flex-1 justify-end px-2">
-        <div className="bg-gradient-to-b from-white/10 to-white/5 border border-white/10 rounded-[24px] p-5 w-full relative overflow-hidden group hover:border-white/20 transition-colors">
+        <div className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
+          isCinema
+            ? 'bg-gradient-to-br from-[#FFF4DF] to-[#F1DEC2] border border-[#E2CFB6] shadow-sm'
+            : 'bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-white/20'
+        }`}>
           {/* Decorative glow */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#EE6055]/20 rounded-full blur-3xl group-hover:bg-[#EE6055]/30 transition-colors"></div>
+          <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl transition-colors ${
+            isCinema ? 'bg-[#DFA96D]/25' : 'bg-[#EE6055]/20 group-hover:bg-[#EE6055]/30'
+          }`}></div>
           
           <div className="relative z-10 flex flex-col w-full">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-[#EE6055]/20 flex items-center justify-center text-[#EE6055]">
+              <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${
+                isCinema ? 'bg-[#F3DFBE] text-[#3A2417]' : 'bg-[#EE6055]/20 text-[#EE6055]'
+              }`}>
                 <Award className="h-5 w-5" />
               </div>
               <div>
-                <h4 className="text-[14px] font-black text-white">Daily Goals</h4>
-                <p className="text-[10px] text-white/60 font-medium">{dailyGoalMet ? "1/3 Completed" : "0/3 Completed"}</p>
+                <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Daily Goals</h4>
+                <p className={`text-[10px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>{dailyGoalMet ? "1/3 Completed" : "0/3 Completed"}</p>
               </div>
             </div>
             
@@ -110,39 +131,39 @@ export default function StudentSidebar() {
                 <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${dailyGoalMet ? 'bg-[#22C55E] border-[#22C55E]' : 'border-white/20 bg-white/5'}`}>
                   {dailyGoalMet && <CheckSquare className="h-2.5 w-2.5 text-white" />}
                 </div>
-                <span className={`text-[11px] font-medium ${dailyGoalMet ? 'text-white' : 'text-white/60'}`}>Maintain Streak</span>
+                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#3A2417]' : dailyGoalMet ? 'text-white' : 'text-white/60'}`}>Maintain Streak</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full flex items-center justify-center border border-white/20 bg-white/5">
+                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#D9C5A8] bg-[#F7E8D1]' : 'border-white/20 bg-white/5'}`}>
                 </div>
-                <span className="text-[11px] font-medium text-white/60">Practice Test</span>
+                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>Practice Test</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full flex items-center justify-center border border-white/20 bg-white/5">
+                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#D9C5A8] bg-[#F7E8D1]' : 'border-white/20 bg-white/5'}`}>
                 </div>
-                <span className="text-[11px] font-medium text-white/60">Complete 1 Video</span>
+                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>{isCinema ? 'Review Mistakes' : 'Complete 1 Video'}</span>
               </div>
             </div>
             
-            <div className="w-full bg-white/10 rounded-full h-2.5 mb-1 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#EE6055] to-orange-400 h-2.5 rounded-full transition-all duration-1000" style={{ width: dailyGoalMet ? '33%' : '0%' }}></div>
+            <div className={`w-full rounded-full h-2.5 mb-1 overflow-hidden ${isCinema ? 'bg-[#E4D0B5]' : 'bg-white/10'}`}>
+              <div className="bg-gradient-to-r from-[#D76343] to-[#E9A164] h-2.5 rounded-full transition-all duration-1000" style={{ width: dailyGoalMet ? '33%' : '0%' }}></div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Logout Section */}
-      <div className="mt-8 pt-6 border-t border-white/10">
+      <div className={`mt-8 pt-6 ${isCinema ? 'border-t border-[#D9C5A8]' : 'border-t border-white/10'}`}>
         <button 
           onClick={logout}
-          className="flex w-full items-center gap-4 rounded-xl p-3 text-left transition-colors hover:bg-white/5"
+          className={`flex w-full items-center gap-4 rounded-xl p-3 text-left transition-colors ${isCinema ? 'hover:bg-[#F7DBB6]/50' : 'hover:bg-white/5'}`}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isCinema ? 'bg-[#F3DFBE] text-[#3A2417]' : 'bg-white/10 text-white'}`}>
             <LogOut className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[14px] font-bold text-white">Logout</p>
-            <p className="text-[12px] font-semibold text-white/50">End your session</p>
+            <p className={`text-[14px] font-bold ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Logout</p>
+            <p className={`text-[12px] font-semibold ${isCinema ? 'text-[#6D5A4C]' : 'text-white/50'}`}>End your session</p>
           </div>
         </button>
       </div>
