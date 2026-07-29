@@ -204,13 +204,13 @@ export default function WritingTask2Practice({ tests, onBack, onStartTest }: Pro
                 </div>
               </div>
 
-              <div className="flex items-center justify-center h-[160px] mb-6">
+              <div className="flex items-center justify-center h-[130px] mb-4">
                 <ImageWithFallback
                   src={cat.img3d}
                   alt={cat.label}
-                  className="w-auto h-[140px] object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
+                  className="w-auto h-[120px] object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
                   fallback={
-                    <div className={`w-[140px] h-[140px] rounded-3xl ${cat.lightBg} border-2 border-dashed ${cat.border} flex flex-col items-center justify-center text-center p-3`}>
+                    <div className={`w-[110px] h-[110px] rounded-3xl ${cat.lightBg} border-2 border-dashed ${cat.border} flex flex-col items-center justify-center text-center p-3`}>
                       <span className={`text-xs font-bold ${cat.text}`}>
                         {cat.label}<br />Image
                       </span>
@@ -225,7 +225,7 @@ export default function WritingTask2Practice({ tests, onBack, onStartTest }: Pro
                   {cat.desc}
                 </p>
 
-                <div className="flex items-center gap-4 text-[12px] font-bold text-slate-400 mt-auto mb-5">
+                <div className="flex items-center gap-4 text-[12px] font-bold text-slate-400 mt-auto mb-4">
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> 40 min</span>
                   <div className="w-1 h-1 rounded-full bg-slate-200"></div>
                   <span className="flex items-center gap-1.5"><PenLine className="w-3.5 h-3.5" /> 1 Essay</span>
@@ -238,13 +238,56 @@ export default function WritingTask2Practice({ tests, onBack, onStartTest }: Pro
 
               <button
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`w-full py-3.5 rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all ${cat.color} ${cat.hoverColor}`}
+                className="w-full py-3.5 rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all hover:opacity-90 group/btn"
+                style={{ background: 'linear-gradient(to right, #294b77 0%, #16243a 100%)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#ef5f55')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'linear-gradient(to right, #294b77 0%, #16243a 100%)')}
               >
                 Start Practice
                 <ArrowLeft className="w-4 h-4 rotate-180" />
               </button>
             </div>
           ))}
+        </div>
+
+        {/* Bottom Features Bar */}
+        <div className="w-full rounded-2xl border border-slate-100 bg-white shadow-sm px-8 py-5 grid grid-cols-4 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#05162E] leading-tight">Official IELTS Format</p>
+              <p className="text-[11px] text-slate-400 font-medium">100% exam-style essays</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#05162E] leading-tight">Band 9 Model Answers</p>
+              <p className="text-[11px] text-slate-400 font-medium">Learn from top quality essays</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#05162E] leading-tight">Detailed Evaluation</p>
+              <p className="text-[11px] text-slate-400 font-medium">Improve with AI feedback</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#05162E] leading-tight">Track Your Progress</p>
+              <p className="text-[11px] text-slate-400 font-medium">Monitor your band score</p>
+            </div>
+          </div>
         </div>
       </div>
     );
