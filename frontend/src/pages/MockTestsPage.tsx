@@ -400,6 +400,41 @@ export default function MockTestsPage() {
       duration: '~ 60 mins'
     }
   ];
+  const practiceCardTheme = {
+    reading: {
+      image: '/images/practice/reading.png',
+      cardClass: 'border-[#DCE8FA] bg-gradient-to-br from-white via-white to-[#F7FAFF]',
+      iconClass: 'border-[#DCE8FA] bg-white text-[#2558D8]',
+      titleClass: 'text-[#061A36]',
+      accentClass: 'bg-[#2558D8]',
+      statsClass: 'border-[#DCE8FA] bg-white/90 text-[#1E3A6E]',
+      buttonClass: 'from-[#2259D8] to-[#193D93] shadow-[#2259D8]/25',
+      imageClass: 'h-[132px] w-[148px]',
+      glowClass: 'bg-blue-100'
+    },
+    listening: {
+      image: '/images/practice/listening.png',
+      cardClass: 'border-[#D9ECE7] bg-gradient-to-br from-white via-white to-[#F5FFFB]',
+      iconClass: 'border-[#D9ECE7] bg-white text-[#07805F]',
+      titleClass: 'text-[#064338]',
+      accentClass: 'bg-[#07805F]',
+      statsClass: 'border-[#D9ECE7] bg-white/90 text-[#07805F]',
+      buttonClass: 'from-[#15996F] to-[#08775B] shadow-[#15996F]/25',
+      imageClass: 'h-[132px] w-[144px]',
+      glowClass: 'bg-emerald-100'
+    },
+    writing: {
+      image: '/images/practice/writing.png',
+      cardClass: 'border-[#F6DCCF] bg-gradient-to-br from-white via-white to-[#FFF8F3]',
+      iconClass: 'border-[#F6DCCF] bg-white text-[#F45B1D]',
+      titleClass: 'text-[#8B170C]',
+      accentClass: 'bg-[#F45B1D]',
+      statsClass: 'border-[#F6DCCF] bg-white/90 text-[#F45B1D]',
+      buttonClass: 'from-[#FF6A24] to-[#F04416] shadow-[#F45B1D]/25',
+      imageClass: 'h-[128px] w-[158px]',
+      glowClass: 'bg-orange-100'
+    }
+  };
   const writingPracticeCards = [
     {
       type: 'task1' as const,
@@ -502,43 +537,75 @@ export default function MockTestsPage() {
             onStartTest={handleStartTest}
           />
         ) : activeTab === 'practice' && !practiceType ? (
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="grid xl:grid-cols-[minmax(0,1fr)_330px] gap-8 p-7 md:p-8">
+          <div className="relative flex h-full flex-col overflow-hidden bg-white">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_69%_14%,rgba(91,141,255,0.11),transparent_21%),radial-gradient(circle_at_5%_34%,rgba(112,161,255,0.06),transparent_18%)]"></div>
+            <div className="relative grid xl:grid-cols-[minmax(0,1fr)_320px] gap-6 px-8 py-6 md:px-10 xl:px-12 xl:py-7">
               <section>
-                <div className="mb-7">
-                  <h2 className="text-[30px] font-black text-[#05162E] tracking-tight">Practice Test</h2>
-                  <p className="text-[15px] text-slate-500 mt-2">Choose a section to practice individually. Improve your skills step by step.</p>
+                <div className="mb-6">
+                  <h2 className="text-[32px] md:text-[36px] font-black text-[#05162E] tracking-tight leading-tight">Practice Test</h2>
+                  <p className="text-[16px] text-slate-500 mt-3 font-medium">
+                    Choose a section to practice individually. Improve your skills <span className="text-[#3C5BFF]">step by step.</span>
+                  </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-7">
+                <div className="grid lg:grid-cols-3 gap-5">
                   {practiceCards.map(card => {
                     const count = getPracticeTestsByType(card.type).length;
+                    const theme = practiceCardTheme[card.type];
                     return (
                       <button
                         key={card.type}
                         type="button"
-	                        onClick={() => {
-	                          setPracticeType(card.type);
-	                          setWritingPracticeType(null);
+                        onClick={() => {
+                          setPracticeType(card.type);
+                          setWritingPracticeType(null);
                             setReadingQuestionType('all');
-	                        }}
-                        className="bg-white border border-slate-200 hover:border-[#1E3A6E]/40 rounded-2xl p-6 min-h-[365px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-center flex flex-col items-center"
+                        }}
+                        className={`group relative flex min-h-[390px] flex-col overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${theme.cardClass}`}
                       >
-                        <div className={`h-20 w-20 rounded-3xl flex items-center justify-center mb-5 ${card.iconClass}`}>
-                          {card.icon}
+                        <div className="relative z-10 flex items-start justify-between gap-4">
+                          <div className={`h-[62px] w-[62px] rounded-full border shadow-sm flex items-center justify-center ${theme.iconClass}`}>
+                            {card.icon}
+                          </div>
+                          <div className={`absolute right-5 top-8 h-28 w-28 rounded-full ${theme.glowClass} opacity-60 blur-2xl`}></div>
+                          <img
+                            src={theme.image}
+                            alt=""
+                            className={`relative z-10 ${theme.imageClass} object-contain opacity-[0.98] drop-shadow-[0_14px_18px_rgba(15,23,42,0.12)] transition-transform duration-300 group-hover:scale-[1.03]`}
+                            style={{
+                              mixBlendMode: 'multiply',
+                              filter: 'saturate(1.04) contrast(1.02)',
+                              WebkitMaskImage: 'radial-gradient(ellipse at center, #000 46%, rgba(0,0,0,0.88) 60%, rgba(0,0,0,0.42) 72%, transparent 86%)',
+                              maskImage: 'radial-gradient(ellipse at center, #000 46%, rgba(0,0,0,0.88) 60%, rgba(0,0,0,0.42) 72%, transparent 86%)'
+                            }}
+                          />
                         </div>
-                        <h3 className="text-[24px] font-black text-[#05162E]">{card.title}</h3>
-                        <p className="text-[14px] text-slate-500 leading-relaxed mt-3 min-h-[54px] max-w-[260px]">{card.description}</p>
-                        <div className="mt-auto grid gap-1.5 text-[13px] font-bold text-[#1E3A6E]">
-                          <span className="flex items-center justify-center gap-2">
-                            <ClipboardList className="h-4 w-4" /> {count} Tests Available
-                          </span>
-                          <span className="flex items-center justify-center gap-2 text-slate-500">
-                            <Clock className="h-4 w-4" /> {card.duration}
-                          </span>
+
+                        <div className="relative z-10 mt-4">
+                          <h3 className={`text-[27px] font-black tracking-tight ${theme.titleClass}`}>{card.title}</h3>
+                          <div className={`mt-2.5 h-1 w-10 rounded-full ${theme.accentClass}`}></div>
+                          <p className="mt-4 min-h-[48px] max-w-[310px] text-[14px] font-medium leading-6 text-slate-600">{card.description}</p>
                         </div>
-                        <span className="w-full mt-5 py-3.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[14px] font-black rounded-xl transition-colors">
-                          Start Practice
+
+                        <div className={`relative z-10 mt-auto grid grid-cols-2 rounded-[16px] border px-3 py-3 ${theme.statsClass}`}>
+                          <div className="flex items-center gap-2.5">
+                            <ClipboardList className="h-5 w-5 shrink-0" />
+                            <div>
+                              <p className="text-[13px] font-black text-[#05162E]">{count} {count === 1 ? 'Test' : 'Tests'}</p>
+                              <p className="text-[11px] font-bold text-slate-500">Available</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3">
+                            <Clock className="h-5 w-5 shrink-0" />
+                            <div>
+                              <p className="text-[13px] font-black text-[#05162E]">{card.duration}</p>
+                              <p className="text-[11px] font-bold text-slate-500">Estimated Time</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className={`relative z-10 mt-5 flex h-12 w-full items-center justify-center gap-4 rounded-[13px] bg-gradient-to-r text-[15px] font-black text-white shadow-lg transition-transform group-hover:translate-x-0.5 ${theme.buttonClass}`}>
+                          Start Practice <ArrowRight className="h-5 w-5" />
                         </span>
                       </button>
                     );
@@ -546,48 +613,53 @@ export default function MockTestsPage() {
                 </div>
               </section>
 
-              <aside className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
-                <h3 className="text-[20px] font-black text-[#1E3A6E] mb-7">How Practice Test Works?</h3>
-                <div className="grid gap-7">
+              <aside className="bg-white/95 border border-slate-200 rounded-[24px] p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] h-fit">
+                <h3 className="text-[20px] font-black text-[#05162E] mb-7 whitespace-nowrap">
+                  How <span className="text-[#6F4BFF]">Practice Test</span> Works?
+                </h3>
+                <div className="grid gap-6">
                   {[
                     [<ClipboardList className="h-5 w-5" />, 'Choose a section', 'Select Reading, Listening or Writing.'],
                     [<CheckSquare className="h-5 w-5" />, 'Practice & Improve', 'Attempt questions and check your answers.'],
                     [<BarChart3 className="h-5 w-5" />, 'Track Progress', 'See your performance and improve your band score.']
                   ].map(([icon, title, desc]) => (
                     <div key={String(title)} className="flex items-start gap-4">
-                      <div className="h-14 w-14 rounded-full bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center shrink-0">
+                      <div className="h-[58px] w-[58px] rounded-full bg-[#F0EDFF] text-[#3730A3] flex items-center justify-center shrink-0 shadow-sm">
                         {icon}
                       </div>
                       <div>
                         <h4 className="font-black text-[#05162E] text-[15px]">{title}</h4>
-                        <p className="text-[13px] text-slate-500 font-medium leading-relaxed mt-1">{desc}</p>
+                        <p className="text-[13px] text-slate-500 font-medium leading-6 mt-1">{desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-5 text-center">
-                  <p className="text-[14px] font-bold text-[#05162E] leading-relaxed">Practice is the key to success in IELTS!</p>
-                  <p className="text-[13px] font-black text-slate-500 mt-3">- Keep Going</p>
+                <div className="mt-7 rounded-[20px] bg-gradient-to-br from-[#F7F6FF] to-[#EEF2FF] p-5 text-center">
+                  <div className="mb-2 flex justify-center text-[#5D5FEF]">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <p className="text-[15px] font-black text-[#05162E] leading-6">Practice is the key to success in IELTS!</p>
+                  <p className="text-[13px] font-black text-[#7A82B7] mt-3">- Keep Going</p>
                 </div>
               </aside>
             </div>
 
-            <div className="border-t border-slate-100 p-6 md:p-7">
-              <h3 className="text-[18px] font-black text-[#05162E] mb-5">Tips for Practice</h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="relative mx-8 mb-6 rounded-[22px] border border-slate-200 bg-white px-6 py-5 shadow-sm md:mx-10 xl:mx-12">
+              <h3 className="text-[18px] font-black text-[#05162E] mb-3">Tips for Practice</h3>
+              <div className="grid sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   [<Timer className="h-6 w-6" />, 'Manage Your Time', 'Practice with timer to improve your speed.', 'bg-[#EFF4FB] text-[#1E3A6E]'],
                   [<Target className="h-6 w-6" />, 'Focus on Weak Areas', 'Identify your weak areas and work on them.', 'bg-emerald-50 text-emerald-600'],
                   [<BarChart3 className="h-6 w-6" />, 'Analyze Results', 'Review your performance and learn from mistakes.', 'bg-orange-50 text-orange-500'],
                   [<Star className="h-6 w-6" />, 'Stay Consistent', 'Practice daily and stay consistent.', 'bg-violet-50 text-violet-600']
-                ].map(([icon, title, desc, colorClass]) => (
-                  <div key={String(title)} className="flex items-start gap-4">
-                    <div className={`h-14 w-14 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                ].map(([icon, title, desc, colorClass], index) => (
+                  <div key={String(title)} className={`flex items-start gap-4 px-4 py-2 ${index > 0 ? 'xl:border-l xl:border-slate-200' : ''}`}>
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
                       {icon}
                     </div>
                     <div>
                       <h4 className="font-black text-[#05162E] text-[14px]">{title}</h4>
-                      <p className="text-[13px] text-slate-500 font-medium leading-relaxed mt-1">{desc}</p>
+                      <p className="text-[13px] text-slate-500 font-medium leading-5 mt-1">{desc}</p>
                     </div>
                   </div>
                 ))}
