@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Bell, BookOpen, CheckCircle2, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, Bell, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { api } from '../services/api';
@@ -184,6 +184,48 @@ const courseColor = (slug: string) => {
   if (slug === 'speaking') return 'bg-gradient-to-br from-[#FF9D3D] to-[#F47B2B]';
   if (slug === 'writing' || slug.startsWith('writing-task')) return 'bg-gradient-to-br from-[#9B5CF6] to-[#7C3FE4]';
   return 'bg-gradient-to-br from-[#2F80ED] to-[#1D5FD1]';
+};
+
+const recordedCoursePoster = (section: CourseSection) => {
+  const key = `${section.slug} ${section.title}`.toLowerCase();
+  if (key.includes('listening')) {
+    return {
+      image: '/images/Recorded%20Courses/listening.png',
+      icon: Headphones,
+      accent: 'text-[#2F8C6B]',
+      border: 'border-[#CDBD8D]'
+    };
+  }
+  if (key.includes('speaking')) {
+    return {
+      image: '/images/Recorded%20Courses/speaking.png',
+      icon: User,
+      accent: 'text-[#C64C1E]',
+      border: 'border-[#D9B579]'
+    };
+  }
+  if (key.includes('task 1') || key.includes('task-1')) {
+    return {
+      image: '/images/Recorded%20Courses/writing%20task%201.png',
+      icon: PenLine,
+      accent: 'text-[#7A2F78]',
+      border: 'border-[#CDB18A]'
+    };
+  }
+  if (key.includes('task 2') || key.includes('task-2')) {
+    return {
+      image: '/images/Recorded%20Courses/writing%20task%202.png',
+      icon: PenLine,
+      accent: 'text-[#C43D2C]',
+      border: 'border-[#D8A277]'
+    };
+  }
+  return {
+    image: '/images/Recorded%20Courses/Reading.png',
+    icon: BookOpen,
+    accent: 'text-[#294b77]',
+    border: 'border-[#C6B78B]'
+  };
 };
 
 export default function CoursesPage() {
@@ -723,117 +765,74 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      <StudentSidebar />
+    <div className="flex min-h-screen bg-[#FBF2E6] font-sans text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <StudentSidebar variant="cinema" />
 
       <main className="min-w-0 flex-1">
-        <div className="grid gap-6 p-5 lg:p-8">
+        <div
+          className="relative min-h-screen overflow-hidden bg-[#FFF8ED] bg-cover bg-center p-5 lg:p-8"
+          style={{ backgroundImage: "url('/images/Recorded%20Courses/background.png')" }}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[#FFF7EA]/35" />
           {!isCourseOpen ? (
-            <>
-              <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <h1 className="text-[28px] font-black tracking-tight">Recorded Courses</h1>
-                  <p className="mt-1 text-[14px] font-semibold text-slate-500">Learn from our expert instructors</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="hidden h-12 min-w-[280px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-slate-400 shadow-sm sm:flex">
-                    <Search className="h-5 w-5" />
-                    <input className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold outline-none placeholder:text-slate-400" placeholder="Search for lessons..." />
-                  </label>
-                  <button className="grid h-12 w-12 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-[#294b77]">
-                    <Bell className="h-5 w-5" />
-                  </button>
-                  <div className="relative grid h-12 w-12 place-items-center rounded-full bg-[#EFF4FB] text-[16px] font-black text-[#294b77] ring-4 ring-white shadow-sm">
+            <div className="relative z-10 grid gap-6">
+              <section className="flex items-center justify-end gap-4">
+                <label className="hidden h-[58px] w-[560px] items-center gap-4 rounded-[18px] border border-[#D7C2A3] bg-[#FFF8EE]/88 px-6 text-[#5E3E2B] shadow-[0_8px_20px_rgba(88,56,35,0.10)] backdrop-blur sm:flex">
+                  <Search className="h-7 w-7" />
+                  <input className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold outline-none placeholder:text-[#8D735F]" placeholder="Search for lessons..." />
+                </label>
+                <button className="relative grid h-[58px] w-[58px] place-items-center rounded-full border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[#3D2418] shadow-[0_8px_20px_rgba(88,56,35,0.10)]">
+                  <Bell className="h-6 w-6" />
+                  <span className="absolute right-3 top-3 h-3.5 w-3.5 rounded-full bg-[#E84332] ring-2 ring-[#FFF8EE]" />
+                </button>
+                <div className="flex items-center gap-2 border-l border-[#D7C2A3] pl-4">
+                  <div className="grid h-[58px] w-[58px] place-items-center rounded-full bg-[#EADBC5] text-[22px] font-black text-[#2E1D14] shadow-sm">
                     {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'S'}
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-amber-400" />
                   </div>
+                  <ChevronDown className="h-5 w-5 text-[#5E3E2B]" />
                 </div>
               </section>
 
-              <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {visibleSections.map(section => {
-                  const Icon = sectionIcon(section.slug);
-                  const completed = section.lessons.filter(lesson => lesson.progress?.completed).length;
-                  const percent = section.lessons.length ? Math.round((completed / section.lessons.length) * 100) : 0;
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => {
-                        setActiveSectionId(section.id);
-                        setActiveLessonId(section.lessons?.[0]?.id || '');
-                        setSearchParams({ section: section.slug });
-                      }}
-                      className="group overflow-hidden rounded-lg bg-white text-left shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
-                    >
-                      <div className={`p-5 text-white ${courseColor(section.slug)}`}>
-                        <div className="mb-5 flex items-start gap-3">
-                          <Icon className="mt-1 h-9 w-9 opacity-95" />
-                          <div>
-                            <h2 className="text-[19px] font-black leading-tight">{section.title}</h2>
-                            <p className="mt-1 text-[12px] font-bold text-white/80">{section.lessons.length} Lessons</p>
-                          </div>
-                        </div>
-                        <div className="text-[12px] font-black text-white/90">
-                          <span>{percent}% Completed</span>
-                        </div>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/25">
-                          <div className="h-full rounded-full bg-white shadow-sm" style={{ width: `${percent}%` }} />
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+              <section className="aspect-[2934/786] overflow-hidden rounded-[24px] shadow-[0_14px_30px_rgba(76,48,29,0.15)]">
+                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" className="block h-full w-full scale-[1.018] select-none object-cover brightness-[1.08]" draggable={false} />
               </section>
 
-              {continueLesson && (
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h2 className="mb-4 text-[18px] font-black">Continue Learning</h2>
-                  <Link
-                    to={`/courses?section=${continueLesson.sectionSlug}&lesson=${continueLesson.id}`}
-                    className="grid gap-4 rounded-2xl border border-slate-100 p-4 transition-all hover:border-[#294b77]/30 hover:bg-[#F8FAFC] md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-center"
-                  >
-                    <LessonThumbnail lesson={continueLesson} className="aspect-video" />
-                    <div className="min-w-0">
-                      <span className="rounded-lg bg-[#EFF4FB] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#294b77]">{continueLesson.sectionTitle}</span>
-                      <h3 className="mt-3 text-[18px] font-black text-[#05162E]">{continueLesson.title}</h3>
-                      <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-6 text-slate-500">{continueLesson.description || 'Continue this recorded IELTS lesson.'}</p>
-                    </div>
-                    <button className="rounded-xl bg-[#294b77] px-5 py-3 text-[13px] font-black text-white">
-                      Continue <Play className="ml-1 inline h-3.5 w-3.5 fill-current" />
-                    </button>
-                  </Link>
-                </section>
-              )}
-
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-[18px] font-black">Recent Lessons</h2>
+              <section>
+                <div className="mb-7">
+                  <h1 className="flex items-center gap-4 text-[28px] font-black tracking-tight text-[#05162E]">
+                    Explore by Section
+                    <span className="text-[20px] font-black text-[#C56832]">~ ★ ~</span>
+                  </h1>
+                  <p className="mt-2 text-[15px] font-semibold text-[#6F6257]">Choose a section and start watching expert video lessons.</p>
                 </div>
-                <div className="grid gap-3">
-                  {recentLessons.length ? recentLessons.map(lesson => (
-                    <Link
-                      key={lesson.id}
-                      to={`/courses?section=${lesson.sectionSlug}&lesson=${lesson.id}`}
-                      className="grid gap-3 rounded-xl border border-slate-100 px-4 py-3 transition-all hover:border-[#294b77]/30 hover:bg-[#F8FAFC] sm:grid-cols-[88px_1fr_auto_auto] sm:items-center"
-                    >
-                      <LessonThumbnail lesson={lesson} className="aspect-video" />
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="rounded-lg bg-[#EFF4FB] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#294b77]">{lesson.sectionTitle}</span>
-                        <span className="truncate text-[14px] font-black text-[#05162E]">{lesson.title}</span>
-                      </div>
-                      <span className="flex items-center gap-1 text-[12px] font-bold text-slate-500"><Clock className="h-3.5 w-3.5" /> {getLessonDurationLabel(lesson)}</span>
-                      <span className="rounded-xl border border-[#294b77]/20 px-4 py-2 text-center text-[12px] font-black text-[#294b77]">
-                        Watch <Play className="ml-1 inline h-3.5 w-3.5 fill-current" />
-                      </span>
-                    </Link>
-                  )) : (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-[14px] font-bold text-slate-400">
-                      Recorded lessons will appear after admin publishes videos.
-                    </div>
-                  )}
+
+                <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-5">
+                  {visibleSections.map(section => {
+                    const poster = recordedCoursePoster(section);
+                    const Icon = poster.icon;
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => {
+                          setActiveSectionId(section.id);
+                          setActiveLessonId(section.lessons?.[0]?.id || '');
+                          setSearchParams({ section: section.slug });
+                        }}
+                        className="group overflow-hidden rounded-[12px] bg-[#F2D9B5] text-left shadow-[0_10px_22px_rgba(76,48,29,0.15)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_28px_rgba(76,48,29,0.20)]"
+                      >
+                        <div className="relative aspect-[464/572] overflow-hidden">
+                          <img src={poster.image} alt={section.title} className="h-full w-full scale-[1.095] object-cover transition-transform duration-300 group-hover:scale-[1.115]" />
+                        </div>
+                        <div className="flex items-center gap-4 bg-[#F0D5AB] px-6 py-4">
+                          <Icon className={`h-7 w-7 ${poster.accent}`} />
+                          <span className="text-[17px] font-semibold text-[#3E2B1D]">{section.lessons.length} Lessons</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
-            </>
+            </div>
           ) : (
           <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)_88px]">
             <div className="lg:col-span-3">
