@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Clock, PenLine, ChevronRight, BarChart3, LineChart, PieChart, Table as TableIcon, Map as MapIcon, Workflow } from 'lucide-react';
+import { ArrowLeft, Clock, PenLine, ChevronRight } from 'lucide-react';
 
 interface MockTest {
   id: string;
@@ -19,11 +19,11 @@ const CATEGORIES = [
   { id: 'All', label: 'All', icon: null },
   { id: 'Line graph', label: 'Line graph', icon: '/images/flat-icons/line-graph.png', img3d: '/images/chart-icons/line-graph.png', color: 'bg-[#059669]', hoverColor: 'hover:bg-[#047857]', lightBg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
   { id: 'Bar graph', label: 'Bar graph', icon: '/images/flat-icons/bar-graph.png', img3d: '/images/chart-icons/bar-graph.png', color: 'bg-[#1a365d]', hoverColor: 'hover:bg-[#152e52]', lightBg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
-  { id: 'Table', label: 'Table', icon: '/images/flat-icons/table.png', img3d: '/images/chart-icons/table.png', color: 'bg-[#ea580c]', hoverColor: 'hover:bg-[#c2410c]', lightBg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-100' },
+  { id: 'Table', label: 'Table', icon: '/images/flat-icons/table-graph.png', img3d: '/images/chart-icons/table-graph.png', color: 'bg-[#ea580c]', hoverColor: 'hover:bg-[#c2410c]', lightBg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-100' },
   { id: 'Pie-chart', label: 'Pie-chart', icon: '/images/flat-icons/pie-chart.png', img3d: '/images/chart-icons/pie-chart.png', color: 'bg-[#7c3aed]', hoverColor: 'hover:bg-[#6d28d9]', lightBg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
   { id: 'Diagram', label: 'Diagram', icon: '/images/flat-icons/process.png', img3d: '/images/chart-icons/process.png', color: 'bg-[#4338ca]', hoverColor: 'hover:bg-[#3730a3]', lightBg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
   { id: 'Maps', label: 'Maps', icon: '/images/flat-icons/map.png', img3d: '/images/chart-icons/map.png', color: 'bg-[#0d9488]', hoverColor: 'hover:bg-[#0f766e]', lightBg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-100' },
-  { id: 'Mixed questions', label: 'Mixed questions', icon: '/images/flat-icons/table.png', img3d: '/images/chart-icons/table.png', color: 'bg-[#b91c1c]', hoverColor: 'hover:bg-[#991b1b]', lightBg: 'bg-red-50', text: 'text-red-600', border: 'border-red-100' },
+  { id: 'Mixed questions', label: 'Mixed questions', icon: '/images/flat-icons/mixquestion-graph.png', img3d: '/images/chart-icons/mixquestion-graph.png', color: 'bg-[#b91c1c]', hoverColor: 'hover:bg-[#991b1b]', lightBg: 'bg-red-50', text: 'text-red-600', border: 'border-red-100' },
 ];
 
 export default function WritingTask1Practice({ tests, onBack, onStartTest }: Props) {
@@ -164,14 +164,16 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
 
               <div className="flex gap-6 mb-6 items-center flex-1">
                 <div className="w-[120px] shrink-0 flex items-center justify-center">
-                  <img
-                    src={catConfig.img3d}
-                    alt={categoryName}
-                    className="w-full h-auto object-contain drop-shadow-2xl group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `<div class="w-[100px] h-[100px] rounded-2xl ${catConfig.lightBg} border-2 border-dashed ${catConfig.border} flex flex-col items-center justify-center text-center p-2"><span class="text-xs font-bold ${catConfig.text}">Put ${categoryName}<br/>3D Image Here</span></div>`;
-                    }}
+                  <ImageWithFallback 
+                    src={catConfig.img3d} 
+                    alt={categoryName} 
+                    fallback={
+                      <div className={`w-[100px] h-[100px] rounded-2xl ${catConfig.lightBg} border-2 border-dashed ${catConfig.border} flex flex-col items-center justify-center text-center p-2`}>
+                        <span className={`text-xs font-bold ${catConfig.text}`}>
+                          Put {categoryName}<br/>3D Image Here
+                        </span>
+                      </div>
+                    }
                   />
                 </div>
                 <div className="flex flex-col justify-center flex-1">
@@ -221,5 +223,27 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
         )}
       </div>
     </div>
+  );
+}
+
+function ImageWithFallback({ src, alt, fallback }: { src: string, alt: string, fallback: React.ReactNode }) {
+  const [error, setError] = useState(false);
+
+  // Reset error state if src changes
+  React.useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (error) {
+    return <>{fallback}</>;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-auto object-contain drop-shadow-2xl group-hover:scale-105 transition-transform duration-500"
+      onError={() => setError(true)}
+    />
   );
 }
