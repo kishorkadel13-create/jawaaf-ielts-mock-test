@@ -49,6 +49,9 @@ export default function AdminTestsPage() {
   const [description, setDescription] = useState('');
   const [chartCategory, setChartCategory] = useState('Bar graph');
   const [isWritingTask1Edit, setIsWritingTask1Edit] = useState(false);
+  const [essayCategory, setEssayCategory] = useState('Opinion Essay');
+  const [difficulty, setDifficulty] = useState('Medium');
+  const [isWritingTask2Edit, setIsWritingTask2Edit] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [duration, setDuration] = useState(60);
@@ -132,32 +135,48 @@ export default function AdminTestsPage() {
     let parsedDesc = test.description || '';
     let parsedCategory = 'Bar graph';
     let isTask1 = false;
+    let parsedEssayCategory = 'Opinion Essay';
+    let parsedDifficulty = 'Medium';
+    let isTask2 = false;
+
     try {
-      if (parsedDesc.trim().startsWith('{') && parsedDesc.includes('"chartCategory"')) {
+      if (parsedDesc.trim().startsWith('{')) {
         const parsed = JSON.parse(parsedDesc);
-        parsedDesc = parsed.text || '';
-        parsedCategory = parsed.chartCategory || 'Bar graph';
-        isTask1 = true;
+        if (parsed.chartCategory) {
+          parsedDesc = parsed.text || '';
+          parsedCategory = parsed.chartCategory;
+          isTask1 = true;
+        } else if (parsed.essayCategory) {
+          parsedDesc = parsed.text || '';
+          parsedEssayCategory = parsed.essayCategory;
+          parsedDifficulty = parsed.difficulty || 'Medium';
+          isTask2 = true;
+        }
       }
     } catch (e) {}
 
-    if (!isTask1 && searchParams.get('mode') === 'practice') {
-      const title = test.title.toLowerCase();
-      if (/graph|table|pie|map|diagram|process|task\s*1|mixed/i.test(title)) {
+    if (!isTask1 && !isTask2 && searchParams.get('mode') === 'practice') {
+      const titleLower = test.title.toLowerCase();
+      if (/graph|table|pie|map|diagram|process|task\s*1|mixed/i.test(titleLower) && !/task\s*2/i.test(titleLower)) {
         isTask1 = true;
-        if (title.includes('line graph')) parsedCategory = 'Line graph';
-        else if (title.includes('bar graph')) parsedCategory = 'Bar graph';
-        else if (title.includes('table')) parsedCategory = 'Table';
-        else if (title.includes('pie')) parsedCategory = 'Pie-chart';
-        else if (title.includes('diagram') || title.includes('process')) parsedCategory = 'Diagram';
-        else if (title.includes('map')) parsedCategory = 'Maps';
-        else if (title.includes('mixed')) parsedCategory = 'Mixed questions';
+        if (titleLower.includes('line graph')) parsedCategory = 'Line graph';
+        else if (titleLower.includes('bar graph')) parsedCategory = 'Bar graph';
+        else if (titleLower.includes('table')) parsedCategory = 'Table';
+        else if (titleLower.includes('pie')) parsedCategory = 'Pie-chart';
+        else if (titleLower.includes('diagram') || titleLower.includes('process')) parsedCategory = 'Diagram';
+        else if (titleLower.includes('map')) parsedCategory = 'Maps';
+        else if (titleLower.includes('mixed')) parsedCategory = 'Mixed questions';
+      } else if (/opinion|discussion|mixed|task\s*2/i.test(titleLower)) {
+        isTask2 = true;
       }
     }
 
     setDescription(parsedDesc);
     setChartCategory(parsedCategory);
     setIsWritingTask1Edit(isTask1);
+    setEssayCategory(parsedEssayCategory);
+    setDifficulty(parsedDifficulty);
+    setIsWritingTask2Edit(isTask2);
     
     setIsDemo(test.is_demo);
     setIsPublished(test.is_published);
@@ -172,9 +191,13 @@ export default function AdminTestsPage() {
       setSubmitting(true);
       
       const isWritingTask1 = sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && isWritingTask1Edit);
+      const isWritingTask2 = sectionTemplate === 'writing_task_2' || (modalMode === 'edit' && isWritingTask2Edit);
+      
       const finalDescription = isWritingTask1 
         ? JSON.stringify({ text: description, chartCategory })
-        : description;
+        : isWritingTask2
+          ? JSON.stringify({ text: description, essayCategory, difficulty })
+          : description;
 
       const payload = {
         title,
@@ -625,6 +648,36 @@ export default function AdminTestsPage() {
                           <option value="Mixed questions">Mixed questions</option>
                         </select>
                       </div>
+                    )}
+
+                    {(sectionTemplate === 'writing_task_2' || (modalMode === 'edit' && isWritingTask2Edit)) && (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-[#3B82F6]">Essay Category</label>
+                          <select
+                            value={essayCategory}
+                            onChange={(e) => setEssayCategory(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-[#3B82F6]/30 focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
+                          >
+                            <option value="Opinion Essay">Opinion Essay</option>
+                            <option value="Discussion Essay">Discussion Essay</option>
+                            <option value="Opinion-Discussion Essay">Opinion-Discussion Essay</option>
+                            <option value="Mixed Essay">Mixed Essay</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-[#F59E0B]">Difficulty</label>
+                          <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-[#F59E0B]/30 focus:border-[#F59E0B] focus:ring-4 focus:ring-[#F59E0B]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
+                          >
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Legend">Legend</option>
+                          </select>
+                        </div>
+                      </>
                     )}
                   </div>
 
