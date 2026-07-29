@@ -458,6 +458,56 @@ export default function MockTestsPage() {
       duration: '60 mins'
     }
   ];
+  const writingPracticeTheme = {
+    task1: {
+      image: '/images/Writing%20Practice/writing%20task%201-cutout.png',
+      eyebrow: 'Academic Reports',
+      titleTop: 'Writing',
+      titleBottom: 'Task 1',
+      description: 'Practice graphs, tables, diagrams, and process writing.',
+      border: 'border-[#CFE0FA]',
+      bg: 'bg-[radial-gradient(circle_at_82%_22%,rgba(191,219,254,0.66),transparent_34%),linear-gradient(135deg,#FFFFFF_0%,#F8FBFF_50%,#EEF6FF_100%)]',
+      icon: <BarChart3 className="h-7 w-7" />,
+      iconClass: 'border-[#D7E5FF] bg-[#F5F8FF] text-[#2458D5]',
+      titleClass: 'text-[#2558D8]',
+      badgeClass: 'bg-[#E8F0FF] text-[#2558D8]',
+      buttonClass: 'from-[#235DDB] to-[#183D98] shadow-[#2259D8]/25',
+      statClass: 'text-[#1E3A6E]',
+      imageClass: 'h-[185px] w-[215px] right-4 top-[48px]'
+    },
+    task2: {
+      image: '/images/Writing%20Practice/writing%20task%202-cutout.png',
+      eyebrow: 'Opinion Essays',
+      titleTop: 'Writing',
+      titleBottom: 'Task 2',
+      description: 'Practice essay writing on opinion, discussion, advantages, and more.',
+      border: 'border-[#CBECE5]',
+      bg: 'bg-[radial-gradient(circle_at_82%_22%,rgba(167,243,208,0.50),transparent_34%),linear-gradient(135deg,#FFFFFF_0%,#F7FFFC_48%,#ECFDF5_100%)]',
+      icon: <PenLine className="h-7 w-7" />,
+      iconClass: 'border-[#CBECE5] bg-[#F5FFFB] text-[#0B8B6C]',
+      titleClass: 'text-[#0B8B6C]',
+      badgeClass: 'bg-[#DDF7EF] text-[#0B8B6C]',
+      buttonClass: 'from-[#18A77C] to-[#078263] shadow-[#15996F]/25',
+      statClass: 'text-[#08775B]',
+      imageClass: 'h-[204px] w-[220px] right-7 top-[46px]'
+    },
+    combo: {
+      image: '/images/Writing%20Practice/full%20test-cutout.png',
+      eyebrow: 'Exam Simulation',
+      titleTop: 'Full Writing',
+      titleBottom: 'Test',
+      description: 'Attempt both Writing Task 1 and Task 2 under exam conditions.',
+      border: 'border-[#F7D8CD]',
+      bg: 'bg-[radial-gradient(circle_at_82%_22%,rgba(254,202,202,0.55),transparent_34%),linear-gradient(135deg,#FFFFFF_0%,#FFF8F4_50%,#FFF1E9_100%)]',
+      icon: <ClipboardList className="h-7 w-7" />,
+      iconClass: 'border-[#F7D8CD] bg-[#FFF8F3] text-[#F45B1D]',
+      titleClass: 'text-[#EF463D]',
+      badgeClass: 'bg-[#FFE8E1] text-[#F45B1D]',
+      buttonClass: 'from-[#FF6841] to-[#EF353D] shadow-[#F45B1D]/25',
+      statClass: 'text-[#F45B1D]',
+      imageClass: 'h-[192px] w-[202px] right-4 top-[46px]'
+    }
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-[#F8FAFC] font-sans flex" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -468,12 +518,25 @@ export default function MockTestsPage() {
           <button className="lg:hidden p-2 rounded-xl hover:bg-slate-50 text-[#05162E]">
             <Menu className="h-6 w-6" />
           </button>
-          <Link 
-            to="/dashboard" 
-            className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-          </Link>
+          {activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPracticeType(null);
+                setWritingPracticeType(null);
+              }}
+              className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Practice
+            </button>
+          ) : (
+            <Link 
+              to="/dashboard" 
+              className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+            </Link>
+          )}
           <div className="flex items-center gap-4">
             <span className="hidden md:flex items-center gap-2 text-[12px] text-slate-500 font-black uppercase tracking-wider">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -485,7 +548,7 @@ export default function MockTestsPage() {
           </div>
         </header>
 
-        <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && !practiceType ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         
         {/* Header Section */}
         {!(activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && (!writingPracticeType || writingPracticeType === 'task1' || writingPracticeType === 'task2')))) && (
@@ -860,177 +923,158 @@ export default function MockTestsPage() {
               </section>
             </div>
           </div>
-	        ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
-          <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full pt-4 pb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setPracticeType(null);
-                  setWritingPracticeType(null);
-                }}
-                className="inline-flex items-center gap-1.5 text-[12px] font-black text-slate-500 hover:text-[#1E3A6E]"
-              >
-                <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-              </button>
-            </div>
+        ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
+          <div className="mx-auto flex h-full w-full max-w-[1360px] flex-col gap-3">
+            <section className="relative aspect-[2856/626] max-h-[250px] overflow-hidden rounded-[24px] bg-transparent">
+              <img
+                src="/images/Writing%20Practice/background.png"
+                alt=""
+                className="pointer-events-none absolute left-0 right-0 -top-1 h-[calc(100%+8px)] w-full object-fill"
+              />
 
-            {/* Header Banner */}
-            <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center rounded-2xl bg-white shadow-sm border border-slate-100 p-6 overflow-hidden shrink-0">
-              {/* Left Side: Greeting */}
-              <div className="relative z-10">
-                <h1 className="text-[28px] font-black text-[#05162E] flex items-center gap-2">
-                  Hi, {profile?.first_name || 'Kishor'}! 👋
-                </h1>
-                <p className="text-[14px] font-medium text-slate-500 mt-1">
-                  Let's sharpen your writing skills and boost your <span className="font-bold text-[#294b77]">IELTS</span> score.
-                </p>
-              </div>
-              
-              {/* Right Side: Your Goal Box & Decorations */}
-              <div className="relative z-20 mt-4 md:mt-0 flex items-center pr-2 -translate-y-2">
-                <div className="flex items-center gap-4 bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-50 relative z-20">
-                  <div className="h-10 w-10 rounded-full bg-[#294b77]/10 flex items-center justify-center shrink-0">
-                    <Target className="h-5 w-5 text-[#294b77]" />
+              <div className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_360px_230px] items-center gap-3 px-10 py-4">
+                <div className="max-w-[520px]">
+                  <h1 className="text-[32px] font-black leading-tight tracking-tight text-[#05162E]">
+                    Hi, {profile?.full_name?.split(' ')[0] || profile?.first_name || 'Student'}! 👋
+                  </h1>
+                  <p className="mt-3 text-[19px] font-medium leading-7 text-slate-600">
+                    Ready to write like a <span className="font-black text-[#1F55D6]">Band 8</span> candidate?
+                  </p>
+                  <div className="ml-[205px] mt-2 h-0.5 w-20 rounded-full bg-[#BBD3FF]"></div>
+
+                  <div className="mt-6 max-w-[465px] rounded-[20px] border border-slate-100 bg-white/92 p-4 shadow-[0_18px_45px_rgba(30,58,110,0.08)]">
+                    <div className="flex items-center gap-4">
+                      <div className="grid h-12 w-12 place-items-center rounded-full bg-[#EEF4FF] text-[#2259D8]">
+                        <PenLine className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 flex items-center justify-between gap-4">
+                          <span className="text-[14px] font-black text-[#05162E]">Today's Progress</span>
+                          <span className="text-[14px] font-black text-[#05162E]">63%</span>
+                        </div>
+                        <div className="h-3 rounded-full bg-slate-200">
+                          <div className="h-full w-[63%] rounded-full bg-gradient-to-r from-[#2563EB] to-[#4F8DFF]"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-3 pl-16 text-[13px] font-semibold text-slate-600">Great progress! Keep it up!</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Your Goal</p>
-                    <p className="text-[14px] font-black text-[#294b77]">Band 7.0+</p>
+                </div>
+
+                <div className="relative -ml-44 flex h-[212px] items-end justify-center">
+                  <div className="absolute bottom-5 h-16 w-72 rounded-full bg-blue-100/70 blur-3xl"></div>
+                  <img
+                    src="/images/Writing%20Practice/header.png"
+                    alt=""
+                    className="relative z-10 h-[252px] w-[294px] object-contain drop-shadow-[0_18px_24px_rgba(15,23,42,0.13)]"
+                    style={{
+                      mixBlendMode: 'multiply',
+                      filter: 'saturate(1.03) contrast(1.01)',
+                      WebkitMaskImage: 'radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,0.86) 72%, transparent 91%)',
+                      maskImage: 'radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,0.86) 72%, transparent 91%)'
+                    }}
+                  />
+                </div>
+
+                <div className="relative -ml-35 h-[218px] w-[246px]">
+                  <img
+                    src="/images/Writing%20Practice/notes-cutout.png"
+                    alt=""
+                    className="absolute inset-0 h-full w-full rotate-[3deg] object-contain drop-shadow-[0_18px_28px_rgba(15,23,42,0.14)]"
+                  />
+                  <div className="relative z-10 h-full rotate-[3deg] px-9 pb-8 pt-11">
+                    <div className="ml-12 max-w-[115px]">
+                      <p className="whitespace-nowrap text-[13px] font-semibold text-slate-600">Today's Goal</p>
+                      <p className="mt-0.5 whitespace-nowrap text-[20px] font-black leading-tight text-[#05162E]">Band 7.0+</p>
+                    </div>
+                    <div className="mx-2 mt-4 h-px bg-[#E8CB83]"></div>
+                    <p className="mt-4 whitespace-nowrap text-[13px] font-medium text-slate-600">You've completed</p>
+                    <p className="mt-1 whitespace-nowrap text-[17px] font-black text-[#1F55D6]">22 / 40 Tasks</p>
                   </div>
                 </div>
               </div>
+            </section>
 
-              {/* Decorative background shapes inside the banner */}
-              <div className="absolute right-0 bottom-0 top-0 w-1/2 pointer-events-none overflow-hidden rounded-r-2xl">
-                {/* Large pale curve */}
-                <div className="absolute top-0 right-0 bottom-0 w-[400px] bg-slate-100/80 rounded-tl-full translate-x-12"></div>
-                
-                {/* Navy Blue Rectangles (exactly as in the screenshot) */}
-                <div className="absolute right-0 bottom-0 flex items-end opacity-60">
-                  {/* Left shorter block */}
-                  <div className="w-16 h-10 bg-[#294b77] rounded-tl-md"></div>
-                  {/* Middle taller block */}
-                  <div className="w-10 h-16 bg-[#294b77]"></div>
-                  {/* Right block */}
-                  <div className="w-16 h-12 bg-[#294b77] opacity-80"></div>
-                </div>
-              </div>
-            </div>
+            <section>
+              <span className="text-[13px] font-black uppercase tracking-wider text-[#1F55D6]">Writing Studio</span>
+              <h2 className="mt-1 text-[30px] font-black leading-tight tracking-tight text-[#05162E]">Choose today's lesson</h2>
+              <p className="mt-2 text-[15px] font-medium text-slate-600">Pick the practice that matches your goal.</p>
+              <div className="mt-3 h-1 w-12 rounded-full bg-[#1F55D6]"></div>
+            </section>
 
-            {/* Title Section with Mascot */}
-            <div className="mt-2 relative z-10 flex justify-between items-end">
-              <div>
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#294b77]">Writing Practice</span>
-                <h2 className="text-[32px] font-black text-[#05162E] mt-1 tracking-tight leading-tight">Choose Your Writing Practice</h2>
-                <p className="text-[14px] font-medium text-slate-500 mt-1.5">Select the type of writing practice you want to focus on today.</p>
-                <div className="w-12 h-1 bg-[#294b77] rounded-full mt-3"></div>
-              </div>
-              
-              {/* Mascot Floating between Goal and Combo Card */}
-              <div className="hidden lg:flex absolute right-10 bottom-0 translate-y-8 items-center justify-center animate-pulse-subtle z-20">
-                <span className="text-[120px] drop-shadow-2xl" style={{ filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.15))' }}>🦉</span>
-              </div>
-            </div>
-
-            {/* Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-              {writingPracticeCards.map((card, idx) => {
+            <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-6 lg:grid-cols-3">
+              {writingPracticeCards.map(card => {
                 const count = getWritingPracticeTestsByKind(card.type).length;
-                
-                // Determine styling based on card type utilizing brand colors
-                let theme = {
-                  border: 'border-[#294b77]/10',
-                  bg: 'bg-[#294b77]/[0.02]',
-                  iconBg: 'bg-white',
-                  iconShadow: 'shadow-[0_4px_12px_rgb(41,75,119,0.15)]', // #294b77 shadow
-                  iconText: 'text-[#294b77]',
-                  btnGrad: 'from-[#294b77] to-[#294b77]',
-                  shadow: 'hover:shadow-[0_12px_24px_rgb(41,75,119,0.12)]',
-                  tipBadge: 'bg-[#294b77]/10 text-[#294b77]',
-                  tipText: 'Improve data description skills'
-                };
-                
-                if (card.type === 'task2') {
-                  theme = {
-                    border: 'border-teal-100',
-                    bg: 'bg-teal-50/30',
-                    iconBg: 'bg-white',
-                    iconShadow: 'shadow-[0_4px_12px_rgb(13,148,136,0.1)]', // teal-600 shadow
-                    iconText: 'text-teal-600',
-                    btnGrad: 'from-teal-500 to-teal-600',
-                    shadow: 'hover:shadow-[0_12px_24px_rgb(13,148,136,0.08)]',
-                    tipBadge: 'bg-teal-50 text-teal-700',
-                    tipText: 'Build strong essay writing skills'
-                  };
-                } else if (card.type === 'combo') {
-                  theme = {
-                    border: 'border-[#ef5f55]/10',
-                    bg: 'bg-[#ef5f55]/[0.02]',
-                    iconBg: 'bg-white',
-                    iconShadow: 'shadow-[0_4px_12px_rgb(239,95,85,0.15)]', // #ef5f55 shadow
-                    iconText: 'text-[#ef5f55]',
-                    btnGrad: 'from-[#ef5f55] to-[#ef5f55]',
-                    shadow: 'hover:shadow-[0_12px_24px_rgb(239,95,85,0.12)]',
-                    tipBadge: 'bg-[#ef5f55]/10 text-[#ef5f55]',
-                    tipText: 'Simulate real IELTS writing test'
-                  };
-                }
-
+                const theme = writingPracticeTheme[card.type];
                 return (
                   <button
                     key={card.type}
                     type="button"
                     onClick={() => setWritingPracticeType(card.type)}
-                    className={`relative rounded-[24px] border ${theme.border} ${theme.bg} shadow-sm hover:-translate-y-1.5 transition-all duration-300 overflow-hidden text-center flex flex-col items-center p-6 group ${theme.shadow}`}
+                    className={`group relative min-h-[300px] overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${theme.border} ${theme.bg}`}
                   >
-                    <div className="absolute top-4 left-0 right-0 flex justify-center opacity-[0.03] pointer-events-none">
-                      <span className="font-black text-3xl tracking-widest uppercase">JAWAAF</span>
+                    <div className={`relative z-10 grid h-12 w-12 place-items-center rounded-full border shadow-sm ${theme.iconClass}`}>
+                      {theme.icon}
                     </div>
 
-                    <div className={`relative h-16 w-16 rounded-full ${theme.iconBg} ${theme.iconShadow} flex items-center justify-center mb-6 shrink-0`}>
-                      {card.type === 'task1' ? <PenLine className={`h-6 w-6 ${theme.iconText}`} /> :
-                       card.type === 'task2' ? <PenLine className={`h-6 w-6 ${theme.iconText} rotate-12`} /> :
-                       <ClipboardList className={`h-6 w-6 ${theme.iconText}`} />}
-                    </div>
-                    
-                    <h3 className="text-[20px] font-black text-[#05162E]">{card.title}</h3>
-                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2 min-h-[48px]">
-                      {card.description}
-                    </p>
-                    
-                    <div className="w-full flex items-center justify-center gap-4 text-[11px] font-bold text-slate-400 mt-5 mb-6">
-                      <span className="flex items-center gap-1.5"><ClipboardList className="h-3.5 w-3.5" /> {count} Tests</span>
-                      <div className="w-[1px] h-3 bg-slate-200"></div>
-                      <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {card.duration}</span>
-                    </div>
-                    
-                    <div className="w-full flex flex-col items-center mt-auto">
-                      <span className={`w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.btnGrad} py-3 text-[14px] font-black text-white shadow-sm transition-transform group-hover:scale-[1.02]`}>
-                        Start {card.title} <ArrowRight className="h-3.5 w-3.5" />
+                    <div className="relative z-10 mt-4 max-w-[235px]">
+                      <h3 className="text-[22px] font-black leading-6 tracking-tight text-[#05162E]">{theme.titleTop}</h3>
+                      <h3 className={`text-[26px] font-black leading-7 tracking-tight ${theme.titleClass}`}>{theme.titleBottom}</h3>
+                      <span className={`mt-3 inline-flex rounded-lg px-3 py-1 text-[11px] font-black ${theme.badgeClass}`}>
+                        {theme.eyebrow}
                       </span>
-                      
-                      <div className={`mt-4 px-4 py-1.5 rounded-full ${theme.tipBadge}`}>
-                        <span className="text-[10px] font-bold">{theme.tipText}</span>
-                      </div>
+                      <p className="mt-4 text-[13px] font-medium leading-6 text-slate-600">{theme.description}</p>
                     </div>
+
+                    <img
+                      src={theme.image}
+                      alt=""
+                      className={`absolute z-0 object-contain opacity-[0.98] drop-shadow-[0_16px_22px_rgba(15,23,42,0.14)] transition-transform duration-300 group-hover:scale-[1.03] ${theme.imageClass}`}
+                      style={{
+                        mixBlendMode: 'multiply',
+                        filter: 'saturate(1.04) contrast(1.02)'
+                      }}
+                    />
+
+                    <div className={`relative z-10 mt-4 flex items-center gap-6 text-[12px] font-black ${theme.statClass}`}>
+                      <span className="flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {count} {count === 1 ? 'Test' : 'Tests'}</span>
+                      <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> {card.duration}</span>
+                    </div>
+
+                    <span className={`relative z-10 mt-5 flex h-12 w-full items-center justify-center gap-4 rounded-[13px] bg-gradient-to-r text-[16px] font-black text-white shadow-lg transition-transform group-hover:translate-x-0.5 ${theme.buttonClass}`}>
+                      {card.type === 'combo' ? 'Start Task 1 + Task 2' : card.type === 'task1' ? 'Start Task 1' : 'Start Task 2'}
+                      <ArrowRight className="h-5 w-5" />
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Bottom Tip Bar */}
-            <div className="mt-2 bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
-                  <span className="text-lg">🚀</span>
+            <div className="relative overflow-hidden rounded-[20px] border border-[#D4E1F8] bg-white px-6 py-3 shadow-sm">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(94,234,212,0.12),transparent_18%),radial-gradient(circle_at_33%_24%,rgba(96,165,250,0.12),transparent_16%)]"></div>
+              <div className="relative z-10 flex flex-col items-center justify-between gap-5 md:flex-row">
+                <div className="flex items-center gap-6">
+                  <div className="h-16 w-16 overflow-hidden rounded-full bg-[#FFF7D9]">
+                    <img
+                      src="/images/Writing%20Practice/futter-cutout.png"
+                      alt=""
+                      className="h-full w-full object-cover object-top"
+                      style={{ mixBlendMode: 'multiply' }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[20px] font-black text-[#1F55D6]">Hooty Says</p>
+                    <div className="mt-1 h-0.5 w-24 rounded-full bg-[#BBD3FF]"></div>
+                  </div>
                 </div>
-                <p className="text-[13px] font-medium text-slate-600 text-left">
-                  <span className="font-bold text-[#F59E0B]">💡 Tip:</span> Practice regularly and review your answers to improve faster! Consistency is the key to success.
-                </p>
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-5 text-center md:text-left">
+                  <span className="text-[52px] font-black leading-none text-[#BCD7FF]">“</span>
+                  <p className="text-[19px] font-medium leading-7 text-[#05162E]">The best essays aren't written fast.<br className="hidden md:block" /> They're rewritten.</p>
+                </div>
+                <button className="flex h-14 shrink-0 items-center justify-center gap-4 rounded-[16px] border border-slate-200 bg-white px-7 text-[16px] font-black text-[#1F3E88] shadow-md transition-colors hover:bg-slate-50">
+                  <BookOpen className="h-5 w-5" /> Hooty's Writing Tips <ArrowRight className="h-5 w-5" />
+                </button>
               </div>
-              <button className="whitespace-nowrap px-4 py-2.5 bg-white border border-slate-200 text-[#1E3A6E] text-[12px] font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2 shrink-0 shadow-sm">
-                <BookOpen className="h-3.5 w-3.5" /> View Writing Tips <ArrowRight className="h-3.5 w-3.5" />
-              </button>
             </div>
           </div>
 	        ) : visibleTests.length === 0 ? (
