@@ -179,7 +179,7 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
                 <div className="flex flex-col justify-center flex-1">
                   <h3 className="text-[22px] font-black text-[#05162E] leading-tight mb-2 tracking-tight">{test.title}</h3>
                   <p className="text-[13px] text-slate-500 font-medium leading-relaxed line-clamp-2 mb-4">
-                    {getTestDescription(test) || 'Simulate official British Council IELTS exam requirements.'}
+                    {getTestDescription(test) || 'Jawaaf has prepared a simulated Cambridge IELTS exam versions.'}
                   </p>
 
                   {/* Stats Row Moved INSIDE the right column */}
