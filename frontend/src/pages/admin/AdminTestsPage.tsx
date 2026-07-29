@@ -47,7 +47,8 @@ export default function AdminTestsPage() {
   // Form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [chartCategory, setChartCategory] = useState('Bar Graph');
+  const [chartCategory, setChartCategory] = useState('Bar graph');
+  const [isWritingTask1Edit, setIsWritingTask1Edit] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [duration, setDuration] = useState(60);
@@ -129,17 +130,34 @@ export default function AdminTestsPage() {
     setTitle(test.title);
     
     let parsedDesc = test.description || '';
-    let parsedCategory = 'Bar Graph';
+    let parsedCategory = 'Bar graph';
+    let isTask1 = false;
     try {
       if (parsedDesc.trim().startsWith('{') && parsedDesc.includes('"chartCategory"')) {
         const parsed = JSON.parse(parsedDesc);
         parsedDesc = parsed.text || '';
-        parsedCategory = parsed.chartCategory || 'Bar Graph';
+        parsedCategory = parsed.chartCategory || 'Bar graph';
+        isTask1 = true;
       }
     } catch (e) {}
 
+    if (!isTask1 && searchParams.get('mode') === 'practice') {
+      const title = test.title.toLowerCase();
+      if (/graph|table|pie|map|diagram|process|task\s*1|mixed/i.test(title)) {
+        isTask1 = true;
+        if (title.includes('line graph')) parsedCategory = 'Line graph';
+        else if (title.includes('bar graph')) parsedCategory = 'Bar graph';
+        else if (title.includes('table')) parsedCategory = 'Table';
+        else if (title.includes('pie')) parsedCategory = 'Pie-chart';
+        else if (title.includes('diagram') || title.includes('process')) parsedCategory = 'Diagram';
+        else if (title.includes('map')) parsedCategory = 'Maps';
+        else if (title.includes('mixed')) parsedCategory = 'Mixed questions';
+      }
+    }
+
     setDescription(parsedDesc);
     setChartCategory(parsedCategory);
+    setIsWritingTask1Edit(isTask1);
     
     setIsDemo(test.is_demo);
     setIsPublished(test.is_published);
@@ -153,7 +171,7 @@ export default function AdminTestsPage() {
     try {
       setSubmitting(true);
       
-      const isWritingTask1 = sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && chartCategory !== 'Bar Graph');
+      const isWritingTask1 = sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && isWritingTask1Edit);
       const finalDescription = isWritingTask1 
         ? JSON.stringify({ text: description, chartCategory })
         : description;
@@ -590,7 +608,7 @@ export default function AdminTestsPage() {
                       />
                     </div>
                     
-                    {(sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && chartCategory !== 'Bar Graph')) && (
+                    {(sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && isWritingTask1Edit)) && (
                       <div className="flex flex-col gap-2">
                         <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-[#F9544F]">Chart Category</label>
                         <select
@@ -598,12 +616,13 @@ export default function AdminTestsPage() {
                           onChange={(e) => setChartCategory(e.target.value)}
                           className="w-full px-4 py-3 bg-white border border-[#F9544F]/30 focus:border-[#F9544F] focus:ring-4 focus:ring-[#F9544F]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
                         >
-                          <option value="Bar Graph">Bar Graph</option>
-                          <option value="Line Graph">Line Graph</option>
-                          <option value="Pie Chart">Pie Chart</option>
+                          <option value="Line graph">Line graph</option>
+                          <option value="Bar graph">Bar graph</option>
                           <option value="Table">Table</option>
-                          <option value="Map">Map</option>
-                          <option value="Process">Process Diagram</option>
+                          <option value="Pie-chart">Pie-chart</option>
+                          <option value="Diagram">Diagram</option>
+                          <option value="Maps">Maps</option>
+                          <option value="Mixed questions">Mixed questions</option>
                         </select>
                       </div>
                     )}

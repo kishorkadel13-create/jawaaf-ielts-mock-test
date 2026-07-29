@@ -6,7 +6,7 @@ export const getTests = async (req, res) => {
     const isStudent = req.user.role === 'student';
     const hasFullAccess = req.user.has_full_access;
 
-    let query = supabaseAdmin.from('mock_tests').select('*').order('created_at', { ascending: false });
+    let query = supabaseAdmin.from('mock_tests').select('*').order('created_at', { ascending: true });
 
     // Students only see published tests
     if (isStudent) {

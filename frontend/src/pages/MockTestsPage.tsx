@@ -492,7 +492,7 @@ export default function MockTestsPage() {
           <WritingTask1Practice 
             tests={visibleTests} 
             onBack={() => setWritingPracticeType(null)} 
-            onStartTest={(testId) => navigate(`/practice/writing/${testId}`)} 
+            onStartTest={handleStartTest}
           />
         ) : activeTab === 'practice' && !practiceType ? (
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">

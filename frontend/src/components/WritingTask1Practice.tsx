@@ -17,24 +17,34 @@ interface Props {
 
 const CATEGORIES = [
   { id: 'All', label: 'All', icon: null },
-  { id: 'Bar Graph', label: 'Bar Graph', icon: '/images/flat-icons/bar-graph.png', img3d: '/images/chart-icons/bar-graph.png', color: 'bg-[#1a365d]', hoverColor: 'hover:bg-[#152e52]', lightBg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
-  { id: 'Line Graph', label: 'Line Graph', icon: '/images/flat-icons/line-graph.png', img3d: '/images/chart-icons/line-graph.png', color: 'bg-[#059669]', hoverColor: 'hover:bg-[#047857]', lightBg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
-  { id: 'Pie Chart', label: 'Pie Chart', icon: '/images/flat-icons/pie-chart.png', img3d: '/images/chart-icons/pie-chart.png', color: 'bg-[#7c3aed]', hoverColor: 'hover:bg-[#6d28d9]', lightBg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
+  { id: 'Line graph', label: 'Line graph', icon: '/images/flat-icons/line-graph.png', img3d: '/images/chart-icons/line-graph.png', color: 'bg-[#059669]', hoverColor: 'hover:bg-[#047857]', lightBg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
+  { id: 'Bar graph', label: 'Bar graph', icon: '/images/flat-icons/bar-graph.png', img3d: '/images/chart-icons/bar-graph.png', color: 'bg-[#1a365d]', hoverColor: 'hover:bg-[#152e52]', lightBg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
   { id: 'Table', label: 'Table', icon: '/images/flat-icons/table.png', img3d: '/images/chart-icons/table.png', color: 'bg-[#ea580c]', hoverColor: 'hover:bg-[#c2410c]', lightBg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-100' },
-  { id: 'Map', label: 'Map', icon: '/images/flat-icons/map.png', img3d: '/images/chart-icons/map.png', color: 'bg-[#0d9488]', hoverColor: 'hover:bg-[#0f766e]', lightBg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-100' },
-  { id: 'Process', label: 'Process', icon: '/images/flat-icons/process.png', img3d: '/images/chart-icons/process.png', color: 'bg-[#4338ca]', hoverColor: 'hover:bg-[#3730a3]', lightBg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
+  { id: 'Pie-chart', label: 'Pie-chart', icon: '/images/flat-icons/pie-chart.png', img3d: '/images/chart-icons/pie-chart.png', color: 'bg-[#7c3aed]', hoverColor: 'hover:bg-[#6d28d9]', lightBg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
+  { id: 'Diagram', label: 'Diagram', icon: '/images/flat-icons/process.png', img3d: '/images/chart-icons/process.png', color: 'bg-[#4338ca]', hoverColor: 'hover:bg-[#3730a3]', lightBg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
+  { id: 'Maps', label: 'Maps', icon: '/images/flat-icons/map.png', img3d: '/images/chart-icons/map.png', color: 'bg-[#0d9488]', hoverColor: 'hover:bg-[#0f766e]', lightBg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-100' },
+  { id: 'Mixed questions', label: 'Mixed questions', icon: '/images/flat-icons/table.png', img3d: '/images/chart-icons/table.png', color: 'bg-[#b91c1c]', hoverColor: 'hover:bg-[#991b1b]', lightBg: 'bg-red-50', text: 'text-red-600', border: 'border-red-100' },
 ];
 
 export default function WritingTask1Practice({ tests, onBack, onStartTest }: Props) {
   const [activeCategory, setActiveCategory] = useState('All');
 
   const getTestCategory = (test: MockTest) => {
-    let category = 'Bar Graph';
+    let category = 'Bar graph';
     if (test.description && test.description.startsWith('{')) {
       try {
         const parsed = JSON.parse(test.description);
-        category = parsed.chartCategory || 'Bar Graph';
+        category = parsed.chartCategory || 'Bar graph';
       } catch (e) { }
+    } else {
+      const title = test.title.toLowerCase();
+      if (title.includes('line graph')) return 'Line graph';
+      if (title.includes('bar graph')) return 'Bar graph';
+      if (title.includes('table')) return 'Table';
+      if (title.includes('pie')) return 'Pie-chart';
+      if (title.includes('diagram') || title.includes('process')) return 'Diagram';
+      if (title.includes('map')) return 'Maps';
+      if (title.includes('mixed')) return 'Mixed questions';
     }
     return category;
   };
