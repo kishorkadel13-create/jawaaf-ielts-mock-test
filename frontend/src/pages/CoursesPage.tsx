@@ -768,14 +768,14 @@ export default function CoursesPage() {
     <div className="flex min-h-screen bg-[#FBF2E6] font-sans text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <StudentSidebar variant="cinema" />
 
-      <main className="min-w-0 flex-1">
+      <main className="relative min-w-0 flex-1 border-l border-[#DED2C2] before:pointer-events-none before:absolute before:left-[8px] before:top-0 before:z-20 before:h-full before:w-px before:bg-[#E9DCCB]">
         <div
           className="relative min-h-screen overflow-hidden bg-[#FFF8ED] bg-cover bg-center p-5 lg:p-8"
           style={{ backgroundImage: "url('/images/Recorded%20Courses/background.png')" }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-[#FFF7EA]/35" />
+          <div className="pointer-events-none absolute inset-0 bg-[#FFF8ED]/70" />
           {!isCourseOpen ? (
-            <div className="relative z-10 grid gap-6">
+            <div className="relative z-10 grid gap-5">
               <section className="flex items-center justify-end gap-4">
                 <label className="hidden h-[58px] w-[560px] items-center gap-4 rounded-[18px] border border-[#D7C2A3] bg-[#FFF8EE]/88 px-6 text-[#5E3E2B] shadow-[0_8px_20px_rgba(88,56,35,0.10)] backdrop-blur sm:flex">
                   <Search className="h-7 w-7" />
@@ -793,12 +793,12 @@ export default function CoursesPage() {
                 </div>
               </section>
 
-              <section className="aspect-[2934/786] overflow-hidden rounded-[24px] shadow-[0_14px_30px_rgba(76,48,29,0.15)]">
-                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" className="block h-full w-full scale-[1.018] select-none object-cover brightness-[1.08]" draggable={false} />
+              <section className="aspect-[2934/786] overflow-hidden rounded-[24px] shadow-[0_12px_24px_rgba(76,48,29,0.12)]">
+                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" className="block h-full w-full scale-[1.018] select-none object-cover brightness-[1.12]" draggable={false} />
               </section>
 
               <section>
-                <div className="mb-7">
+                <div className="mb-5">
                   <h1 className="flex items-center gap-4 text-[28px] font-black tracking-tight text-[#05162E]">
                     Explore by Section
                     <span className="text-[20px] font-black text-[#C56832]">~ ★ ~</span>
@@ -806,7 +806,7 @@ export default function CoursesPage() {
                   <p className="mt-2 text-[15px] font-semibold text-[#6F6257]">Choose a section and start watching expert video lessons.</p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
                   {visibleSections.map(section => {
                     const poster = recordedCoursePoster(section);
                     const Icon = poster.icon;
@@ -823,7 +823,7 @@ export default function CoursesPage() {
                         <div className="relative aspect-[464/572] overflow-hidden">
                           <img src={poster.image} alt={section.title} className="h-full w-full scale-[1.095] object-cover transition-transform duration-300 group-hover:scale-[1.115]" />
                         </div>
-                        <div className="flex items-center gap-4 bg-[#F0D5AB] px-6 py-4">
+                        <div className="flex items-center gap-4 bg-[#F0D5AB] px-6 py-3.5">
                           <Icon className={`h-7 w-7 ${poster.accent}`} />
                           <span className="text-[17px] font-semibold text-[#3E2B1D]">{section.lessons.length} Lessons</span>
                         </div>

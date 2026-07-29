@@ -56,11 +56,11 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
   return (
     <aside 
       className={`hidden w-[280px] shrink-0 flex-col p-6 shadow-xl lg:flex h-screen sticky top-0 overflow-y-auto custom-scrollbar ${
-        isCinema ? 'border-r border-[#E2CFB6] text-[#352216]' : 'text-white'
+        isCinema ? 'border-r border-[#E8DCCB] text-[#352216]' : 'text-white'
       }`}
       style={{
         background: isCinema
-          ? 'linear-gradient(180deg, #FFF8EC 0%, #F7E8D1 100%)'
+          ? 'linear-gradient(180deg, #FFF8ED 0%, #FFF4E5 100%)'
           : 'linear-gradient(to right, #16243a 0%, #16243a 100%)'
       }}
     >
@@ -80,10 +80,10 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
               className={`flex items-center gap-3 rounded-[14px] px-4 py-3 mx-2 transition-all ${
                 active
                   ? isCinema
-                    ? 'bg-[#F7DBB6] text-[#3A2417] shadow-sm'
+                    ? 'bg-[#F7D8AC] text-[#3A2417] shadow-sm'
                     : 'bg-gradient-to-r from-[#EE6055] to-[#EE6055]/80 text-white shadow-md'
                   : isCinema
-                  ? 'text-[#3A2417] hover:bg-[#F7DBB6]/60'
+                  ? 'text-[#3A2417] hover:bg-[#F7D8AC]/45'
                   : 'text-white/60 hover:bg-white/10 hover:text-white'
               }`}
             >
@@ -94,7 +94,7 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
 
         {profile?.role === 'admin' && (
           <Link to="/admin" className={`mt-4 flex items-center gap-3 rounded-xl px-4 py-3 font-bold transition-colors ${
-            isCinema ? 'bg-[#F7DBB6]/70 text-[#3A2417] hover:bg-[#F7DBB6]' : 'bg-white/10 text-white hover:bg-white/20'
+            isCinema ? 'bg-[#F7D8AC]/60 text-[#3A2417] hover:bg-[#F7D8AC]/80' : 'bg-white/10 text-white hover:bg-white/20'
           }`}>
             <Award className="h-5 w-5" /> Admin Console
           </Link>
@@ -105,7 +105,7 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
       <div className="mt-8 flex flex-col items-center flex-1 justify-end px-2">
         <div className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
           isCinema
-            ? 'bg-gradient-to-br from-[#FFF4DF] to-[#F1DEC2] border border-[#E2CFB6] shadow-sm'
+            ? 'bg-gradient-to-br from-[#FFF7EA] to-[#F9E5C6] border border-[#E8D7BE] shadow-sm'
             : 'bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-white/20'
         }`}>
           {/* Decorative glow */}
@@ -116,7 +116,7 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
           <div className="relative z-10 flex flex-col w-full">
             <div className="flex items-center gap-3 mb-4">
               <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${
-                isCinema ? 'bg-[#F3DFBE] text-[#3A2417]' : 'bg-[#EE6055]/20 text-[#EE6055]'
+                isCinema ? 'bg-[#F7D8AC] text-[#3A2417]' : 'bg-[#EE6055]/20 text-[#EE6055]'
               }`}>
                 <Award className="h-5 w-5" />
               </div>
@@ -134,12 +134,12 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
                 <span className={`text-[11px] font-medium ${isCinema ? 'text-[#3A2417]' : dailyGoalMet ? 'text-white' : 'text-white/60'}`}>Maintain Streak</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#D9C5A8] bg-[#F7E8D1]' : 'border-white/20 bg-white/5'}`}>
+                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#E0CDB2] bg-[#FFF4E5]' : 'border-white/20 bg-white/5'}`}>
                 </div>
                 <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>Practice Test</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#D9C5A8] bg-[#F7E8D1]' : 'border-white/20 bg-white/5'}`}>
+                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#E0CDB2] bg-[#FFF4E5]' : 'border-white/20 bg-white/5'}`}>
                 </div>
                 <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>{isCinema ? 'Review Mistakes' : 'Complete 1 Video'}</span>
               </div>
@@ -156,9 +156,9 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
       <div className={`mt-8 pt-6 ${isCinema ? 'border-t border-[#D9C5A8]' : 'border-t border-white/10'}`}>
         <button 
           onClick={logout}
-          className={`flex w-full items-center gap-4 rounded-xl p-3 text-left transition-colors ${isCinema ? 'hover:bg-[#F7DBB6]/50' : 'hover:bg-white/5'}`}
+          className={`flex w-full items-center gap-4 rounded-xl p-3 text-left transition-colors ${isCinema ? 'hover:bg-[#F7D8AC]/45' : 'hover:bg-white/5'}`}
         >
-          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isCinema ? 'bg-[#F3DFBE] text-[#3A2417]' : 'bg-white/10 text-white'}`}>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isCinema ? 'bg-[#F7D8AC] text-[#3A2417]' : 'bg-white/10 text-white'}`}>
             <LogOut className="h-5 w-5" />
           </div>
           <div>
