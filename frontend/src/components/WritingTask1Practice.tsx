@@ -165,7 +165,7 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
               <div className="flex gap-6 mb-6 items-center flex-1">
                 <div className="w-[120px] shrink-0 flex items-center justify-center">
                   <ImageWithFallback 
-                    src={catConfig.img3d} 
+                    src={catConfig.img3d || ''} 
                     alt={categoryName} 
                     fallback={
                       <div className={`w-[100px] h-[100px] rounded-2xl ${catConfig.lightBg} border-2 border-dashed ${catConfig.border} flex flex-col items-center justify-center text-center p-2`}>

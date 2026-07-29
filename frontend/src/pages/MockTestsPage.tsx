@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import StudentSidebar from '../components/StudentSidebar';
 import WritingTask1Practice from '../components/WritingTask1Practice';
+import WritingTask2Practice from '../components/WritingTask2Practice';
 import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
 
 interface MockTest {
@@ -452,7 +453,7 @@ export default function MockTestsPage() {
         <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && !practiceType ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         
         {/* Header Section */}
-        {!(activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && (!writingPracticeType || writingPracticeType === 'task1')))) && (
+        {!(activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && (!writingPracticeType || writingPracticeType === 'task1' || writingPracticeType === 'task2')))) && (
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h1 className="text-[28px] md:text-[34px] font-black text-[#05162E] tracking-tight leading-tight">
@@ -490,6 +491,12 @@ export default function MockTestsPage() {
           </div>
         ) : activeTab === 'practice' && practiceType === 'writing' && writingPracticeType === 'task1' ? (
           <WritingTask1Practice 
+            tests={visibleTests} 
+            onBack={() => setWritingPracticeType(null)} 
+            onStartTest={handleStartTest}
+          />
+        ) : activeTab === 'practice' && practiceType === 'writing' && writingPracticeType === 'task2' ? (
+          <WritingTask2Practice 
             tests={visibleTests} 
             onBack={() => setWritingPracticeType(null)} 
             onStartTest={handleStartTest}
