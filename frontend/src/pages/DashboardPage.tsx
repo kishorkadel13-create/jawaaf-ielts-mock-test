@@ -335,35 +335,25 @@ export default function DashboardPage() {
           <div className="relative rounded-[30px] p-8 md:p-16 flex flex-col justify-center overflow-hidden mt-2 bg-[#E9F0FA] min-h-[320px]">
             {/* Background Image (User's Exact Asset) */}
             <div className="absolute inset-0 z-0">
-              <img src="/banner-asset.png" alt="Banner Background" className="w-full h-full object-cover object-center scale-[1.04]" />
+              <img src="/images/cover.png" alt="Banner Background" className="w-full h-full  scale-[1.04]" />
             </div>
 
             {/* Text Content */}
             <div className="relative z-10 w-full max-w-sm flex flex-col">
               <h2 className="text-[28px] font-black text-[#0B1B3D] mb-1.5 leading-tight">Ready for today's challenge?</h2>
-              <p className="text-[15px] text-[#4B5563] font-semibold mb-6">Consistency today, success tomorrow.</p>
+              <p className="text-[15px] text-[#4B5563] font-semibold mb-6">Quality Course, Quality Career</p>
 
               <div>
-                <Link to="/tests?mode=mock" className="inline-flex items-center gap-2 bg-[#0B1B3D] hover:bg-[#1E3A6E] text-white px-7 py-3 rounded-xl font-bold text-[15px] transition-colors shadow-lg shadow-[#0B1B3D]/20">
-                  Start a Mock Test <ArrowRight className="h-4 w-4" />
+                <Link to="/tests?mode=practice" className="inline-flex items-center gap-2 bg-[#0B1B3D] hover:bg-[#1E3A6E] text-white px-7 py-3 rounded-xl font-bold text-[15px] transition-colors shadow-lg shadow-[#0B1B3D]/20">
+                  Start a Practice Test <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
               <p className="text-[13px] text-[#6B7280] font-semibold mt-10">You have full access to all mock tests.</p>
             </div>
 
-            {/* Target Band Card Floating */}
-            <div className="absolute top-1/4 -translate-y-1/3 right-4 bg-white p-4 rounded-[10px] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] min-w-[130px] z-20 flex-col items-center justify-center hidden md:flex">
-              {/* Speech Bubble Arrow */}
-              <div className="absolute top-1/2 -translate-y-1/2 -left-2 w-6 h-6 bg-white rotate-45 rounded-sm"></div>
-
-              <p className="text-[13px] font-bold text-[#4B5563] mb-1 relative z-10">Your target band</p>
-              <div className="text-[52px] font-black text-[#0B1B3D] leading-none mb-1 relative z-10">8.0</div>
-              <div className="flex items-center justify-center gap-1.5 w-full mt-2 relative z-10">
-                <span className="text-[12px] font-bold text-[#9CA3AF]">Keep pushing!</span>
-                <TrendingUp className="h-4 w-4 text-[#F16259]" />
-              </div>
-            </div>
+         
+            
           </div>
 
           {/* Stats Cards */}

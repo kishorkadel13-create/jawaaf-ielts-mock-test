@@ -46,7 +46,7 @@ export const getTests = async (req, res) => {
         if (groupIds.length > 0) {
           const { data: questionList, error: questionError } = await supabaseAdmin
             .from('questions')
-            .select('id, group_id, question_type, extra_data_json')
+            .select('id, group_id, question_number, question_text, question_type, extra_data_json')
             .in('group_id', groupIds);
 
           if (questionError) throw questionError;
@@ -84,7 +84,14 @@ export const getTests = async (req, res) => {
               ...group,
               question_count: groupQuestions.length,
               question_types: questionTypes,
-              primary_question_type: questionTypes[0] || ''
+              primary_question_type: questionTypes[0] || '',
+              questions: groupQuestions.map(question => ({
+                id: question.id,
+                question_number: question.question_number,
+                question_text: question.question_text,
+                question_type: question.question_type,
+                extra_data_json: question.extra_data_json
+              }))
             };
           });
           const question_count = questionGroups.reduce((total, group) => total + (group.question_count || 0), 0);
