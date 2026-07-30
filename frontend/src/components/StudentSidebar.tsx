@@ -4,6 +4,7 @@ import {
   Award,
   BookOpen,
   CheckSquare,
+  Crown,
   History,
   LogOut,
   Monitor,
@@ -32,6 +33,7 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
   const { profile, logout } = useAuthStore();
   const [dailyGoalMet, setDailyGoalMet] = useState(false);
   const isCinema = variant === 'cinema';
+  const hasPremiumAccess = Boolean(profile?.has_full_access || profile?.role === 'admin' || profile?.role === 'teacher');
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -101,8 +103,67 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
         )}
       </nav>
 
-      {/* Daily Goal Widget (Replaced Mascot) */}
-      <div className="mt-8 flex flex-col items-center flex-1 justify-end px-2">
+      <div className="mt-8 flex flex-1 flex-col justify-end gap-4 px-2">
+        <div className={`relative w-full overflow-hidden rounded-[24px] border p-5 shadow-sm ${
+          isCinema
+            ? 'border-[#E3CBA8] bg-gradient-to-br from-[#FFF6E8] to-[#F3D8AD] text-[#3A2417]'
+            : 'border-white/10 bg-gradient-to-br from-white/12 to-white/5 text-white'
+        }`}>
+          <div className={`absolute -right-8 -top-8 h-28 w-28 rounded-full blur-3xl ${isCinema ? 'bg-[#D49325]/22' : 'bg-[#F59E24]/20'}`} />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3">
+              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                hasPremiumAccess
+                  ? 'bg-emerald-500/15 text-emerald-500'
+                  : isCinema
+                    ? 'bg-[#A23A24]/12 text-[#A23A24]'
+                    : 'bg-[#F59E24]/18 text-[#F59E24]'
+              }`}>
+                <Crown className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>
+                  {hasPremiumAccess ? 'Premium Access Active' : 'Active Premium Features'}
+                </h4>
+                <p className={`mt-0.5 text-[10px] font-bold ${isCinema ? 'text-[#6D5A4C]' : 'text-white/58'}`}>
+                  {hasPremiumAccess ? 'All premium learning unlocked' : 'Unlock full IELTS learning'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2 text-[11px] font-bold">
+              {['Recorded classes', 'Premium mock tests', 'Practice library'].map(item => (
+                <div key={item} className="flex items-center gap-2">
+                  <span className={`grid h-4 w-4 place-items-center rounded-full border ${
+                    hasPremiumAccess
+                      ? 'border-emerald-500 bg-emerald-500 text-white'
+                      : isCinema
+                        ? 'border-[#D9BD91] bg-[#FFF9EF]'
+                        : 'border-white/20 bg-white/5'
+                  }`}>
+                    {hasPremiumAccess && <CheckSquare className="h-2.5 w-2.5" />}
+                  </span>
+                  <span className={isCinema ? 'text-[#5D422D]' : 'text-white/72'}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            {!hasPremiumAccess && (
+              <Link
+                to="/access-request"
+                className={`mt-4 flex w-full items-center justify-center rounded-xl px-4 py-3 text-[12px] font-black transition-colors ${
+                  isCinema
+                    ? 'bg-[#A23A24] text-white hover:bg-[#7E291D]'
+                    : 'bg-gradient-to-r from-[#EE6055] to-[#F59E24] text-white hover:brightness-105'
+                }`}
+              >
+                Request Premium Access
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Daily Goal Widget (Replaced Mascot) */}
         <div className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
           isCinema
             ? 'bg-gradient-to-br from-[#FFF7EA] to-[#F9E5C6] border border-[#E8D7BE] shadow-sm'
