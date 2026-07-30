@@ -1,28 +1,15 @@
 {
+  "installCommand": "npm install && npm install --include=dev --prefix frontend && npm install --prefix backend",
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api(/.*)?",
-      "destination": {
-        "type": "service",
-        "service": "backend"
-      }
+      "source": "/api/(.*)",
+      "destination": "/api/[...path].js"
     },
     {
       "source": "/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "frontend"
-      }
+      "destination": "/index.html"
     }
-  ],
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "vite"
-    },
-    "backend": {
-      "root": "backend",
-      "entrypoint": "server.js"
-    }
-  }
+  ]
 }
