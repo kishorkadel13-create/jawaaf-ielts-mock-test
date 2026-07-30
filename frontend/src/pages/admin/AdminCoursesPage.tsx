@@ -37,6 +37,7 @@ type CourseLesson = {
   section_id: string;
   title: string;
   description?: string;
+  learning_points?: string[] | string | null;
   video_url?: string;
   video_file?: string;
   thumbnail_url?: string;
@@ -80,6 +81,7 @@ const emptyCourse = {
 const emptyLesson = {
   title: '',
   description: '',
+  learning_points: '',
   video_url: '',
   video_file: '',
   thumbnail_url: '',
@@ -114,6 +116,25 @@ const formatAdminDuration = (minutes?: number) => {
   if (!Number.isFinite(safeMinutes) || safeMinutes <= 0) return 'Duration pending';
   return `${safeMinutes} min`;
 };
+
+const learningPointsToText = (value?: string[] | string | null) => {
+  if (Array.isArray(value)) return value.filter(Boolean).join('\n');
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean).join('\n');
+    } catch {
+      return value;
+    }
+  }
+  return '';
+};
+
+const textToLearningPoints = (value?: string) =>
+  String(value || '')
+    .split(/\r?\n/)
+    .map(item => item.trim())
+    .filter(Boolean);
 
 export default function AdminCoursesPage() {
   const { profile } = useAuthStore();
@@ -183,6 +204,7 @@ export default function AdminCoursesPage() {
       setLessonForm({
         title: activeLesson.title || '',
         description: activeLesson.description || '',
+        learning_points: learningPointsToText(activeLesson.learning_points),
         video_url: activeLesson.video_url || '',
         video_file: activeLesson.video_file || '',
         thumbnail_url: activeLesson.thumbnail_url || '',
@@ -297,6 +319,7 @@ export default function AdminCoursesPage() {
       setSaving(true);
       const payload = {
         ...lessonForm,
+        learning_points: textToLearningPoints(lessonForm.learning_points),
         section_id: activeCourse.id,
         duration_minutes: Number(lessonForm.duration_minutes || 0),
         order_no: Number(lessonForm.order_no || 1),
@@ -524,7 +547,21 @@ export default function AdminCoursesPage() {
             <div className="grid gap-4">
               <input value={lessonForm.title} onChange={event => setLessonForm({ ...lessonForm, title: event.target.value })} placeholder="Lesson title" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
 
-              <textarea value={lessonForm.description} onChange={event => setLessonForm({ ...lessonForm, description: event.target.value })} placeholder="Lesson description" className="min-h-[90px] rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#294b77]" />
+              <label className="grid gap-2">
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">About this lesson</span>
+                <textarea value={lessonForm.description} onChange={event => setLessonForm({ ...lessonForm, description: event.target.value })} placeholder="This appears in the student's About this lesson section." className="min-h-[105px] rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#294b77]" />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">What you'll learn</span>
+                <textarea
+                  value={lessonForm.learning_points}
+                  onChange={event => setLessonForm({ ...lessonForm, learning_points: event.target.value })}
+                  placeholder={'One point per line\ne.g. Key IELTS concepts\nStep-by-step class strategy'}
+                  className="min-h-[118px] rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#294b77]"
+                />
+                <span className="text-[11px] font-bold leading-5 text-slate-500">These bullet points appear in the cinema overview beside About this lesson.</span>
+              </label>
 
               <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-4">
                 <div className="mb-3 flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-slate-500">

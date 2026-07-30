@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getCourseLibrary,
+  getCourseTodayGoals,
   getLessonById,
   getLessonQuestions,
   getLessonResourceContent,
@@ -14,6 +15,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', getCourseLibrary);
+router.get('/today-goals', getCourseTodayGoals);
 router.get('/lessons/:lessonId', getLessonById);
 router.put('/lessons/:lessonId/progress', saveLessonProgress);
 router.get('/lessons/:lessonId/questions', getLessonQuestions);

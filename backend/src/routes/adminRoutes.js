@@ -22,7 +22,11 @@ import {
   deleteLessonResource,
   getAdminLessonQuestions,
   answerLessonQuestion,
-  getLearningProgressReport
+  getLearningProgressReport,
+  getAdminTodayGoals,
+  createTodayGoal,
+  updateTodayGoal,
+  deleteTodayGoal
 } from '../controllers/courseController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
@@ -79,6 +83,10 @@ router.post('/teachers', createTeacher);
 // Recorded Course / LMS management
 router.get('/courses', getAdminCourseLibrary);
 router.get('/learning-progress', getLearningProgressReport);
+router.get('/today-goals', getAdminTodayGoals);
+router.post('/today-goals', createTodayGoal);
+router.put('/today-goals/:goalId', updateTodayGoal);
+router.delete('/today-goals/:goalId', deleteTodayGoal);
 router.post('/course-sections', createCourseSection);
 router.put('/course-sections/:sectionId', updateCourseSection);
 router.post('/course-lessons', createCourseLesson);

@@ -221,6 +221,9 @@ export default function AdminDashboardPage() {
             <Link to="/admin/courses" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
               <BookOpen className="h-5 w-5" /> Recorded Courses
             </Link>
+            <Link to="/admin/today-goals" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
+              <Target className="h-5 w-5" /> Today's Goals
+            </Link>
 
             <p className="px-4 pt-8 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
             <button onClick={() => setIsTeacherModalOpen(true)} className="w-full flex items-center gap-4 rounded-xl px-5 py-3.5 text-left text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">

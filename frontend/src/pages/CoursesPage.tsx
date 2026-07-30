@@ -15,6 +15,7 @@ type Lesson = {
   id: string;
   title: string;
   description?: string;
+  learning_points?: string[] | string | null;
   video_url?: string;
   video_file?: string;
   thumbnail_url?: string;
@@ -41,6 +42,38 @@ type LessonQuestion = {
   answer_text?: string;
   created_at?: string;
   profiles?: { full_name?: string; email?: string } | null;
+};
+
+type TodayGoal = {
+  id: string;
+  title?: string;
+  goal_text: string;
+  tip_text?: string;
+  section_slug?: string | null;
+  order_no?: number;
+};
+
+const defaultLearningPoints = ['Key IELTS concepts', 'Step-by-step class strategy', 'Common traps to avoid', 'Practice-focused guidance'];
+
+const getLessonLearningPoints = (lesson?: Lesson | null) => {
+  const raw = lesson?.learning_points;
+  if (Array.isArray(raw)) {
+    const points = raw.map(item => String(item || '').trim()).filter(Boolean);
+    return points.length ? points : defaultLearningPoints;
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const points = parsed.map(item => String(item || '').trim()).filter(Boolean);
+        return points.length ? points : defaultLearningPoints;
+      }
+    } catch {
+      const points = raw.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
+      if (points.length) return points;
+    }
+  }
+  return defaultLearningPoints;
 };
 
 const formatLessonDuration = (seconds?: number) => {
@@ -382,6 +415,7 @@ export default function CoursesPage() {
   );
   const [activeResourceId, setActiveResourceId] = useState('');
   const [lessonQuestions, setLessonQuestions] = useState<LessonQuestion[]>([]);
+  const [todayGoals, setTodayGoals] = useState<TodayGoal[]>([]);
   const [questionText, setQuestionText] = useState('');
   const [postingQuestion, setPostingQuestion] = useState(false);
   const [detectedDurations, setDetectedDurations] = useState<Record<string, number>>({});
@@ -444,8 +478,14 @@ export default function CoursesPage() {
     }
   };
 
+  const loadTodayGoals = async () => {
+    const { data } = await api.get('/courses/today-goals').catch(() => ({ data: [] }));
+    setTodayGoals(Array.isArray(data) ? data : []);
+  };
+
   useEffect(() => {
     loadCourses();
+    loadTodayGoals();
   }, []);
 
   useEffect(() => {
@@ -592,6 +632,11 @@ export default function CoursesPage() {
     const cinemaWatchedStamp = '/images/video%20course/watch-transparent.png';
     const cinemaNowShowingStamp = '/images/video%20course/now-showing-transparent.png';
     const cinemaReelRing = '/images/video%20course/ring-transparent.png';
+    const activeLearningPoints = getLessonLearningPoints(activeLesson);
+    const matchingTodayGoals = todayGoals.filter(goal => !goal.section_slug || goal.section_slug === activeSection?.slug);
+    const activeTodayGoal = matchingTodayGoals.length
+      ? matchingTodayGoals[Math.max(activeLessonIndex, 0) % matchingTodayGoals.length]
+      : null;
 
     return (
       <div
@@ -823,7 +868,7 @@ export default function CoursesPage() {
                               <div className="cinema-copy-block min-w-0 border-l border-[#E1C79A] pl-5">
                                 <h3 className="cinema-serif text-[21px] font-black text-[#2D1A10]">What you'll learn</h3>
                                 <div className="mt-3 grid gap-2.5 text-[14px] font-semibold text-[#5F4630]">
-                                  {['Key IELTS concepts', 'Step-by-step class strategy', 'Common traps to avoid', 'Practice-focused guidance'].map(item => (
+                                  {activeLearningPoints.map(item => (
                                     <p key={item} className="flex items-center gap-2">
                                       <CheckCircle2 className="h-5 w-5 text-[#4F7B54]" /> {item}
                                     </p>
@@ -965,13 +1010,15 @@ export default function CoursesPage() {
                     }}
                   />
                   <div className="mt-1 rounded-[16px] border border-[#E1C79A] bg-[#FFF9EF]/88 p-5.5 2xl:p-5">
-                    <p className="text-[30px] italic leading-none text-[#A23A24] 2xl:text-[34px]" style={{ fontFamily: '"Brush Script MT", "Segoe Script",  cursive' }}>Today's Goal</p>
+                    <p className="text-[30px] italic leading-none text-[#A23A24] 2xl:text-[34px]" style={{ fontFamily: '"Brush Script MT", "Segoe Script",  cursive' }}>{activeTodayGoal?.title || "Today's Goal"}</p>
                     <p className="mt-2 text-[15px] font-semibold italic leading-5 text-[#2D1A10] 2xl:text-[16px] 2xl:leading-6" style={{ fontFamily: 'cursive' }}>
-                      Learn how to identify the main idea and match headings correctly.
+                      {activeTodayGoal?.goal_text || 'Learn how to identify the main idea and match headings correctly.'}
                     </p>
-                    <p className="mt-2 text-[13px] font-semibold italic leading-5 text-[#2D1A10] 2xl:text-[14px] 2xl:leading-6" style={{ fontFamily: 'cursive' }}>
-                      Focus on keywords and synonyms!
-                    </p>
+                    {(activeTodayGoal?.tip_text || !activeTodayGoal) && (
+                      <p className="mt-2 text-[13px] font-semibold italic leading-5 text-[#2D1A10] 2xl:text-[14px] 2xl:leading-6" style={{ fontFamily: 'cursive' }}>
+                        {activeTodayGoal?.tip_text || 'Focus on keywords and synonyms!'}
+                      </p>
+                    )}
                     <div className="mt-3 flex items-center justify-center gap-3 text-[#C88A24]">
                       <span className="h-px w-16 bg-[#C88A24]/50" />
                       <span>★</span>

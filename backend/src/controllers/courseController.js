@@ -4,10 +4,34 @@ const ASSET_BUCKET = 'ielts-assets';
 const isAdminLike = (user) => ['admin', 'teacher'].includes(user?.role);
 const hasPremiumCourseAccess = (user) => Boolean(user?.has_full_access || isAdminLike(user));
 const COURSE_DEMO_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260726_add_course_lesson_demo_access.sql in Supabase, then reload the API schema cache.';
+const COURSE_CONTENT_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260730_add_course_dynamic_content.sql in Supabase, then reload the API schema cache.';
 
 const isMissingDemoColumnError = (error) => {
   const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
   return error?.code === 'PGRST204' || /is_demo/i.test(message) && /schema cache|column/i.test(message);
+};
+
+const isMissingContentSchemaError = (error) => {
+  const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
+  return (
+    error?.code === 'PGRST204' ||
+    error?.code === 'PGRST205' ||
+    (/learning_points|course_today_goals/i.test(message) && /schema cache|column|relation|table/i.test(message))
+  );
+};
+
+const normalizeLearningPoints = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(item => String(item || '').trim()).filter(Boolean).slice(0, 8);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n|,/)
+      .map(item => item.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+  return [];
 };
 
 const slugify = (value) => String(value || '')
@@ -178,6 +202,27 @@ export const getCourseLibrary = async (req, res) => {
   } catch (err) {
     console.error('getCourseLibrary Error:', err);
     res.status(500).json({ error: 'CourseLibraryError', message: 'Failed to load recorded courses.' });
+  }
+};
+
+export const getCourseTodayGoals = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('course_today_goals')
+      .select('*')
+      .eq('is_active', true)
+      .order('order_no', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      if (isMissingContentSchemaError(error)) return res.status(200).json([]);
+      throw error;
+    }
+
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error('getCourseTodayGoals Error:', err);
+    res.status(500).json({ error: 'TodayGoalsLoadError', message: 'Failed to load today goals.' });
   }
 };
 
@@ -518,6 +563,7 @@ export const createCourseLesson = async (req, res) => {
       video_file: req.body.video_file || '',
       thumbnail_url: req.body.thumbnail_url || '',
       notes: req.body.notes || '',
+      learning_points: normalizeLearningPoints(req.body.learning_points),
       duration_minutes: Number(req.body.duration_minutes || 0),
       order_no: Number(req.body.order_no || 1),
       is_demo: Boolean(req.body.is_demo),
@@ -527,6 +573,9 @@ export const createCourseLesson = async (req, res) => {
     const { data, error } = await supabaseAdmin.from('course_lessons').insert(payload).select().single();
     if (isMissingDemoColumnError(error)) {
       return res.status(409).json({ error: 'MigrationRequired', message: COURSE_DEMO_MIGRATION_MESSAGE });
+    }
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
     }
     if (error) throw error;
     res.status(201).json(data);
@@ -543,6 +592,9 @@ export const updateCourseLesson = async (req, res) => {
       ...req.body,
       updated_at: new Date().toISOString()
     };
+    if ('learning_points' in payload) {
+      payload.learning_points = normalizeLearningPoints(payload.learning_points);
+    }
 
     const { data, error } = await supabaseAdmin
       .from('course_lessons')
@@ -554,11 +606,111 @@ export const updateCourseLesson = async (req, res) => {
     if (isMissingDemoColumnError(error)) {
       return res.status(409).json({ error: 'MigrationRequired', message: COURSE_DEMO_MIGRATION_MESSAGE });
     }
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
+    }
     if (error) throw error;
     res.status(200).json(data);
   } catch (err) {
     console.error('updateCourseLesson Error:', err);
     res.status(500).json({ error: 'CourseLessonUpdateError', message: err.message || 'Failed to update lesson.' });
+  }
+};
+
+export const getAdminTodayGoals = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('course_today_goals')
+      .select('*')
+      .order('order_no', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
+    }
+    if (error) throw error;
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error('getAdminTodayGoals Error:', err);
+    res.status(500).json({ error: 'TodayGoalsLoadError', message: err.message || 'Failed to load today goals.' });
+  }
+};
+
+export const createTodayGoal = async (req, res) => {
+  try {
+    const goalText = String(req.body.goal_text || '').trim();
+    if (!goalText) {
+      return res.status(400).json({ error: 'BadRequest', message: 'Goal text is required.' });
+    }
+
+    const payload = {
+      title: String(req.body.title || "Today's Goal").trim() || "Today's Goal",
+      goal_text: goalText,
+      tip_text: String(req.body.tip_text || '').trim(),
+      section_slug: String(req.body.section_slug || '').trim() || null,
+      order_no: Number(req.body.order_no || 1),
+      is_active: req.body.is_active !== false
+    };
+
+    const { data, error } = await supabaseAdmin.from('course_today_goals').insert(payload).select().single();
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
+    }
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    console.error('createTodayGoal Error:', err);
+    res.status(500).json({ error: 'TodayGoalCreateError', message: err.message || 'Failed to create today goal.' });
+  }
+};
+
+export const updateTodayGoal = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const payload = {
+      title: String(req.body.title || "Today's Goal").trim() || "Today's Goal",
+      goal_text: String(req.body.goal_text || '').trim(),
+      tip_text: String(req.body.tip_text || '').trim(),
+      section_slug: String(req.body.section_slug || '').trim() || null,
+      order_no: Number(req.body.order_no || 1),
+      is_active: Boolean(req.body.is_active),
+      updated_at: new Date().toISOString()
+    };
+
+    if (!payload.goal_text) {
+      return res.status(400).json({ error: 'BadRequest', message: 'Goal text is required.' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('course_today_goals')
+      .update(payload)
+      .eq('id', goalId)
+      .select()
+      .single();
+
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
+    }
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (err) {
+    console.error('updateTodayGoal Error:', err);
+    res.status(500).json({ error: 'TodayGoalUpdateError', message: err.message || 'Failed to update today goal.' });
+  }
+};
+
+export const deleteTodayGoal = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const { error } = await supabaseAdmin.from('course_today_goals').delete().eq('id', goalId);
+    if (isMissingContentSchemaError(error)) {
+      return res.status(409).json({ error: 'MigrationRequired', message: COURSE_CONTENT_MIGRATION_MESSAGE });
+    }
+    if (error) throw error;
+    res.status(200).json({ message: 'Today goal deleted.' });
+  } catch (err) {
+    console.error('deleteTodayGoal Error:', err);
+    res.status(500).json({ error: 'TodayGoalDeleteError', message: err.message || 'Failed to delete today goal.' });
   }
 };
 
