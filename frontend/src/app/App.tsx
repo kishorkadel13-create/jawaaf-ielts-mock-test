@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AppRoutes from '../routes/AppRoutes';
+import AppRoutes, { prefetchAdminRoutes, prefetchStudentRoutes } from '../routes/AppRoutes';
 import { useAuthStore } from '../store/authStore';
 
 // Create a client
@@ -15,11 +15,32 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  const { initializeAuth } = useAuthStore();
+  const { initializeAuth, isAuthenticated, profile } = useAuthStore();
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !profile?.role) return;
+
+    const prefetch = () => {
+      if (profile.role === 'admin') {
+        prefetchAdminRoutes();
+        return;
+      }
+
+      if (profile.role === 'student') {
+        prefetchStudentRoutes();
+      }
+    };
+
+    const idleRequest = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 800));
+    const idleCancel = window.cancelIdleCallback || window.clearTimeout;
+    const handle = idleRequest(prefetch, { timeout: 2000 });
+
+    return () => idleCancel(handle);
+  }, [isAuthenticated, profile?.role]);
 
   return (
     <QueryClientProvider client={queryClient}>

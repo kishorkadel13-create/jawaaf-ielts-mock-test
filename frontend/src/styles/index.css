@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;850&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=League+Spartan:wght@700&family=Lora:ital,wght@0,500;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;850&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=League+Spartan:wght@700&family=Lora:ital,wght@0,500;0,600;1,500&display=swap');
 
 :root {
   --font-lora: 'Lora', serif;
@@ -272,4 +272,201 @@
 
 .animate-recorded-course-page-reveal {
   animation: recorded-course-page-reveal 520ms ease-out both;
+}
+
+.cinema-serif {
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+}
+
+.custom-scrollbar {
+  scrollbar-color: rgba(172, 123, 62, 0.5) rgba(255, 244, 223, 0.45);
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 244, 223, 0.45);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(172, 123, 62, 0.45);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(137, 83, 34, 0.58);
+}
+
+.cinema-mascot-cutout {
+  filter: saturate(1.03) contrast(1.02);
+}
+
+.cinema-shell {
+  position: relative;
+  background-color: #f7f1e6;
+}
+
+.cinema-shell::before,
+.cinema-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cinema-shell::before {
+  z-index: 0;
+  opacity: 0.46;
+  background:
+    radial-gradient(circle at 48% 32%, rgba(255, 248, 232, 0.82), transparent 34%),
+    radial-gradient(circle at 82% 84%, rgba(168, 103, 40, 0.12), transparent 26%),
+    linear-gradient(90deg, rgba(91, 55, 24, 0.08), transparent 18%, transparent 82%, rgba(91, 55, 24, 0.07));
+}
+
+.cinema-shell::after {
+  z-index: 1;
+  opacity: 0.05;
+  background-image:
+    repeating-linear-gradient(0deg, #3b2a1f 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, #3b2a1f 0 1px, transparent 1px 5px);
+  mix-blend-mode: multiply;
+}
+
+.cinema-shell > * {
+  position: relative;
+  z-index: 2;
+}
+
+.cinema-paper-panel {
+  position: relative;
+  border: 1px solid #d1aa73;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 238, 0.93), rgba(247, 229, 197, 0.84)),
+    radial-gradient(circle at 18px 22px, rgba(112, 74, 35, 0.07) 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 18%, rgba(255, 255, 255, 0.45), transparent 26%);
+  background-size: auto, 19px 19px, auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -18px 38px rgba(157, 105, 45, 0.05),
+    0 18px 34px rgba(86, 49, 23, 0.12);
+}
+
+.cinema-paper-panel::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  border: 1px solid rgba(181, 132, 74, 0.42);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.55);
+}
+
+.cinema-paper-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(125, 76, 31, 0.08), transparent 20%, transparent 78%, rgba(125, 76, 31, 0.07)),
+    radial-gradient(circle at 0 0, rgba(182, 127, 61, 0.18), transparent 42px),
+    radial-gradient(circle at 100% 0, rgba(182, 127, 61, 0.14), transparent 42px),
+    radial-gradient(circle at 0 100%, rgba(182, 127, 61, 0.14), transparent 42px),
+    radial-gradient(circle at 100% 100%, rgba(182, 127, 61, 0.16), transparent 42px);
+  opacity: 0.55;
+}
+
+.cinema-status-stamp {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  transform: rotate(-13deg);
+  filter:
+    contrast(1.08)
+    saturate(0.92)
+    drop-shadow(0 1px 0 rgba(255, 248, 232, 0.35))
+    drop-shadow(0 4px 6px rgba(91, 55, 24, 0.06));
+  opacity: 0.94;
+}
+
+.cinema-status-stamp--showing {
+  width: 72px;
+  height: 72px;
+}
+
+.cinema-ring-icon {
+  filter:
+    contrast(1.04)
+    saturate(0.96)
+    drop-shadow(0 5px 8px rgba(91, 55, 24, 0.14));
+}
+
+.cinema-play-triangle {
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 11px solid #b93122;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
+}
+
+.cinema-lock-seal {
+  border: 1px solid rgba(174, 135, 77, 0.34);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 248, 232, 0.72), rgba(237, 215, 178, 0.55));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 250, 238, 0.52),
+    0 8px 16px rgba(91, 55, 24, 0.06);
+}
+
+.cinema-reel-badge {
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 248, 232, 0.75),
+    0 8px 18px rgba(91, 55, 24, 0.10);
+}
+
+.cinema-video-frame {
+  border: 2px solid #6e604d;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 232, 0.22),
+    0 4px 0 rgba(50, 33, 20, 0.28),
+    0 20px 38px rgba(55, 32, 16, 0.20);
+}
+
+.cinema-tabs button:first-child {
+  border-top-left-radius: 16px;
+}
+
+.cinema-tabs button:last-child {
+  border-top-right-radius: 28px;
+  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+}
+
+.cinema-copy-block {
+  font-family: "Lora", Georgia, serif;
+}
+
+.cinema-resource-card,
+.cinema-button-paper,
+.cinema-speech-card {
+  position: relative;
+  border: 1px solid #d4b27e;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 239, 0.9), rgba(247, 230, 200, 0.82)),
+    radial-gradient(circle at 12px 12px, rgba(116, 76, 34, 0.07) 1px, transparent 1.6px);
+  background-size: auto, 18px 18px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 232, 0.55),
+    0 10px 18px rgba(86, 49, 23, 0.08);
+}
+
+.cinema-speech-card::after {
+  content: "";
+  position: absolute;
+  right: -14px;
+  top: 42%;
+  width: 26px;
+  height: 22px;
+  background: inherit;
+  border-right: 1px solid #d4b27e;
+  border-bottom: 1px solid #d4b27e;
+  transform: rotate(-35deg);
 }

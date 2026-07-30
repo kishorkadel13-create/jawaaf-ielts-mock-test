@@ -1,35 +1,66 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 
-// Public pages
-import LandingPage from '../pages/LandingPage';
-import FeaturesPage from '../pages/FeaturesPage';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
+const loadLandingPage = () => import('../pages/LandingPage');
+const loadFeaturesPage = () => import('../pages/FeaturesPage');
+const loadLoginPage = () => import('../pages/LoginPage');
+const loadRegisterPage = () => import('../pages/RegisterPage');
 
-// Student pages
-import DashboardPage from '../pages/DashboardPage';
-import MockTestsPage from '../pages/MockTestsPage';
-import CoursesPage from '../pages/CoursesPage';
-import HistoryPage from '../pages/HistoryPage';
-import AccessRequestPage from '../pages/AccessRequestPage';
-import ExamInterface from '../pages/ExamInterface';
-import ResultPage from '../pages/ResultPage';
+const loadDashboardPage = () => import('../pages/DashboardPage');
+const loadMockTestsPage = () => import('../pages/MockTestsPage');
+const loadCoursesPage = () => import('../pages/CoursesPage');
+const loadHistoryPage = () => import('../pages/HistoryPage');
+const loadAccessRequestPage = () => import('../pages/AccessRequestPage');
+const loadExamInterface = () => import('../pages/ExamInterface');
+const loadResultPage = () => import('../pages/ResultPage');
 import RecordedCoursesTransition from '../components/RecordedCoursesTransition';
 
-// Admin pages
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
-import AdminTestsPage from '../pages/admin/AdminTestsPage';
-import AdminCoursesPage from '../pages/admin/AdminCoursesPage';
-import AdminTestDetailsPage from '../pages/admin/AdminTestDetailsPage';
-import AdminAccessPage from '../pages/admin/AdminAccessPage';
-import AdminSubmissionsPage from '../pages/admin/AdminSubmissionsPage';
-import TeacherDashboardPage from '../pages/admin/TeacherDashboardPage';
+const loadAdminDashboardPage = () => import('../pages/admin/AdminDashboardPage');
+const loadAdminTestsPage = () => import('../pages/admin/AdminTestsPage');
+const loadAdminCoursesPage = () => import('../pages/admin/AdminCoursesPage');
+const loadAdminTestDetailsPage = () => import('../pages/admin/AdminTestDetailsPage');
+const loadAdminAccessPage = () => import('../pages/admin/AdminAccessPage');
+const loadAdminSubmissionsPage = () => import('../pages/admin/AdminSubmissionsPage');
+const loadTeacherDashboardPage = () => import('../pages/admin/TeacherDashboardPage');
+
+const LandingPage = lazy(loadLandingPage);
+const FeaturesPage = lazy(loadFeaturesPage);
+const LoginPage = lazy(loadLoginPage);
+const RegisterPage = lazy(loadRegisterPage);
+const DashboardPage = lazy(loadDashboardPage);
+const MockTestsPage = lazy(loadMockTestsPage);
+const CoursesPage = lazy(loadCoursesPage);
+const HistoryPage = lazy(loadHistoryPage);
+const AccessRequestPage = lazy(loadAccessRequestPage);
+const ExamInterface = lazy(loadExamInterface);
+const ResultPage = lazy(loadResultPage);
+const AdminDashboardPage = lazy(loadAdminDashboardPage);
+const AdminTestsPage = lazy(loadAdminTestsPage);
+const AdminCoursesPage = lazy(loadAdminCoursesPage);
+const AdminTestDetailsPage = lazy(loadAdminTestDetailsPage);
+const AdminAccessPage = lazy(loadAdminAccessPage);
+const AdminSubmissionsPage = lazy(loadAdminSubmissionsPage);
+const TeacherDashboardPage = lazy(loadTeacherDashboardPage);
+
+export const prefetchStudentRoutes = () => {
+  loadDashboardPage();
+  loadCoursesPage();
+  loadMockTestsPage();
+  loadHistoryPage();
+};
+
+export const prefetchAdminRoutes = () => {
+  loadAdminDashboardPage();
+  loadAdminTestsPage();
+  loadAdminCoursesPage();
+  loadAdminSubmissionsPage();
+};
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={null}>
+      <Routes>
       {/* Public Guest Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/features" element={<FeaturesPage />} />
@@ -198,6 +229,7 @@ export default function AppRoutes() {
 
       {/* Fallback route */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
