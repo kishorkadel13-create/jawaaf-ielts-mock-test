@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 import { api } from '../services/api.js';
-import { Award, ShieldAlert, ShieldCheck, ArrowLeft, Clock, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Clock, Crown, ShieldAlert, ShieldCheck, Zap } from 'lucide-react';
+import JawaafLogo from '../components/JawaafLogo';
 
 export default function AccessRequestPage() {
   const { profile, updateProfileAccess } = useAuthStore();
@@ -45,91 +46,162 @@ export default function AccessRequestPage() {
     }
   };
 
-  return (
-    <div className="flex-1 flex flex-col p-6 md:p-12 max-w-2xl mx-auto w-full justify-center">
-      <div className="mb-8 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold">
-          <ArrowLeft className="h-4 w-4" /> Dashboard
+  const hasAccess = Boolean(profile?.has_full_access || requestStatus === 'approved');
+  const features = [
+    '15+ Premium Mock Tests',
+    'Auto IELTS Band Scoring',
+    'Interactive Review Sheet',
+    'Autosave & Resume CBT'
+  ];
+
+  const renderAction = () => {
+    if (loading) {
+      return (
+        <div className="flex h-[74px] w-full items-center justify-center rounded-[20px] bg-[#294b77]/10">
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#294b77]/15 border-t-[#294b77]"></div>
+        </div>
+      );
+    }
+
+    if (hasAccess) {
+      return (
+        <Link
+          to="/courses"
+          className="group flex h-[62px] w-full items-center justify-center gap-5 rounded-[18px] text-[18px] font-black text-white shadow-[0_18px_34px_rgba(41,75,119,0.25)] transition-transform hover:-translate-y-0.5"
+          style={{ background: 'linear-gradient(to right, #294b77 0%, #294b77 100%)' }}
+        >
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-500 shadow-[0_0_26px_rgba(34,197,94,0.48)]">
+            <ShieldCheck className="h-6 w-6" />
+          </span>
+          Continue Premium Learning
+          <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
         </Link>
-        <span className="text-xs text-slate-500 font-medium">Jawaaf IELTS Lab</span>
-      </div>
+      );
+    }
 
-      <div className="glass-card p-8 border-brand-500/10 shadow-brand-500/5 relative overflow-hidden">
-        {/* Decorative Radial Background */}
-        <div className="absolute top-0 right-0 w-36 h-36 bg-brand-500/5 rounded-full blur-2xl"></div>
+    if (requestStatus === 'pending') {
+      return (
+        <div className="flex min-h-[62px] w-full items-center justify-center gap-4 rounded-[18px] bg-[#294b77] px-6 text-white shadow-[0_18px_34px_rgba(41,75,119,0.24)]">
+          <Clock className="h-6 w-6 animate-pulse text-[#ef5f55]" />
+          <div className="text-left">
+            <p className="text-[18px] font-black">Request Pending Review</p>
+            <p className="text-[12px] font-semibold text-white/70">You will gain access after admin approval.</p>
+          </div>
+        </div>
+      );
+    }
 
-        <div className="text-center">
-          <Zap className="h-12 w-12 text-brand-400 mx-auto mb-4 animate-bounce" />
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white font-serif">Unlock Premium Access</h1>
-          <p className="mt-3 text-slate-400 text-sm leading-relaxed max-w-md mx-auto">
-            Get complete access to all full-length Academic IELTS Listening and Reading mock tests, detailed band analytics, and review platforms.
-          </p>
+    if (requestStatus === 'rejected') {
+      return (
+        <button
+          onClick={handleRequestAccess}
+          disabled={submitting}
+          className="group flex h-[62px] w-full items-center justify-center gap-5 rounded-[18px] bg-[#294b77] text-[18px] font-black text-white shadow-[0_18px_34px_rgba(41,75,119,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-70"
+        >
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#ef5f55] shadow-[0_0_26px_rgba(239,95,85,0.5)]">
+            <ShieldAlert className="h-6 w-6" />
+          </span>
+          {submitting ? 'Submitting request...' : 'Submit New Request'}
+          <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleRequestAccess}
+        disabled={submitting}
+        className="group flex h-[62px] w-full items-center justify-center gap-5 rounded-[18px] text-[18px] font-black text-white shadow-[0_18px_34px_rgba(41,75,119,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-70"
+        style={{ background: 'linear-gradient(to right, #294b77 0%, #294b77 100%)' }}
+      >
+        <span className="grid h-11 w-11 place-items-center rounded-full shadow-[0_0_26px_rgba(239,95,85,0.5)]" style={{ background: 'linear-gradient(to right, #ef5f55 0%, #ef5f55 100%)' }}>
+          <Zap className="h-6 w-6 fill-white" />
+        </span>
+        {submitting ? 'Submitting request...' : 'Request Full Access Now'}
+        <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+      </button>
+    );
+  };
+
+  return (
+    <div
+      className="relative flex h-screen max-h-screen flex-1 overflow-hidden bg-[#f7fbff] px-6 py-7 text-[#294b77] md:px-12 lg:px-16"
+      style={{
+        backgroundImage: "url('/images/premium access/background.png')",
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'center center',
+      }}
+    >
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1360px] flex-col">
+        <div className="flex items-center justify-between">
+          <Link to="/dashboard" className="inline-flex items-center gap-3 text-[15px] font-black text-[#294b77] transition-colors hover:text-[#ef5f55]">
+            <ArrowLeft className="h-5 w-5" /> Dashboard
+          </Link>
+          <JawaafLogo className="w-[165px] md:w-[205px]" />
         </div>
 
-        <div className="mt-8 border-t border-white/5 pt-6 text-center">
-          {loading ? (
-            <div className="flex justify-center p-4">
-              <div className="w-8 h-8 border-2 border-slate-800 border-t-brand-500 rounded-full animate-spin"></div>
+        <section className="relative mx-auto mt-6 grid w-full max-w-[960px] overflow-hidden rounded-[34px] border border-white/85 bg-white/92 p-7 shadow-[0_28px_75px_rgba(41,75,119,0.14)] backdrop-blur-sm md:mt-9 md:p-10 lg:max-h-[calc(100vh-118px)] lg:grid-cols-[0.94fr_0.78fr] lg:p-11">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_18%,rgba(255,255,255,0.86),transparent_34%),radial-gradient(circle_at_82%_24%,rgba(41,75,119,0.012),transparent_30%)]"></div>
+          <div className="relative z-10 flex flex-col justify-center lg:pr-2">
+            <div className="mb-8 inline-flex w-fit items-center gap-3 rounded-full px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.04em] text-white shadow-[0_12px_24px_rgba(239,95,85,0.2)]" style={{ background: 'linear-gradient(to right, #ef5f55 0%, #ef5f55 100%)' }}>
+              <Crown className="h-4 w-4" />
+              {hasAccess ? 'Premium Active' : 'Premium Access'}
             </div>
-          ) : profile?.has_full_access || requestStatus === 'approved' ? (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-xl flex items-center justify-center gap-2.5 max-w-md mx-auto">
-              <ShieldCheck className="h-5 w-5 shrink-0" />
-              <span className="font-bold">Premium Subscription Active</span>
-            </div>
-          ) : requestStatus === 'pending' ? (
-            <div className="p-5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm rounded-xl max-w-md mx-auto flex flex-col items-center gap-2">
-              <Clock className="h-6 w-6 animate-pulse" />
-              <span className="font-bold">Request Pending Review</span>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Our administrators are currently reviewing your account access request. You will gain full access immediately upon approval.
-              </p>
-            </div>
-          ) : requestStatus === 'rejected' ? (
-            <div className="p-5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl max-w-md mx-auto flex flex-col items-center gap-2">
-              <ShieldAlert className="h-6 w-6" />
-              <span className="font-bold">Request Rejected</span>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Your request for full premium access was declined. Please contact support or your administrator.
-              </p>
-              <button 
-                onClick={handleRequestAccess}
-                disabled={submitting}
-                className="mt-3 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg transition-all"
-              >
-                Submit New Request
-              </button>
-            </div>
-          ) : (
-            <div className="max-w-md mx-auto">
-              <div className="mb-6 grid grid-cols-2 gap-4 text-left text-xs text-slate-400">
-                <div className="flex gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  <span>15+ Premium Mock Tests</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  <span>Auto IELTS Band Scoring</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  <span>Interactive Review Sheet</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  <span>Autosave & Resume CBT</span>
-                </div>
-              </div>
 
-              <button
-                onClick={handleRequestAccess}
-                disabled={submitting}
-                className="w-full py-3.5 bg-brand-600 hover:bg-brand-500 disabled:bg-brand-800 disabled:text-slate-400 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2"
-              >
-                {submitting ? 'Submitting request...' : 'Request Full Access Now'}
-              </button>
+            <h1 className="max-w-[480px] text-[42px] font-black leading-[0.98] tracking-tight text-[#173963] md:text-[58px]" style={{ fontFamily: 'var(--font-league-spartan)' }}>
+              {hasAccess ? 'Your Premium Access Is' : 'Unlock Your'}
+              <span className="mt-2 block text-[#ef5f55]">
+                {hasAccess ? 'Active' : 'Full Potential'}
+              </span>
+            </h1>
+
+            <p className="mt-6 max-w-[470px] text-[15px] font-semibold leading-[1.75] text-[#6d7f9e]">
+              Get complete access to all full-length Academic IELTS Listening and Reading mock tests, detailed band analytics, and review platforms.
+            </p>
+
+            <div className="mt-9 grid gap-x-9 gap-y-5 text-[13px] font-bold text-[#7183a0] sm:grid-cols-2">
+              {features.map(feature => (
+                <div key={feature} className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 shrink-0 text-[#294b77]" />
+                  <span>{feature}</span>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+
+          <div className="relative z-10 mt-8 flex min-h-[320px] items-end justify-center overflow-hidden lg:mt-0">
+            <div className="absolute inset-y-0 left-0 z-20 w-20 bg-gradient-to-r from-white/92 via-white/70 to-transparent"></div>
+            <div className="absolute inset-y-8 right-4 z-0 w-[78%] rounded-[34px] bg-white/75 blur-xl"></div>
+            <img
+              src="/images/premium access/active.png"
+              alt="Jawaaf premium access mascot"
+              className="relative z-10 -mr-10 h-[350px] w-auto max-w-none object-contain drop-shadow-[0_22px_28px_rgba(41,75,119,0.13)] md:h-[420px] lg:h-[470px]"
+              style={{
+                clipPath: 'inset(0 18px 0 0)',
+                WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, #000 8%, #000 91%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 7%, #000 93%, transparent 100%)',
+                maskImage: 'linear-gradient(90deg, transparent 0%, #000 8%, #000 91%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 7%, #000 93%, transparent 100%)',
+                WebkitMaskComposite: 'source-in',
+                maskComposite: 'intersect'
+              }}
+            />
+          </div>
+
+          <div className="relative z-20 mt-8 lg:col-span-2">
+            {requestStatus === 'rejected' && (
+              <p className="mb-4 flex items-center justify-center gap-2 text-[13px] font-bold text-[#ef5f55]">
+                <ShieldAlert className="h-4 w-4" /> Your previous request was declined. You can submit a new one.
+              </p>
+            )}
+            {renderAction()}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-[13px] font-bold text-[#7b8ca7]">
+              <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[#294b77]" /> 100% Secure</span>
+              <span className="text-[#ef5f55]">•</span>
+              <span>Instant Access</span>
+              <span className="text-[#ef5f55]">•</span>
+              <span>Cancel Anytime</span>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
