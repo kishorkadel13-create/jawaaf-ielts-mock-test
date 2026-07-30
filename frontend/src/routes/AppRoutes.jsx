@@ -16,6 +16,7 @@ import HistoryPage from '../pages/HistoryPage';
 import AccessRequestPage from '../pages/AccessRequestPage';
 import ExamInterface from '../pages/ExamInterface';
 import ResultPage from '../pages/ResultPage';
+import RecordedCoursesTransition from '../components/RecordedCoursesTransition';
 
 // Admin pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -48,7 +49,9 @@ export default function AppRoutes() {
         path="/courses" 
         element={
           <ProtectedRoute roles={['student']}>
-            <CoursesPage />
+            <RecordedCoursesTransition>
+              <CoursesPage />
+            </RecordedCoursesTransition>
           </ProtectedRoute>
         } 
       />
