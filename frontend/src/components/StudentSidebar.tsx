@@ -83,10 +83,12 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
       </nav>
 
       <div className="mt-8 flex flex-1 flex-col items-center justify-end px-2">
-        <Link to="/access-request" className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
+        <Link to={hasPremiumAccess ? '/courses' : '/access-request'} className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
           isCinema
             ? 'bg-gradient-to-br from-[#FFF7EA] to-[#F9E5C6] border border-[#E8D7BE] shadow-sm'
-            : 'bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-white/20'
+            : hasPremiumAccess
+              ? 'bg-gradient-to-b from-emerald-500/15 to-white/5 border border-emerald-400/25 hover:border-emerald-300/40 shadow-[0_18px_55px_rgba(16,185,129,0.12)]'
+              : 'bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-white/20'
         }`}>
           {/* Decorative glow */}
           <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl transition-colors ${
@@ -97,17 +99,17 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
             <div className="flex items-center gap-3 mb-4">
               <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${
                 hasPremiumAccess
-                  ? 'bg-emerald-500/15 text-emerald-500'
+                  ? 'bg-emerald-500 text-white shadow-[0_0_22px_rgba(34,197,94,0.35)]'
                   : isCinema
                     ? 'bg-[#F7D8AC] text-[#A23A24]'
                     : 'bg-[#EE6055]/20 text-[#EE6055]'
               }`}>
-                <Crown className="h-5 w-5" />
+                {hasPremiumAccess ? <CheckSquare className="h-5 w-5" /> : <Crown className="h-5 w-5" />}
               </div>
               <div>
                 <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Premium Access Active</h4>
-                <p className={`text-[10px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>
-                  {hasPremiumAccess ? 'All premium learning unlocked' : 'Click to request access'}
+                <p className={`text-[10px] font-semibold ${isCinema ? 'text-[#6D5A4C]' : hasPremiumAccess ? 'text-emerald-100/90' : 'text-white/60'}`}>
+                  {hasPremiumAccess ? 'Premium account verified' : 'Click to request access'}
                 </p>
               </div>
             </div>
@@ -126,8 +128,18 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
             </div>
             
             <div className={`w-full rounded-full h-2.5 mb-1 overflow-hidden ${isCinema ? 'bg-[#E4D0B5]' : 'bg-white/10'}`}>
-              <div className="bg-gradient-to-r from-[#D76343] to-[#E9A164] h-2.5 rounded-full transition-all duration-1000" style={{ width: hasPremiumAccess ? '100%' : '34%' }}></div>
+              <div
+                className={`h-2.5 rounded-full transition-all duration-1000 ${
+                  hasPremiumAccess ? 'bg-gradient-to-r from-emerald-500 to-lime-300' : 'bg-gradient-to-r from-[#D76343] to-[#E9A164]'
+                }`}
+                style={{ width: hasPremiumAccess ? '100%' : '34%' }}
+              ></div>
             </div>
+            {hasPremiumAccess && (
+              <p className={`mt-2 text-[10px] font-bold uppercase tracking-[0.12em] ${isCinema ? 'text-emerald-700' : 'text-emerald-200'}`}>
+                Access unlocked
+              </p>
+            )}
           </div>
         </Link>
       </div>
