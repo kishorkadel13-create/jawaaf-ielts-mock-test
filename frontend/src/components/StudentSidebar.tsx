@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Award,
@@ -31,29 +31,8 @@ const navItems = [
 export default function StudentSidebar({ variant = 'default' }: { variant?: 'default' | 'cinema' }) {
   const location = useLocation();
   const { profile, logout } = useAuthStore();
-  const [dailyGoalMet, setDailyGoalMet] = useState(false);
   const isCinema = variant === 'cinema';
   const hasPremiumAccess = Boolean(profile?.has_full_access || profile?.role === 'admin' || profile?.role === 'teacher');
-
-  useEffect(() => {
-    if (!profile?.id) return;
-    const storageKey = `user_streak_data_${profile.id}`;
-    
-    // Check every second to catch when the dashboard sets it
-    const checkGoal = () => {
-      const savedData = localStorage.getItem(storageKey);
-      const activeDates = savedData ? JSON.parse(savedData) : [];
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      if (activeDates.includes(todayStr)) {
-        setDailyGoalMet(true);
-      }
-    };
-    
-    checkGoal();
-    const interval = setInterval(checkGoal, 1000);
-    return () => clearInterval(interval);
-  }, [profile?.id]);
 
   return (
     <aside 
@@ -103,68 +82,8 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
         )}
       </nav>
 
-      <div className="mt-8 flex flex-1 flex-col justify-end gap-4 px-2">
-        <div className={`relative w-full overflow-hidden rounded-[24px] border p-5 shadow-sm ${
-          isCinema
-            ? 'border-[#E3CBA8] bg-gradient-to-br from-[#FFF6E8] to-[#F3D8AD] text-[#3A2417]'
-            : 'border-white/10 bg-gradient-to-br from-white/12 to-white/5 text-white'
-        }`}>
-          <div className={`absolute -right-8 -top-8 h-28 w-28 rounded-full blur-3xl ${isCinema ? 'bg-[#D49325]/22' : 'bg-[#F59E24]/20'}`} />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3">
-              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-                hasPremiumAccess
-                  ? 'bg-emerald-500/15 text-emerald-500'
-                  : isCinema
-                    ? 'bg-[#A23A24]/12 text-[#A23A24]'
-                    : 'bg-[#F59E24]/18 text-[#F59E24]'
-              }`}>
-                <Crown className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>
-                  {hasPremiumAccess ? 'Premium Access Active' : 'Active Premium Features'}
-                </h4>
-                <p className={`mt-0.5 text-[10px] font-bold ${isCinema ? 'text-[#6D5A4C]' : 'text-white/58'}`}>
-                  {hasPremiumAccess ? 'All premium learning unlocked' : 'Unlock full IELTS learning'}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-2 text-[11px] font-bold">
-              {['Recorded classes', 'Premium mock tests', 'Practice library'].map(item => (
-                <div key={item} className="flex items-center gap-2">
-                  <span className={`grid h-4 w-4 place-items-center rounded-full border ${
-                    hasPremiumAccess
-                      ? 'border-emerald-500 bg-emerald-500 text-white'
-                      : isCinema
-                        ? 'border-[#D9BD91] bg-[#FFF9EF]'
-                        : 'border-white/20 bg-white/5'
-                  }`}>
-                    {hasPremiumAccess && <CheckSquare className="h-2.5 w-2.5" />}
-                  </span>
-                  <span className={isCinema ? 'text-[#5D422D]' : 'text-white/72'}>{item}</span>
-                </div>
-              ))}
-            </div>
-
-            {!hasPremiumAccess && (
-              <Link
-                to="/access-request"
-                className={`mt-4 flex w-full items-center justify-center rounded-xl px-4 py-3 text-[12px] font-black transition-colors ${
-                  isCinema
-                    ? 'bg-[#A23A24] text-white hover:bg-[#7E291D]'
-                    : 'bg-gradient-to-r from-[#EE6055] to-[#F59E24] text-white hover:brightness-105'
-                }`}
-              >
-                Request Premium Access
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Daily Goal Widget (Replaced Mascot) */}
-        <div className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
+      <div className="mt-8 flex flex-1 flex-col items-center justify-end px-2">
+        <Link to="/access-request" className={`rounded-[24px] p-5 w-full relative overflow-hidden group transition-colors ${
           isCinema
             ? 'bg-gradient-to-br from-[#FFF7EA] to-[#F9E5C6] border border-[#E8D7BE] shadow-sm'
             : 'bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-white/20'
@@ -177,40 +96,40 @@ export default function StudentSidebar({ variant = 'default' }: { variant?: 'def
           <div className="relative z-10 flex flex-col w-full">
             <div className="flex items-center gap-3 mb-4">
               <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${
-                isCinema ? 'bg-[#F7D8AC] text-[#3A2417]' : 'bg-[#EE6055]/20 text-[#EE6055]'
+                hasPremiumAccess
+                  ? 'bg-emerald-500/15 text-emerald-500'
+                  : isCinema
+                    ? 'bg-[#F7D8AC] text-[#A23A24]'
+                    : 'bg-[#EE6055]/20 text-[#EE6055]'
               }`}>
-                <Award className="h-5 w-5" />
+                <Crown className="h-5 w-5" />
               </div>
               <div>
-                <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Daily Goals</h4>
-                <p className={`text-[10px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>{dailyGoalMet ? "1/3 Completed" : "0/3 Completed"}</p>
+                <h4 className={`text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Premium Access Active</h4>
+                <p className={`text-[10px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>
+                  {hasPremiumAccess ? 'All premium learning unlocked' : 'Click to request access'}
+                </p>
               </div>
             </div>
             
             <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${dailyGoalMet ? 'bg-[#22C55E] border-[#22C55E]' : 'border-white/20 bg-white/5'}`}>
-                  {dailyGoalMet && <CheckSquare className="h-2.5 w-2.5 text-white" />}
+              {['Recorded Courses', 'Mock Tests', 'Practice Tests'].map(item => (
+                <div key={item} className="flex items-center gap-2">
+                  <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${
+                    hasPremiumAccess ? 'bg-[#22C55E] border-[#22C55E]' : isCinema ? 'border-[#E0CDB2] bg-[#FFF4E5]' : 'border-white/20 bg-white/5'
+                  }`}>
+                    {hasPremiumAccess && <CheckSquare className="h-2.5 w-2.5 text-white" />}
+                  </div>
+                  <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : hasPremiumAccess ? 'text-white' : 'text-white/60'}`}>{item}</span>
                 </div>
-                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#3A2417]' : dailyGoalMet ? 'text-white' : 'text-white/60'}`}>Maintain Streak</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#E0CDB2] bg-[#FFF4E5]' : 'border-white/20 bg-white/5'}`}>
-                </div>
-                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>Practice Test</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded-full flex items-center justify-center border ${isCinema ? 'border-[#E0CDB2] bg-[#FFF4E5]' : 'border-white/20 bg-white/5'}`}>
-                </div>
-                <span className={`text-[11px] font-medium ${isCinema ? 'text-[#6D5A4C]' : 'text-white/60'}`}>{isCinema ? 'Review Mistakes' : 'Complete 1 Video'}</span>
-              </div>
+              ))}
             </div>
             
             <div className={`w-full rounded-full h-2.5 mb-1 overflow-hidden ${isCinema ? 'bg-[#E4D0B5]' : 'bg-white/10'}`}>
-              <div className="bg-gradient-to-r from-[#D76343] to-[#E9A164] h-2.5 rounded-full transition-all duration-1000" style={{ width: dailyGoalMet ? '33%' : '0%' }}></div>
+              <div className="bg-gradient-to-r from-[#D76343] to-[#E9A164] h-2.5 rounded-full transition-all duration-1000" style={{ width: hasPremiumAccess ? '100%' : '34%' }}></div>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Logout Section */}
