@@ -9,7 +9,7 @@ import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
 import { resolveListeningAudioUrl } from '../utils/audioUrl';
-import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2 } from 'lucide-react';
+import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2, ChevronUp } from 'lucide-react';
 
 type OrderedQuestionBlock = {
   id: string;
@@ -131,6 +131,7 @@ export default function ExamInterface() {
   const [loading, setLoading] = useState(true);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [activeWritingTaskIndex, setActiveWritingTaskIndex] = useState(0);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [sectionSecondsRemaining, setSectionSecondsRemaining] = useState<number | null>(null);
   const [clipboardMessage, setClipboardMessage] = useState('');
   const internalClipboardRef = useRef<{ text: string; taskId: string | null } | null>(null);
@@ -826,23 +827,23 @@ export default function ExamInterface() {
       )}
       
       {/* 1. Header Toolbar */}
-      <header className="bg-slate-900 border-b border-white/5 px-6 py-3.5 flex items-center justify-between text-slate-200 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-slate-900 px-4 py-3 text-slate-200 sm:px-6 sm:py-3.5">
+        <div className="flex min-w-0 items-center gap-3">
           <Award className="h-5 w-5 text-[#1E3A6E] shrink-0" />
-          <div>
-            <h1 className="font-extrabold text-sm text-white tracking-wide">{activeTest.title}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-extrabold tracking-wide text-white">{activeTest.title}</h1>
             <span className="text-[10px] text-slate-500 font-semibold uppercase">{activeSection?.type} Section</span>
           </div>
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="hidden sm:flex bg-slate-950 p-1 rounded-xl border border-white/5">
+        <div className="order-3 flex w-full gap-1 overflow-x-auto rounded-xl border border-white/5 bg-slate-950 p-1 sm:order-none sm:w-auto">
           {activeSection?.type === 'writing' && writingTasks.length > 0 ? (
             writingTasks.map((task: any, idx: number) => (
               <button
                 key={task.id}
                 onClick={() => setActiveWritingTaskIndex(idx)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
                   activeWritingTaskIndex === idx
                     ? 'bg-[#1E3A6E] text-white'
                     : 'text-slate-400 hover:text-white'
@@ -860,7 +861,7 @@ export default function ExamInterface() {
                 onClick={() => {
                   if (!isFullMock) setActiveSection(idx);
                 }}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
                   activeSectionIndex === idx
                     ? 'bg-[#1E3A6E] text-white'
                     : isFullMock
@@ -875,7 +876,7 @@ export default function ExamInterface() {
         </div>
 
         {/* Timer & Submit controls */}
-        <div className="flex items-center gap-6">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-6">
           {/* Autosave status indicator */}
           <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-500">
             <Save className={`h-3.5 w-3.5 ${autosaveStatus === 'saving' ? 'animate-spin text-[#1E3A6E]' : ''}`} />
@@ -894,11 +895,20 @@ export default function ExamInterface() {
             <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
           </div>
 
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex min-h-10 items-center justify-center rounded-xl bg-[#1E3A6E] px-3 text-[12px] font-black text-white shadow-sm disabled:opacity-60 sm:hidden"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </button>
+
         </div>
       </header>
 
       {/* 2. Main CBT Split Screen Layout */}
-      <div className="flex-1 min-h-0 flex flex-row overflow-hidden relative">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:flex-row lg:overflow-hidden lg:pb-0">
         
         {/* Highlighter Tooltip overlay */}
         {highlightCoords && (
@@ -927,14 +937,13 @@ export default function ExamInterface() {
 
         {/* LEFT COLUMN: Passage (Reading) or Audio Deck (Listening) */}
         <div 
-          className="min-h-0 w-1/2 border-r border-slate-200 bg-[#fbfbfa] overflow-y-scroll px-8 py-7 relative"
-          style={{ height: '100%', flex: '0 0 50%', maxWidth: '50%', overflowY: 'scroll', overflowX: 'hidden' }}
+          className="relative min-h-0 w-full shrink-0 overflow-y-visible border-b border-slate-200 bg-[#fbfbfa] px-4 py-5 sm:px-6 sm:py-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:border-b-0 lg:border-r lg:px-8 lg:py-7"
           onMouseUp={handleSelection}
           onKeyUp={handleSelection}
         >
           {activeSection?.type === 'listening' ? (
             /* Premium Listening Audio Interface */
-            <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto text-center gap-8 py-12">
+            <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-6 py-8 text-center lg:gap-8 lg:py-12">
               <div className="w-24 h-24 rounded-full bg-[#1E3A6E]/10 border border-[#1E3A6E]/20 text-[#1E3A6E] flex items-center justify-center animate-pulse">
                 <Headphones className="h-10 w-10" />
               </div>
@@ -947,7 +956,7 @@ export default function ExamInterface() {
 
               {/* Listening Audio Track Element */}
               {listeningAudioUrl ? (
-                <div className="w-full bg-white border border-slate-200 p-5 rounded-2xl flex items-center gap-4 shadow-sm">
+                <div className="sticky top-0 z-20 flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:p-5 lg:static">
                   <div className="w-12 h-12 rounded-full bg-[#1E3A6E] text-white flex items-center justify-center shrink-0 shadow-md">
                     {audioPlaying ? <Volume2 className="h-5 w-5" /> : <Play className="h-5 w-5 ml-1 fill-current" />}
                   </div>
@@ -1007,15 +1016,15 @@ export default function ExamInterface() {
               )}
             </div>
           ) : activeSection?.type === 'writing' ? (
-            <div className="flex-1 flex flex-col gap-6 py-6">
+            <div className="flex flex-1 flex-col gap-5 py-2 sm:gap-6 sm:py-6">
               {activeWritingTask ? (
                 <>
                   <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-                    <div>
+                    <div className="min-w-0">
                       <span className="px-2.5 py-1 bg-[#EFF4FB] text-[#1E3A6E] text-[10px] font-black uppercase tracking-wider rounded-md">
                         {activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
                       </span>
-                      <h2 className="text-2xl font-extrabold text-[#05162E] font-serif mt-3">
+                      <h2 className="mt-3 break-words text-xl font-extrabold leading-tight text-[#05162E] sm:text-2xl">
                         {activeWritingTask.extra_data_json?.task_title || activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
                       </h2>
                       <p className="text-[12px] font-bold text-slate-500 mt-2">
@@ -1042,6 +1051,7 @@ export default function ExamInterface() {
                     <img
                       src={activeWritingGroup.image_url}
                       alt="Task 1 visual"
+                      loading="lazy"
                       className="w-full max-h-[420px] object-contain bg-white border border-slate-200 rounded-2xl shadow-sm"
                     />
                   )}
@@ -1069,7 +1079,8 @@ export default function ExamInterface() {
                       <img
                         src={group.image_url}
                         alt={`${group.title || 'Reading passage'} reference`}
-                        className="w-full max-w-2xl mx-auto rounded-xl border border-slate-200 shadow-sm mb-6"
+                        loading="lazy"
+                        className="mx-auto mb-6 h-auto w-full max-w-2xl rounded-xl border border-slate-200 shadow-sm"
                       />
                     )}
                     {group.normalizedPassage ? (
@@ -1092,19 +1103,18 @@ export default function ExamInterface() {
 
         {/* RIGHT COLUMN: Interactive Questions column */}
         <div
-          className="min-h-0 w-1/2 bg-[#F8FAFC] overflow-y-scroll p-8"
-          style={{ height: '100%', flex: '0 0 50%', maxWidth: '50%', overflowY: 'scroll', overflowX: 'hidden' }}
+          className="min-h-0 w-full min-w-0 bg-[#F8FAFC] p-4 sm:p-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:p-8"
         >
           <div style={{ display: 'none' }} aria-hidden="true" data-reading-layout-marker="split-scroll-active" />
           {activeSection?.type === 'writing' ? (
-            <div className="h-full flex flex-col gap-5">
-              <div className="flex gap-2">
+            <div className="flex h-full flex-col gap-5">
+              <div className="sticky top-0 z-20 flex gap-2 rounded-2xl bg-[#F8FAFC]/95 py-2 backdrop-blur lg:static lg:bg-transparent lg:py-0">
                 {writingTasks.map((task: any, idx: number) => (
                   <button
                     key={task.id}
                     type="button"
                     onClick={() => setActiveWritingTaskIndex(idx)}
-                    className={`flex-1 py-3 rounded-xl text-[13px] font-black transition-all border ${
+                    className={`min-h-11 flex-1 rounded-xl border py-3 text-[13px] font-black transition-all ${
                       activeWritingTaskIndex === idx
                         ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
                         : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
@@ -1154,9 +1164,9 @@ export default function ExamInterface() {
                     data-gramm="false"
                     data-gramm_editor="false"
                     data-enable-grammarly="false"
-	                    className="flex-1 min-h-[420px] w-full resize-none select-text p-6 bg-white text-[#05162E] text-[15px] leading-7 outline-none"
+	                    className="min-h-[50vh] w-full flex-1 resize-none select-text bg-white p-4 text-[15px] leading-7 text-[#05162E] outline-none sm:min-h-[420px] sm:p-6"
                   />
-                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                  <div className="sticky bottom-0 z-10 flex items-center justify-between border-t border-slate-100 bg-white px-5 py-3 text-[11px] font-bold text-slate-400">
                     <span>Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words</span>
                     <span>{autosaveStatus === 'saving' ? 'Saving...' : autosaveStatus === 'saved' ? 'Autosaved' : 'Autosave active'}</span>
                   </div>
@@ -1224,18 +1234,18 @@ export default function ExamInterface() {
                         {block.questions.map((question: any) => (
                           <div 
                             key={question.id} 
-                            className={`bg-white rounded-2xl p-6 shadow-sm flex items-start gap-4 border transition-all ${
+                            className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${
                               activeQuestionId === question.id 
                                 ? 'border-[#1E3A6E]/50' 
                                 : 'border-slate-200'
                             }`}
                             onClick={() => setActiveQuestionId(question.id)}
                           >
-                            <div className="h-8 w-8 bg-[#1E3A6E] text-white rounded-full flex items-center justify-center font-black text-[13px] shrink-0 shadow-md">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A6E] text-[13px] font-black text-white shadow-md">
                               {question.question_number}
                             </div>
 
-                            <div className="flex-1">
+                            <div className="min-w-0 flex-1">
                               <div className="flex justify-end mb-2">
                                 <button
                                   onClick={(e) => {
@@ -1276,8 +1286,20 @@ export default function ExamInterface() {
       </div>
 
       {/* 3. Bottom Palette Navigation Dock */}
-      <footer className="bg-white border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-slate-500 select-none shrink-0 shadow-[0_-4px_20px_rgba(15,23,42,0.04)]">
-        <div className="flex flex-wrap gap-2 max-w-full overflow-x-auto py-1">
+      <footer className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] shrink-0 select-none flex-col gap-4 overflow-hidden border-t border-slate-200 bg-white px-4 pb-4 pt-2 text-slate-500 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:flex-row lg:items-center lg:justify-between lg:overflow-visible lg:px-6 lg:py-4 ${
+        isPaletteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'
+      }`}>
+        <button
+          type="button"
+          onClick={() => setIsPaletteOpen(current => !current)}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F8FAFC] px-4 text-[12px] font-black uppercase tracking-wide text-[#05162E] lg:hidden"
+          aria-expanded={isPaletteOpen}
+        >
+          <span>Question Palette</span>
+          <ChevronUp className={`h-4 w-4 transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        <div className="flex max-w-full flex-wrap gap-2 overflow-x-auto py-1">
           {(activeSection?.type === 'writing' ? writingTasks : sectionQuestions).map((q: any, idx: number) => {
             const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
             const isFlagged = flaggedQuestions.includes(q.id);
@@ -1292,8 +1314,9 @@ export default function ExamInterface() {
                   } else {
                     setActiveQuestionId(q.id);
                   }
+                  setIsPaletteOpen(false);
                 }}
-                className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} h-9 rounded-xl font-bold text-[13px] flex items-center justify-center transition-all ${
+                className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} flex h-9 min-w-9 items-center justify-center rounded-xl text-[13px] font-bold transition-all ${
                   isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
                 } ${
                   isFlagged 
@@ -1310,7 +1333,7 @@ export default function ExamInterface() {
         </div>
 
         {/* Legend */}
-        <div className="flex gap-5 text-[10px] font-black uppercase tracking-widest shrink-0 text-slate-500">
+        <div className="flex shrink-0 flex-wrap gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 sm:gap-5">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-md bg-[#1E3A6E]"></div>
             <span>Answered</span>
@@ -1328,7 +1351,7 @@ export default function ExamInterface() {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="px-8 py-3 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-[14px] font-black rounded-2xl transition-all shadow-md flex items-center gap-2 uppercase tracking-wide shrink-0"
+          className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1E3A6E] px-8 py-3 text-[14px] font-black uppercase tracking-wide text-white shadow-md transition-all hover:bg-[#162d57] sm:w-auto"
         >
           <CheckCircle2 className="h-5 w-5" /> {submitButtonLabel}
         </button>

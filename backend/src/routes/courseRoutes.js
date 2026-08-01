@@ -5,12 +5,15 @@ import {
   getLessonById,
   getLessonQuestions,
   getLessonResourceContent,
+  getLessonVideoContent,
   createLessonQuestion,
   saveLessonProgress
 } from '../controllers/courseController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
+
+router.get('/lessons/:lessonId/video', getLessonVideoContent);
 
 router.use(authMiddleware);
 

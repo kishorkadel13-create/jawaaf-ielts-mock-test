@@ -142,6 +142,26 @@
     list-style: decimal;
   }
 
+  .ielts-passage :where(table),
+  .ielts-passage-shell :where(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .ielts-passage :where(img),
+  .ielts-passage-shell :where(img) {
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .ielts-passage :where(a, p, li, td, th),
+  .ielts-passage-shell :where(a, p, li, td, th) {
+    overflow-wrap: anywhere;
+  }
+
   .ielts-passage-dark .ielts-highlighted {
     color: #0f172a;
   }
@@ -431,13 +451,50 @@
     0 20px 38px rgba(55, 32, 16, 0.20);
 }
 
+.cinema-video-frame :where(video, iframe) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.cinema-video-frame :where(video) {
+  object-fit: contain;
+}
+
+.cinema-video-frame:fullscreen,
+.cinema-video-frame :where(video, iframe):fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  object-fit: contain;
+}
+
+.cinema-video-frame:-webkit-full-screen,
+.cinema-video-frame :where(video, iframe):-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  object-fit: contain;
+}
+
 .cinema-tabs button:first-child {
   border-top-left-radius: 16px;
 }
 
 .cinema-tabs button:last-child {
-  border-top-right-radius: 28px;
-  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  border-top-right-radius: 16px;
+}
+
+@media (min-width: 640px) {
+  .cinema-tabs button:last-child {
+    border-top-right-radius: 28px;
+    clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  }
 }
 
 .cinema-copy-block {

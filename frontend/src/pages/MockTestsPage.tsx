@@ -5,7 +5,8 @@ import { api } from '../services/api';
 import StudentSidebar from '../components/StudentSidebar';
 import WritingTask1Practice from '../components/WritingTask1Practice';
 import WritingTask2Practice from '../components/WritingTask2Practice';
-import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video } from 'lucide-react';
+import MobileBottomNav from '../components/MobileBottomNav';
+import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video, SlidersHorizontal, X } from 'lucide-react';
 
 interface MockTest {
   id: string;
@@ -31,6 +32,11 @@ interface MockTest {
       question_count: number;
       question_types?: string[];
       primary_question_type?: string;
+      questions?: Array<{
+        question_text?: string;
+        question_type?: string;
+        extra_data_json?: Record<string, any>;
+      }>;
     }>;
   }>;
 }
@@ -102,6 +108,8 @@ export default function MockTestsPage() {
   const [writingPracticeType, setWritingPracticeType] = useState<'task1' | 'task2' | 'combo' | null>(null);
   const [readingCategory, setReadingCategory] = useState<ReadingCategoryKey>('passage-1');
   const [readingQuestionType, setReadingQuestionType] = useState<ReadingQuestionTypeKey>('all');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
 
   const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set());
@@ -354,6 +362,62 @@ export default function MockTestsPage() {
       return card.category === activeReadingCategory && card.questionTypeKeys.includes(typeKey);
     }).length;
 
+  const readingFilterPanel = (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-[#294b77] px-5 py-4">
+        <div>
+          <h3 className="text-[15px] font-black text-white">Question Types</h3>
+          <p className="mt-1 text-[12px] font-semibold text-white/70">
+            {isCompleteReadingCategory || readingQuestionType === 'all'
+              ? `${activeReadingCategoryMeta.label} practice sets`
+              : `${activeReadingCategoryMeta.label} filtered by type`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsFilterOpen(false)}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/10 text-white lg:hidden"
+          aria-label="Close filters"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      <div className="max-h-[70vh] overflow-y-auto p-3 lg:max-h-[calc(100vh-260px)]">
+        {READING_QUESTION_TYPES.map(type => {
+          const count = getReadingTypeCount(type.key);
+          const isDisabled = isCompleteReadingCategory && type.key !== 'all';
+          const isActive = isCompleteReadingCategory ? type.key === 'all' : readingQuestionType === type.key;
+          return (
+            <button
+              key={type.key}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => {
+                if (isDisabled) return;
+                setReadingQuestionType(type.key);
+                setIsFilterOpen(false);
+              }}
+              className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left transition-all ${
+                isActive
+                  ? 'bg-[#EFF4FB] text-[#294b77] ring-1 ring-[#294b77]/20'
+                  : isDisabled
+                  ? 'cursor-not-allowed text-slate-300'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-[#294b77]'
+              }`}
+            >
+              <span className="break-words text-[13px] font-black leading-snug">{type.label}</span>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
+                isActive ? 'bg-white text-[#294b77]' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   const getWritingPracticeKind = (test: MockTest) => {
     const section = test.sections?.[0];
     const label = `${test.title || ''} ${section?.title || ''}`.toLowerCase();
@@ -510,12 +574,17 @@ export default function MockTestsPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#F8FAFC] font-sans flex" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      <StudentSidebar />
+    <div className="flex min-h-screen bg-[#F8FAFC] pb-24 font-sans lg:pb-0" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <main className="flex-1 min-w-0 h-screen overflow-hidden">
-        <header className="h-[68px] bg-white border-b border-slate-100 px-6 lg:px-10 flex items-center justify-between shadow-sm">
-          <button className="lg:hidden p-2 rounded-xl hover:bg-slate-50 text-[#05162E]">
+      <main className="min-w-0 flex-1">
+        <header className="sticky top-0 z-30 flex min-h-[68px] items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6 lg:px-10">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#05162E] hover:bg-slate-50 lg:hidden"
+            aria-label="Open navigation"
+          >
             <Menu className="h-6 w-6" />
           </button>
           {activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
@@ -537,7 +606,7 @@ export default function MockTestsPage() {
               <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Link>
           )}
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
             <span className="hidden md:flex items-center gap-2 text-[12px] text-slate-500 font-black uppercase tracking-wider">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               Jawaaf Testing Platform
@@ -548,7 +617,7 @@ export default function MockTestsPage() {
           </div>
         </header>
 
-        <div className={`h-[calc(100vh-68px)] p-4 md:p-5 xl:p-6 w-full ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <div className={`w-full p-4 md:p-5 xl:p-6 ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-visible' : 'overflow-visible'}`}>
         
         {/* Header Section */}
         {!(activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && (!writingPracticeType || writingPracticeType === 'task1' || writingPracticeType === 'task2')))) && (
@@ -575,12 +644,12 @@ export default function MockTestsPage() {
 
         {/* Content Section */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-20 gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 p-10 sm:p-20">
             <div className="w-12 h-12 border-4 border-slate-100 border-t-[#1E3A6E] rounded-full animate-spin"></div>
             <p className="text-slate-400 text-[14px] font-bold">Loading test library...</p>
           </div>
         ) : tests.length === 0 ? (
-          <div className="bg-white border border-slate-100 rounded-2xl p-16 text-center shadow-sm flex flex-col items-center">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-16">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
               <BookOpen className="h-10 w-10 text-slate-300" />
             </div>
@@ -600,9 +669,9 @@ export default function MockTestsPage() {
             onStartTest={handleStartTest}
           />
         ) : activeTab === 'practice' && !practiceType ? (
-          <div className="relative flex h-full flex-col overflow-hidden bg-white">
+          <div className="relative flex min-h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl bg-white">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_69%_14%,rgba(91,141,255,0.11),transparent_21%),radial-gradient(circle_at_5%_34%,rgba(112,161,255,0.06),transparent_18%)]"></div>
-            <div className="relative grid xl:grid-cols-[minmax(0,1fr)_320px] gap-6 px-8 py-6 md:px-10 xl:px-12 xl:py-7">
+            <div className="relative grid gap-6 px-4 py-5 sm:px-6 md:px-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:px-12 xl:py-7">
               <section>
                 <div className="mb-6">
                   <h2 className="text-[32px] md:text-[36px] font-black text-[#05162E] tracking-tight leading-tight">Practice Test</h2>
@@ -611,7 +680,7 @@ export default function MockTestsPage() {
                   </p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
                   {practiceCards.map(card => {
                     const count = getPracticeTestsByType(card.type).length;
                     const theme = practiceCardTheme[card.type];
@@ -624,7 +693,7 @@ export default function MockTestsPage() {
                           setWritingPracticeType(null);
                             setReadingQuestionType('all');
                         }}
-                        className={`group relative flex min-h-[390px] flex-col overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${theme.cardClass}`}
+                        className={`group relative flex min-h-[320px] w-full flex-col overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:min-h-[390px] ${theme.cardClass}`}
                       >
                         <div className="relative z-10 flex items-start justify-between gap-4">
                           <div className={`h-[62px] w-[62px] rounded-full border shadow-sm flex items-center justify-center ${theme.iconClass}`}>
@@ -634,6 +703,7 @@ export default function MockTestsPage() {
                           <img
                             src={theme.image}
                             alt=""
+                            loading="lazy"
                             className={`relative z-10 ${theme.imageClass} object-contain opacity-[0.98] drop-shadow-[0_14px_18px_rgba(15,23,42,0.12)] transition-transform duration-300 group-hover:scale-[1.03]`}
                             style={{
                               mixBlendMode: 'multiply',
@@ -676,8 +746,8 @@ export default function MockTestsPage() {
                 </div>
               </section>
 
-              <aside className="bg-white/95 border border-slate-200 rounded-[24px] p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] h-fit">
-                <h3 className="text-[20px] font-black text-[#05162E] mb-7 whitespace-nowrap">
+              <aside className="h-fit rounded-[24px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
+                <h3 className="mb-7 break-words text-[20px] font-black text-[#05162E]">
                   How <span className="text-[#6F4BFF]">Practice Test</span> Works?
                 </h3>
                 <div className="grid gap-6">
@@ -707,7 +777,7 @@ export default function MockTestsPage() {
               </aside>
             </div>
 
-            <div className="relative mx-8 mb-6 rounded-[22px] border border-slate-200 bg-white px-6 py-5 shadow-sm md:mx-10 xl:mx-12">
+            <div className="relative mx-4 mb-6 rounded-[22px] border border-slate-200 bg-white px-4 py-5 shadow-sm sm:mx-6 sm:px-6 md:mx-8 xl:mx-12">
               <h3 className="text-[18px] font-black text-[#05162E] mb-3">Tips for Practice</h3>
               <div className="grid sm:grid-cols-2 xl:grid-cols-4">
                 {[
@@ -748,7 +818,7 @@ export default function MockTestsPage() {
               </div>
 
               {readingCategories.length > 0 && (
-                <div className="flex rounded-2xl bg-white border border-slate-200 p-1 shadow-sm">
+                <div className="flex w-full gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:w-auto">
                 {readingCategories.map(category => (
                   <button
                     key={category}
@@ -757,7 +827,7 @@ export default function MockTestsPage() {
                       setReadingCategory(category);
                       setReadingQuestionType('all');
                     }}
-                    className={`px-4 sm:px-6 py-3 rounded-xl text-[13px] font-black transition-all ${
+                    className={`min-h-11 shrink-0 rounded-xl px-4 py-3 text-[13px] font-black transition-all sm:px-6 ${
                       activeReadingCategory === category
                         ? 'bg-[#294b77] text-white shadow-sm'
                         : 'text-slate-500 hover:bg-[#EFF4FB] hover:text-[#294b77]'
@@ -770,52 +840,22 @@ export default function MockTestsPage() {
               )}
             </div>
 
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(true)}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-black text-[#294b77] shadow-sm lg:hidden"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters: {activeReadingQuestionTypeMeta.label}
+            </button>
+
             <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-              <aside className="lg:sticky lg:top-0 h-fit rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div className="border-b border-slate-100 bg-[#294b77] px-5 py-4">
-                  <h3 className="text-[15px] font-black text-white">Question Types</h3>
-                  <p className="text-[12px] font-semibold text-white/70 mt-1">
-                    {isCompleteReadingCategory || readingQuestionType === 'all'
-                      ? `${activeReadingCategoryMeta.label} practice sets`
-                      : `${activeReadingCategoryMeta.label} filtered by type`}
-                  </p>
-                </div>
-                <div className="max-h-[calc(100vh-260px)] overflow-y-auto p-3">
-                  {READING_QUESTION_TYPES.map(type => {
-                    const count = getReadingTypeCount(type.key);
-                    const isDisabled = isCompleteReadingCategory && type.key !== 'all';
-                    const isActive = isCompleteReadingCategory ? type.key === 'all' : readingQuestionType === type.key;
-                    return (
-                      <button
-                        key={type.key}
-                        type="button"
-                        disabled={isDisabled}
-                        onClick={() => {
-                          if (isDisabled) return;
-                          setReadingQuestionType(type.key);
-                        }}
-                        className={`w-full rounded-xl px-3 py-3 text-left transition-all flex items-center justify-between gap-3 ${
-                          isActive
-                            ? 'bg-[#EFF4FB] text-[#294b77] ring-1 ring-[#294b77]/20'
-                            : isDisabled
-                            ? 'text-slate-300 cursor-not-allowed'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-[#294b77]'
-                        }`}
-                      >
-                        <span className="text-[13px] font-black leading-snug">{type.label}</span>
-                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
-                          isActive ? 'bg-white text-[#294b77]' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+              <aside className="hidden h-fit lg:sticky lg:top-24 lg:block">
+                {readingFilterPanel}
               </aside>
 
               <section className="min-w-0">
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-[18px] font-black text-[#05162E]">
                       {isCompleteReadingCategory || readingQuestionType === 'all'
@@ -830,7 +870,7 @@ export default function MockTestsPage() {
                 </div>
 
                 {filteredReadingCards.length === 0 ? (
-                  <div className="bg-white border border-slate-200 rounded-2xl p-14 text-center shadow-sm flex flex-col items-center">
+                  <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-14">
                     <div className="w-16 h-16 bg-[#EFF4FB] rounded-full flex items-center justify-center mb-5">
                       <BookOpen className="h-8 w-8 text-[#294b77]" />
                     </div>
@@ -840,11 +880,11 @@ export default function MockTestsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
                     {filteredReadingCards.map(card => (
                       <div
                         key={card.id}
-                        className={`bg-white rounded-2xl border ${card.test.is_locked ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1'} transition-all overflow-hidden`}
+                        className={`w-full overflow-hidden rounded-2xl border bg-white ${card.test.is_locked ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1'} transition-all`}
                       >
                         <div className="h-2 w-full bg-[#294b77]"></div>
                         <div className="p-5">
@@ -868,7 +908,7 @@ export default function MockTestsPage() {
                             )}
                           </div>
 
-                          <h4 className="text-[18px] font-black text-[#05162E] leading-snug">{card.title}</h4>
+                          <h4 className="break-words text-[18px] font-black leading-snug text-[#05162E]">{card.title}</h4>
                           <p className="mt-2 text-[13px] font-bold text-slate-500">{card.test.title}</p>
 
                           <div className="mt-5 grid grid-cols-2 gap-3 text-[12px] font-black">
@@ -902,7 +942,7 @@ export default function MockTestsPage() {
                           {card.test.is_locked ? (
                             <Link
                               to="/access-request"
-                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 py-3 text-[13px] font-black text-slate-600 hover:bg-slate-200"
+                              className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-100 py-3 text-[13px] font-black text-slate-600 hover:bg-slate-200"
                             >
                               Unlock Practice <Lock className="h-3.5 w-3.5" />
                             </Link>
@@ -910,7 +950,7 @@ export default function MockTestsPage() {
                             <button
                               disabled={startingTestId === card.test.id}
                               onClick={() => handleStartTest(card.test.id)}
-                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#294b77] py-3 text-[13px] font-black text-white shadow-sm hover:bg-[#203d63] disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#294b77] py-3 text-[13px] font-black text-white shadow-sm hover:bg-[#203d63] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {startingTestId === card.test.id ? 'Starting Practice...' : completedTestIds.has(card.test.id) ? <>Retake Practice <Play className="h-3 w-3 fill-current" /></> : <>Start Practice <Play className="h-3 w-3 fill-current" /></>}
                             </button>
@@ -924,23 +964,24 @@ export default function MockTestsPage() {
             </div>
           </div>
         ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
-          <div className="mx-auto flex h-full w-full max-w-[1360px] flex-col gap-3">
-            <section className="relative aspect-[2856/626] max-h-[250px] overflow-hidden rounded-[24px] bg-transparent">
+          <div className="mx-auto flex h-full w-full max-w-[1360px] flex-col gap-5">
+            <section className="relative min-h-[260px] overflow-hidden rounded-[24px] bg-transparent lg:aspect-[2856/626] lg:max-h-[250px] lg:min-h-0">
               <img
                 src="/images/Writing%20Practice/background.png"
                 alt=""
-                className="pointer-events-none absolute left-0 right-0 -top-1 h-[calc(100%+8px)] w-full object-fill"
+                loading="lazy"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover lg:-top-1 lg:h-[calc(100%+8px)]"
               />
 
-              <div className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_360px_230px] items-center gap-3 px-10 py-4">
-                <div className="max-w-[520px]">
-                  <h1 className="text-[32px] font-black leading-tight tracking-tight text-[#05162E]">
-                    Hi, {profile?.full_name?.split(' ')[0] || profile?.first_name || 'Student'}! 👋
+              <div className="relative z-10 grid min-h-[260px] items-center gap-4 px-5 py-6 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px_230px] lg:gap-3 lg:px-10 lg:py-4">
+                <div className="min-w-0 max-w-[520px]">
+                  <h1 className="break-words text-[28px] font-black leading-tight tracking-tight text-[#05162E] sm:text-[32px]">
+                    Hi, {profile?.full_name?.split(' ')[0] || profile?.first_name || 'Student'}!
                   </h1>
-                  <p className="mt-3 text-[19px] font-medium leading-7 text-slate-600">
+                  <p className="mt-3 text-[16px] font-medium leading-7 text-slate-600 sm:text-[19px]">
                     Ready to write like a <span className="font-black text-[#1F55D6]">Band 8</span> candidate?
                   </p>
-                  <div className="ml-[205px] mt-2 h-0.5 w-20 rounded-full bg-[#BBD3FF]"></div>
+                  <div className="mt-2 h-0.5 w-20 rounded-full bg-[#BBD3FF] lg:ml-[205px]"></div>
 
                   <div className="mt-6 max-w-[465px] rounded-[20px] border border-slate-100 bg-white/92 p-4 shadow-[0_18px_45px_rgba(30,58,110,0.08)]">
                     <div className="flex items-center gap-4">
@@ -957,15 +998,16 @@ export default function MockTestsPage() {
                         </div>
                       </div>
                     </div>
-                    <p className="mt-3 pl-16 text-[13px] font-semibold text-slate-600">Great progress! Keep it up!</p>
+                    <p className="mt-3 text-[13px] font-semibold text-slate-600 sm:pl-16">Great progress! Keep it up!</p>
                   </div>
                 </div>
 
-                <div className="relative -ml-44 flex h-[212px] items-end justify-center">
+                <div className="relative hidden h-[212px] items-end justify-center lg:-ml-44 lg:flex">
                   <div className="absolute bottom-5 h-16 w-72 rounded-full bg-blue-100/70 blur-3xl"></div>
                   <img
                     src="/images/Writing%20Practice/header.png"
                     alt=""
+                    loading="lazy"
                     className="relative z-10 h-[252px] w-[294px] object-contain drop-shadow-[0_18px_24px_rgba(15,23,42,0.13)]"
                     style={{
                       mixBlendMode: 'multiply',
@@ -976,10 +1018,11 @@ export default function MockTestsPage() {
                   />
                 </div>
 
-                <div className="relative -ml-35 h-[218px] w-[246px]">
+                <div className="relative hidden h-[218px] w-[246px] lg:-ml-35 lg:block">
                   <img
                     src="/images/Writing%20Practice/notes-cutout.png"
                     alt=""
+                    loading="lazy"
                     className="absolute inset-0 h-full w-full rotate-[3deg] object-contain drop-shadow-[0_18px_28px_rgba(15,23,42,0.14)]"
                   />
                   <div className="relative z-10 h-full rotate-[3deg] px-9 pb-8 pt-11">
@@ -1011,7 +1054,7 @@ export default function MockTestsPage() {
                     key={card.type}
                     type="button"
                     onClick={() => setWritingPracticeType(card.type)}
-                    className={`group relative min-h-[300px] overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${theme.border} ${theme.bg}`}
+                    className={`group relative min-h-[300px] w-full overflow-hidden rounded-[22px] border p-5 text-left shadow-sm transition-all duration-300 active:scale-[0.98] hover:-translate-y-1 hover:shadow-xl ${theme.border} ${theme.bg}`}
                   >
                     <div className={`relative z-10 grid h-12 w-12 place-items-center rounded-full border shadow-sm ${theme.iconClass}`}>
                       {theme.icon}
@@ -1029,7 +1072,8 @@ export default function MockTestsPage() {
                     <img
                       src={theme.image}
                       alt=""
-                      className={`absolute z-0 object-contain opacity-[0.98] drop-shadow-[0_16px_22px_rgba(15,23,42,0.14)] transition-transform duration-300 group-hover:scale-[1.03] ${theme.imageClass}`}
+                      loading="lazy"
+                      className={`absolute z-0 hidden object-contain opacity-[0.98] drop-shadow-[0_16px_22px_rgba(15,23,42,0.14)] transition-transform duration-300 group-hover:scale-[1.03] sm:block ${theme.imageClass}`}
                       style={{
                         mixBlendMode: 'multiply',
                         filter: 'saturate(1.04) contrast(1.02)'
@@ -1078,7 +1122,7 @@ export default function MockTestsPage() {
             </div>
           </div>
 	        ) : visibleTests.length === 0 ? (
-          <div className="bg-white border border-slate-100 rounded-2xl p-16 text-center shadow-sm flex flex-col items-center">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-16">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
               <BookOpen className="h-10 w-10 text-slate-300" />
             </div>
@@ -1117,11 +1161,11 @@ export default function MockTestsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {visibleTests.map(test => (
               <div 
                 key={test.id} 
-                className={`bg-white rounded-2xl border ${test.is_locked ? 'border-slate-100 bg-slate-50/50' : 'border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1'} flex flex-col relative transition-all duration-300`}
+                className={`relative flex w-full flex-col overflow-hidden rounded-2xl border bg-white ${test.is_locked ? 'border-slate-100 bg-slate-50/50' : 'border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md'} transition-all duration-300`}
               >
                 
                 <div className="h-2 w-full rounded-t-2xl bg-[#1E3A6E]"></div>
@@ -1154,7 +1198,7 @@ export default function MockTestsPage() {
                     )}
                   </div>
 
-                  <h3 className="text-[18px] font-black text-[#05162E] leading-snug mb-2">{test.title}</h3>
+                  <h3 className="mb-2 break-words text-[18px] font-black leading-snug text-[#05162E]">{test.title}</h3>
                   <p className="text-[13px] text-slate-500 leading-relaxed flex-1">{test.description || 'Simulate official British Council IELTS exam requirements.'}</p>
                   
                   <div className="mt-6 flex flex-col gap-4">
@@ -1170,7 +1214,7 @@ export default function MockTestsPage() {
                     {test.is_locked ? (
                       <Link 
                         to="/access-request" 
-                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-100 py-3 text-[13px] font-bold text-slate-600 transition-colors hover:bg-slate-200"
                       >
                         Unlock Test <Lock className="h-3.5 w-3.5" />
                       </Link>
@@ -1178,7 +1222,7 @@ export default function MockTestsPage() {
                       <button 
                         disabled={startingTestId === test.id}
                         onClick={() => handleStartTest(test.id)}
-                        className="w-full py-3 text-white text-[13px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#162d57] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] py-3 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-[#162d57] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {startingTestId === test.id ? (
                           <>Starting Exam...</>
@@ -1199,6 +1243,11 @@ export default function MockTestsPage() {
         )}
         </div>
       </main>
+      <div className={`fixed inset-0 z-40 bg-[#05162E]/55 backdrop-blur-sm transition-opacity lg:hidden ${isFilterOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={() => setIsFilterOpen(false)} />
+      <aside className={`fixed inset-x-0 bottom-0 z-50 max-h-[82dvh] rounded-t-3xl bg-white transition-transform duration-300 lg:hidden ${isFilterOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+        {readingFilterPanel}
+      </aside>
+      <MobileBottomNav />
     </div>
   );
 }

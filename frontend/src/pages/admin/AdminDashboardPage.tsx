@@ -7,24 +7,20 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
-  Grid2X2,
-  History,
   KeyRound,
   LogOut,
   Mail,
   Menu,
   MoreVertical,
   PenLine,
-  Settings,
-  ShieldCheck,
   Target,
   UserPlus,
   UsersRound,
   X
 } from 'lucide-react';
 import { api } from '../../services/api';
-import JawaafLogo from '../../components/JawaafLogo';
 import { useAuthStore } from '../../store/authStore';
+import AdminSidebar from '../../components/admin/AdminSidebar';
 
 interface AdminTest {
   id: string;
@@ -55,6 +51,7 @@ export default function AdminDashboardPage() {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [teacherCount, setTeacherCount] = useState(() => Number(localStorage.getItem('created_teacher_count') || '0'));
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [teacherForm, setTeacherForm] = useState({ full_name: '', email: '', password: '' });
   const [creatingTeacher, setCreatingTeacher] = useState(false);
 
@@ -196,85 +193,31 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <div className="flex min-h-screen">
-        <aside
-          className="hidden w-[318px] shrink-0 flex-col text-white lg:flex"
-          style={{ background: '#172338' }}
-        >
-          <div className="px-9 pt-10 pb-10">
-            <Link to="/" className="inline-flex">
-              <JawaafLogo isWhite className="h-[58px] w-auto" />
-            </Link>
-          </div>
-
-          <nav className="flex-1 px-5">
-            <Link to="/admin" className="flex items-center gap-4 rounded-xl bg-[#F9544F] px-5 py-4 text-[16px] font-bold shadow-lg shadow-[#F9544F]/20">
-              <Grid2X2 className="h-5 w-5" /> Dashboard
-            </Link>
-
-            <p className="px-4 pt-10 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">Test Management</p>
-            <Link to="/admin/tests?create=mock" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <ClipboardList className="h-5 w-5" /> Mock Tests
-            </Link>
-            <Link to="/admin/tests?create=practice" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <Target className="h-5 w-5" /> Practice Tests
-            </Link>
-            <Link to="/admin/courses" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <BookOpen className="h-5 w-5" /> Recorded Courses
-            </Link>
-            <Link to="/admin/today-goals" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <Target className="h-5 w-5" /> Today's Goals
-            </Link>
-
-            <p className="px-4 pt-8 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
-            <button onClick={() => setIsTeacherModalOpen(true)} className="w-full flex items-center gap-4 rounded-xl px-5 py-3.5 text-left text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <UsersRound className="h-5 w-5" /> Teachers
-            </button>
-            <Link to="/admin/access" className="flex items-center justify-between rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <span className="flex items-center gap-4"><ShieldCheck className="h-5 w-5" /> Student Approval</span>
-              {pendingRequests > 0 && <span className="rounded-full bg-[#F9544F] px-2 py-0.5 text-[10px] font-bold text-white">{pendingRequests}</span>}
-            </Link>
-
-            <p className="px-4 pt-8 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">Other</p>
-            <Link to="/admin/submissions" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <BarChart3 className="h-5 w-5" /> Reports
-            </Link>
-            <Link to="/admin" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <Settings className="h-5 w-5" /> Settings
-            </Link>
-            <Link to="/admin" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
-              <History className="h-5 w-5" /> Activity Log
-            </Link>
-          </nav>
-
-          <div className="p-5">
-            <button onClick={handleLogout} className="w-full border-t border-slate-600/40 p-4 text-left hover:bg-[#243047]">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EAF1FB] text-[16px] font-black text-[#1E3A6E]">
-                  A
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-black text-white">Admin</p>
-                  <p className="text-[12px] font-medium text-slate-400">Super Admin</p>
-                </div>
-                <LogOut className="h-4 w-4 text-slate-400" />
-              </div>
-            </button>
-          </div>
-        </aside>
+        <AdminSidebar
+          activeTab="dashboard"
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          onAddTeacherClick={() => setIsTeacherModalOpen(true)}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-[86px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 shadow-sm backdrop-blur lg:px-10">
-            <div className="flex items-center gap-5">
-              <button className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden">
+          <header className="sticky top-0 z-20 flex min-h-[72px] items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6 lg:min-h-[86px] lg:px-10">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden"
+                aria-label="Open admin navigation"
+              >
                 <Menu className="h-6 w-6" />
               </button>
               <button className="hidden h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 lg:grid">
                 <Menu className="h-6 w-6" />
               </button>
-              <h1 className="text-[24px] font-black tracking-tight text-[#061A36]">Dashboard</h1>
+              <h1 className="min-w-0 truncate text-[20px] font-black tracking-tight text-[#061A36] sm:text-[24px]">Dashboard</h1>
             </div>
 
-            <div className="flex items-center gap-5">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-5">
               <div className="relative hidden sm:block">
                 <Bell className="h-6 w-6 text-[#061A36]" />
                 <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#F59E24] px-1 text-[10px] font-black text-white">
@@ -293,20 +236,20 @@ export default function AdminDashboardPage() {
             </div>
           </header>
 
-          <main className="flex-1 px-5 py-6 lg:px-10 lg:py-7">
+          <main className="min-w-0 flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-7">
             <div className="mx-auto max-w-[1480px] space-y-6">
               <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-[28px] font-black tracking-tight text-[#061A36]">Welcome back, Admin!</h2>
+                <div className="min-w-0">
+                  <h2 className="break-words text-[24px] font-black leading-tight tracking-tight text-[#061A36] sm:text-[28px]">Welcome back, Admin!</h2>
                   <p className="mt-1 text-[15px] font-medium text-slate-500">Here's what's happening with your IELTS Lab.</p>
                 </div>
-                <div className="flex w-fit items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[14px] font-bold text-slate-600 shadow-sm">
+                <div className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] font-bold text-slate-600 shadow-sm sm:w-fit sm:px-5">
                   <CalendarDays className="h-5 w-5 text-slate-500" />
                   {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
               </section>
 
-              <section className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))' }}>
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {statCards.map((card) => {
                   const Icon = card.icon;
                   const content = (
@@ -321,32 +264,31 @@ export default function AdminDashboardPage() {
                           <p className="mt-2 text-[12px] font-bold text-slate-500">{card.subtitle}</p>
                         </div>
                       </div>
-                      <span className={`mt-6 inline-flex items-center gap-2 text-[13px] font-black ${
-                        card.tone === 'green' ? 'text-emerald-600' : card.tone === 'purple' ? 'text-violet-600' : card.tone === 'orange' ? 'text-orange-500' : 'text-blue-600'
-                      }`}>
+                      <span className={`mt-6 inline-flex items-center gap-2 text-[13px] font-black ${card.tone === 'green' ? 'text-emerald-600' : card.tone === 'purple' ? 'text-violet-600' : card.tone === 'orange' ? 'text-orange-500' : 'text-blue-600'
+                        }`}>
                         {card.action} <ArrowRight className="h-4 w-4" />
                       </span>
                     </>
                   );
 
                   return card.href ? (
-                    <Link key={card.title} to={card.href} className="flex min-h-[178px] flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                    <Link key={card.title} to={card.href} className="flex min-h-[152px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg sm:min-h-[178px] sm:p-6">
                       {content}
                     </Link>
                   ) : (
-                    <button key={card.title} onClick={card.onClick} className="flex min-h-[178px] flex-col rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                    <button key={card.title} onClick={card.onClick} className="flex min-h-[152px] flex-col rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg sm:min-h-[178px] sm:p-6">
                       {content}
                     </button>
                   );
                 })}
               </section>
 
-              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                 <h3 className="text-[20px] font-black text-[#061A36]">Quick Actions</h3>
                 <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                  <Link to="/admin/tests?create=mock" className="group flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:bg-blue-50/30">
-                    <div className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-                      <ClipboardList className="h-8 w-8" />
+                  <Link to="/admin/tests?create=mock" className="group flex min-h-20 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-blue-200 hover:bg-blue-50/30 sm:gap-5 sm:p-5">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600 sm:h-[72px] sm:w-[72px]">
+                      <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-[16px] font-black text-[#061A36]">Create Mock Test</h4>
@@ -355,9 +297,9 @@ export default function AdminDashboardPage() {
                     <ArrowRight className="h-5 w-5 text-[#061A36] group-hover:translate-x-1 transition-transform" />
                   </Link>
 
-                  <Link to="/admin/tests?create=practice" className="group flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-200 hover:bg-emerald-50/30">
-                    <div className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
-                      <Target className="h-8 w-8" />
+                  <Link to="/admin/tests?create=practice" className="group flex min-h-20 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-emerald-200 hover:bg-emerald-50/30 sm:gap-5 sm:p-5">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 sm:h-[72px] sm:w-[72px]">
+                      <Target className="h-6 w-6 sm:h-8 sm:w-8" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-[16px] font-black text-[#061A36]">Create Practice Test</h4>
@@ -366,9 +308,9 @@ export default function AdminDashboardPage() {
                     <ArrowRight className="h-5 w-5 text-[#061A36] group-hover:translate-x-1 transition-transform" />
                   </Link>
 
-                  <button onClick={() => setIsTeacherModalOpen(true)} className="group flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm hover:border-violet-200 hover:bg-violet-50/30">
-                    <div className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-600">
-                      <UsersRound className="h-8 w-8" />
+                  <button onClick={() => setIsTeacherModalOpen(true)} className="group flex min-h-20 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-violet-200 hover:bg-violet-50/30 sm:gap-5 sm:p-5">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-600 sm:h-[72px] sm:w-[72px]">
+                      <UsersRound className="h-6 w-6 sm:h-8 sm:w-8" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-[16px] font-black text-[#061A36]">Add Teacher</h4>
@@ -379,18 +321,15 @@ export default function AdminDashboardPage() {
                 </div>
               </section>
 
-              <section
-                className="grid gap-6"
-                style={{ gridTemplateColumns: 'minmax(620px, 1.38fr) minmax(390px, 0.86fr)' }}
-              >
-                <div className="min-w-0 rounded-2xl border border-slate-200 bg-white px-7 py-6 shadow-sm">
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.38fr)_minmax(320px,0.86fr)]">
+                <div className="min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-7 sm:py-6">
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="text-[20px] font-black text-[#061A36]">Recent Tests</h3>
                     <Link to="/admin/tests" className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-[13px] font-black text-blue-600 shadow-sm hover:bg-blue-50">View All</Link>
                   </div>
-                  <div className="mt-6 flex gap-8 border-b border-slate-200 text-[15px] font-black text-slate-500">
-                    <span className="border-b-4 border-blue-600 px-6 pb-4 text-blue-700">Mock Tests</span>
-                    <span className="px-2 pb-4">Practice Tests</span>
+                  <div className="mt-6 flex gap-4 overflow-x-auto border-b border-slate-200 text-[14px] font-black text-slate-500 sm:gap-8 sm:text-[15px]">
+                    <span className="whitespace-nowrap border-b-4 border-blue-600 px-3 pb-4 text-blue-700 sm:px-6">Mock Tests</span>
+                    <span className="whitespace-nowrap px-2 pb-4">Practice Tests</span>
                   </div>
                   <div className="divide-y divide-slate-100">
                     {(recentTests.length ? recentTests : [
@@ -398,7 +337,7 @@ export default function AdminDashboardPage() {
                     ]).map((test) => {
                       const isPractice = (test.sections || []).length <= 1;
                       return (
-                        <div key={test.id} className="flex min-h-[76px] items-center gap-5 py-3">
+                        <div key={test.id} className="flex min-h-[76px] flex-wrap items-center gap-3 py-3 sm:flex-nowrap sm:gap-5">
                           <div className={`grid h-[52px] w-[52px] shrink-0 place-items-center rounded-2xl ${isPractice ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                             {isPractice ? <Target className="h-6 w-6" /> : <ClipboardList className="h-6 w-6" />}
                           </div>
@@ -408,7 +347,7 @@ export default function AdminDashboardPage() {
                               {isPractice ? 'Practice' : 'Full Length'} <span className="px-1 text-slate-300">•</span> {test.duration ? `${test.duration} mins` : 'Ready to build'}
                             </p>
                           </div>
-                          <span className={`rounded-lg px-4 py-2 text-[12px] font-black ${test.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'}`}>
+                          <span className={`rounded-lg px-3 py-2 text-[12px] font-black sm:px-4 ${test.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'}`}>
                             {test.is_published ? 'Published' : 'Draft'}
                           </span>
                           <MoreVertical className="h-5 w-5 text-slate-400" />
@@ -418,7 +357,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="min-w-0 rounded-2xl border border-slate-200 bg-white px-7 py-6 shadow-sm">
+                <div className="min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-7 sm:py-6">
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="text-[20px] font-black text-[#061A36]">Recent Activity</h3>
                     <Link to="/admin/submissions" className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-[13px] font-black text-blue-600 shadow-sm hover:bg-blue-50">View All</Link>
@@ -427,8 +366,7 @@ export default function AdminDashboardPage() {
                     {(recentActivity.length ? recentActivity : [{ label: 'No recent activity yet', meta: 'Create your first test', tone: 'blue' as const }]).map((item, index) => (
                       <div
                         key={`${item.label}-${index}`}
-                        className="grid min-h-[76px] gap-4"
-                        style={{ gridTemplateColumns: '52px minmax(0, 1fr) 88px' }}
+                        className="grid min-h-[76px] grid-cols-[44px_minmax(0,1fr)] gap-3 sm:grid-cols-[52px_minmax(0,1fr)_88px] sm:gap-4"
                       >
                         <div className="relative flex flex-col items-center">
                           <div className={`grid h-12 w-12 place-items-center rounded-2xl ${toneClass[item.tone]}`}>
@@ -440,7 +378,7 @@ export default function AdminDashboardPage() {
                           <p className="text-[14px] font-black leading-relaxed text-[#061A36]">{item.label}</p>
                           <p className="mt-0.5 text-[12px] font-bold text-slate-500">by Admin</p>
                         </div>
-                        <span className="pt-2 text-right text-[12px] font-bold text-slate-400">{item.meta}</span>
+                        <span className="col-start-2 -mt-4 pb-3 text-left text-[12px] font-bold text-slate-400 sm:col-start-auto sm:mt-0 sm:pb-0 sm:pt-2 sm:text-right">{item.meta}</span>
                       </div>
                     ))}
                   </div>
@@ -453,8 +391,8 @@ export default function AdminDashboardPage() {
 
       {isTeacherModalOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-[#05162E]/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleCreateTeacher} className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-[#F8FAFC] px-7 py-5">
+          <form onSubmit={handleCreateTeacher} className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-slate-100 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-[#F8FAFC] px-5 py-5 sm:px-7">
               <div>
                 <h3 className="text-[20px] font-black text-[#061A36]">Create Teacher Account</h3>
                 <p className="mt-1 text-[13px] font-semibold text-slate-500">Teacher login banayepachi writing review dashboard khulcha.</p>
@@ -464,7 +402,7 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            <div className="grid gap-5 p-7">
+            <div className="grid gap-5 p-5 sm:p-7">
               <label className="grid gap-1.5">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Teacher Name</span>
                 <div className="relative">

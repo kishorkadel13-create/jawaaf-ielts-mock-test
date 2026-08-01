@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { supabaseAdmin } from '../config/supabase.js';
 
 const ASSET_BUCKET = 'ielts-assets';
@@ -41,13 +42,72 @@ const slugify = (value) => String(value || '')
   .replace(/^-+|-+$/g, '')
   .slice(0, 80);
 
-const getDriveDownloadUrl = (value) => {
+const getDriveFileId = (value) => {
   const raw = String(value || '').trim();
   const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/i) || raw.match(/[?&]id=([^&]+)/i);
-  if (raw.includes('drive.google.com') && driveMatch?.[1]) {
-    return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+  return raw.includes('drive.google.com') ? driveMatch?.[1] || '' : '';
+};
+
+const getDriveDownloadUrl = (value) => {
+  const raw = String(value || '').trim();
+  const driveFileId = getDriveFileId(raw);
+  if (driveFileId) {
+    return `https://drive.google.com/uc?export=download&id=${driveFileId}`;
   }
   return raw;
+};
+
+const getGoogleCookieHeader = (headers) => {
+  const cookies = typeof headers.getSetCookie === 'function'
+    ? headers.getSetCookie()
+    : String(headers.get('set-cookie') || '').split(/,(?=\s*[^;,]+=)/);
+
+  return cookies
+    .map(cookie => cookie.split(';')[0]?.trim())
+    .filter(Boolean)
+    .join('; ');
+};
+
+const resolveGoogleDriveResponse = async (value, rangeHeader) => {
+  const sourceUrl = getDriveDownloadUrl(value);
+  const headers = {
+    'User-Agent': 'JawaafIELTSLab/1.0',
+    ...(rangeHeader ? { Range: rangeHeader } : {})
+  };
+  const firstResponse = await fetch(sourceUrl, { headers, redirect: 'follow' });
+  const firstContentType = firstResponse.headers.get('content-type') || '';
+
+  if (!/text\/html/i.test(firstContentType)) {
+    return firstResponse;
+  }
+
+  const confirmationHtml = await firstResponse.text();
+  const cookieHeader = getGoogleCookieHeader(firstResponse.headers);
+  const hrefMatch = confirmationHtml.match(/href="([^"]*(?:confirm=|download_warning)[^"]*)"/i);
+  const confirmMatch = confirmationHtml.match(/[?&]confirm=([0-9A-Za-z_-]+)/i);
+  const driveFileId = getDriveFileId(value);
+  let confirmedUrl = '';
+
+  if (hrefMatch?.[1]) {
+    const decodedHref = hrefMatch[1].replace(/&amp;/g, '&');
+    confirmedUrl = decodedHref.startsWith('http')
+      ? decodedHref
+      : `https://drive.google.com${decodedHref.startsWith('/') ? '' : '/'}${decodedHref}`;
+  } else if (confirmMatch?.[1] && driveFileId) {
+    confirmedUrl = `https://drive.google.com/uc?export=download&confirm=${confirmMatch[1]}&id=${driveFileId}`;
+  }
+
+  if (!confirmedUrl) {
+    return firstResponse;
+  }
+
+  return fetch(confirmedUrl, {
+    headers: {
+      ...headers,
+      ...(cookieHeader ? { Cookie: cookieHeader } : {})
+    },
+    redirect: 'follow'
+  });
 };
 
 const getLessonThumbnailUrl = (lesson) => {
@@ -92,6 +152,32 @@ const canAccessLesson = async (lessonId, user) => {
   if (hasPremiumCourseAccess(user)) return true;
   const accessibleLessonIds = await getAccessibleLessonIds(user);
   return accessibleLessonIds?.has(lessonId) || false;
+};
+
+const getUserFromToken = async (token) => {
+  const cleanToken = String(token || '').trim();
+  if (!cleanToken) return null;
+
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(cleanToken);
+  if (error || !user) return null;
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile) {
+    const metadataRole = user.app_metadata?.role || user.user_metadata?.role || 'student';
+    return {
+      id: user.id,
+      email: user.email,
+      role: metadataRole,
+      has_full_access: metadataRole === 'admin'
+    };
+  }
+
+  return profile;
 };
 
 const sanitizeLockedLesson = (lesson) => ({
@@ -404,6 +490,86 @@ export const getLessonResourceContent = async (req, res) => {
   } catch (err) {
     console.error('getLessonResourceContent Error:', err);
     res.status(500).json({ error: 'LessonResourceContentError', message: err.message || 'Failed to load notes file.' });
+  }
+};
+
+export const getLessonVideoContent = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const authHeader = String(req.headers.authorization || '');
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
+    const user = req.user || await getUserFromToken(bearerToken || req.query.token);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'Video access requires a valid session.' });
+    }
+
+    const { data: lesson, error } = await supabaseAdmin
+      .from('course_lessons')
+      .select('*')
+      .eq('id', lessonId)
+      .single();
+
+    if (error) throw error;
+    if (!lesson.is_published && !isAdminLike(user)) {
+      return res.status(403).json({ error: 'Forbidden', message: 'This lesson is not published yet.' });
+    }
+    if (!(await canAccessLesson(lessonId, user))) {
+      return res.status(403).json({ error: 'PremiumLocked', message: 'This recorded lesson requires premium access.' });
+    }
+
+    const sourceValue = String(lesson.video_file || lesson.video_url || '').trim();
+    if (!sourceValue) {
+      return res.status(404).json({ error: 'VideoNotFound', message: 'This lesson has no video file.' });
+    }
+
+    if (lesson.video_file) {
+      const { data: signed, error: signedError } = await supabaseAdmin.storage
+        .from(ASSET_BUCKET)
+        .createSignedUrl(lesson.video_file, 300);
+
+      if (signedError) throw signedError;
+      return res.redirect(signed.signedUrl);
+    }
+
+    const upstream = getDriveFileId(sourceValue)
+      ? await resolveGoogleDriveResponse(sourceValue, req.headers.range)
+      : await fetch(sourceValue, {
+        headers: {
+          'User-Agent': 'JawaafIELTSLab/1.0',
+          ...(req.headers.range ? { Range: req.headers.range } : {})
+        },
+        redirect: 'follow'
+      });
+
+    if (!upstream.ok && upstream.status !== 206) {
+      return res.status(502).json({ error: 'VideoFetchError', message: 'Could not load this lesson video.' });
+    }
+
+    const contentType = upstream.headers.get('content-type') || 'video/mp4';
+    if (/text\/html/i.test(contentType)) {
+      return res.status(502).json({ error: 'VideoFetchError', message: 'Google Drive did not return a playable video stream.' });
+    }
+
+    res.status(upstream.status === 206 ? 206 : 200);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(lesson.title || 'lesson-video')}.mp4"`);
+    res.setHeader('Accept-Ranges', upstream.headers.get('accept-ranges') || 'bytes');
+    res.setHeader('Cache-Control', 'private, max-age=120');
+
+    const contentLength = upstream.headers.get('content-length');
+    const contentRange = upstream.headers.get('content-range');
+    if (contentLength) res.setHeader('Content-Length', contentLength);
+    if (contentRange) res.setHeader('Content-Range', contentRange);
+
+    if (!upstream.body) {
+      return res.status(502).json({ error: 'VideoStreamError', message: 'The video stream is empty.' });
+    }
+
+    Readable.fromWeb(upstream.body).pipe(res);
+  } catch (err) {
+    console.error('getLessonVideoContent Error:', err);
+    res.status(500).json({ error: 'LessonVideoContentError', message: err.message || 'Failed to load lesson video.' });
   }
 };
 

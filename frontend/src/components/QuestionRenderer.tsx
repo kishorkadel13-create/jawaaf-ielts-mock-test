@@ -17,11 +17,11 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
   const bodyTextClass = isLight ? 'text-[#05162E]' : 'text-slate-200';
   const mutedTextClass = isLight ? 'text-slate-700' : 'text-slate-300';
   const inputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E]'
-    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-base'
+    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white text-base';
   const inlineInputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E]'
-    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-base'
+    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white text-base';
   const optionClass = (selected: boolean) => isLight
     ? selected
       ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E]'
@@ -92,7 +92,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
             {...readingPasteProps}
             data-reading-answer={onPasteText ? 'true' : undefined}
             placeholder={placeholder}
-            className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all ${inputClass}`}
+            className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 outline-none transition-all ${inputClass}`}
           />
         </div>
       );
@@ -130,7 +130,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
                   });
                 }}
                 data-reading-answer={onPasteText ? 'true' : undefined}
-                className={`inline-block w-36 mx-2 border-b-2 px-2 py-1 text-center outline-none transition-colors rounded-t-sm ${inlineInputClass}`}
+                className={`my-1 inline-block min-h-11 w-full rounded-t-sm border-b-2 px-2 py-2 text-center outline-none transition-colors sm:mx-2 sm:w-36 ${inlineInputClass}`}
               />
             )}
           </React.Fragment>
@@ -149,7 +149,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
         {...readingPasteProps}
         data-reading-answer={onPasteText ? 'true' : undefined}
         aria-label={`Answer for question ${question.question_number}`}
-        className={`inline-block w-48 max-w-full ml-3 border-0 border-b-2 px-2 py-1 text-center outline-none transition-colors rounded-none ${inlineInputClass}`}
+        className={`mt-2 inline-block min-h-11 w-full max-w-full rounded-none border-0 border-b-2 px-2 py-2 text-center outline-none transition-colors sm:ml-3 sm:mt-0 sm:w-48 ${inlineInputClass}`}
       />
     </div>
   );
@@ -178,7 +178,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
                     onChange(e.target.value);
                   }
                 }}
-                className={`inline-block min-w-36 mx-2 border-2 px-3 py-1.5 rounded-lg outline-none transition-colors ${inputClass}`}
+                className={`my-1 inline-block min-h-11 w-full rounded-lg border-2 px-3 py-2 outline-none transition-colors sm:mx-2 sm:w-auto sm:min-w-36 ${inputClass}`}
               >
                 <option value="">Select</option>
                 {options.map((opt: string, optionIdx: number) => (
@@ -206,7 +206,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all ${inputClass}`}
+        className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 outline-none transition-all ${inputClass}`}
       >
         <option value="">{placeholder}</option>
         {options.map((opt: string, idx: number) => (
@@ -247,7 +247,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
           data-gramm="false"
           data-gramm_editor="false"
           data-enable-grammarly="false"
-          className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all resize-y leading-relaxed ${inputClass}`}
+          className={`min-h-[50vh] w-full resize-y rounded-xl border-2 px-4 py-3 leading-relaxed outline-none transition-all sm:min-h-0 ${inputClass}`}
         />
         <div className={`text-[11px] font-bold text-right ${wordCount < minimumWords ? 'text-amber-600' : 'text-emerald-600'}`}>
           {wordCount} words
@@ -284,7 +284,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
             <button
               key={opt}
               onClick={() => onChange(opt)}
-              className={`flex-1 py-3 px-2 rounded-xl text-[12px] font-bold transition-all border-2 ${
+              className={`min-h-11 flex-1 rounded-xl border-2 px-2 py-3 text-[12px] font-bold transition-all ${
                 value === opt
                   ? isLight
                     ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
@@ -324,7 +324,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
             return (
               <label 
                 key={idx} 
-                className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${optionClass(isSelected)}`}
+                className={`flex min-h-11 cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all ${optionClass(isSelected)}`}
               >
                 <div className="pt-0.5">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${

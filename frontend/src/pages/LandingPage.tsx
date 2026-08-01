@@ -51,14 +51,14 @@ export default function LandingPage() {
           NAVBAR
       ═══════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-100 shadow-sm">
-        <div className="max-w-[1280px] mx-auto px-6 md:px-10 py-3 flex items-center justify-between">
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-10">
 
-          <Link to="/" className="flex items-center flex-shrink-0 ">
-            <JawaafLogo className="h-20 w-auto relative left-[-150px]" />
+          <Link to="/" className="flex min-w-0 flex-shrink-0 items-center">
+            <JawaafLogo className="h-14 w-auto sm:h-16 lg:h-20" />
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-16 text-[16px] font-medium text-slate-500">
+          <nav className="hidden items-center gap-6 text-[14px] font-medium text-slate-500 xl:flex 2xl:gap-12 2xl:text-[16px]">
             <Link to="/" className="flex flex-col items-center gap-1 text-[#1E3A6E] font-semibold">
               Home
               <span className="w-6 h-[2.5px] rounded-full bg-[#1E3A6E]" />
@@ -75,7 +75,7 @@ export default function LandingPage() {
           </nav>
 
           {/* CTA buttons */}
-          <div className="hidden lg:flex items-center gap-10 relative right-[-200px]">
+          <div className="hidden items-center gap-3 xl:flex">
             <Link
               to="/login"
               className="px-5 py-2 rounded-lg bg-[#EE6055] text-white text-sm font-bold hover:bg-[#1E3A6E] transition-colors duration-200 shadow-md shadow-[#EE6055]/20"
@@ -91,14 +91,14 @@ export default function LandingPage() {
           </div>
 
           {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-lg p-2 hover:bg-slate-100 xl:hidden">
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-slate-100 px-6 py-5 flex flex-col gap-4 shadow-xl">
+          <div className="flex flex-col gap-4 border-t border-slate-100 bg-white px-4 py-5 shadow-xl sm:px-6 xl:hidden">
             <Link to="/" className="font-bold text-[#1E3A6E]">Home</Link>
             {['Features', 'Mock Tests', 'Pricing', 'About Us', 'Contact'].map(l => (
               <Link key={l} to="/" className="font-medium text-slate-600">{l}</Link>
@@ -117,17 +117,17 @@ export default function LandingPage() {
       <section className="relative overflow-hidden bg-white">
 
         {/* Navy arc — top right, matches reference image */}
-        <div className="absolute top-0 right-0 w-[360px] h-[510px] pointer-events-none z-0">
+        <div className="pointer-events-none absolute right-0 top-0 z-0 hidden h-[510px] w-[360px] md:block">
           <div className="absolute inset-0 bg-[#0B2558] rounded-bl-[160px] rounded-tl-[200px]" />
 
         </div>
 
         {/* Coral blob — behind the card, center-right area matching image */}
         <div
-          className="absolute pointer-events-none z-0"
+          className="pointer-events-none absolute z-0 hidden lg:block"
           style={{
             bottom: '20px',
-            right: '700px',
+            right: '44%',
             width: '250px',
             height: '200px',
             background: '#EE6055',
@@ -145,11 +145,11 @@ export default function LandingPage() {
         </div>* /}
 
         {/* Hero inner */}
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 md:px-10 pt-16 pb-20 flex flex-col lg:flex-row items-center gap-10 ">
+        <div className="relative z-10 mx-auto flex max-w-[1400px] flex-col items-center gap-8 px-4 pb-12 pt-10 sm:px-6 md:px-10 lg:flex-row lg:gap-10 lg:pb-20 lg:pt-16">
 
           {/* ── Left copy ── */}
-          <div className="flex-1 lg:w-[650px] shrink-0 relative lg:-top-10  lg:left-[-80px] ">
-            <h1 className="text-[45px] sm:text-[72px] xl:text-[72px] font-black leading-[1.05] tracking-[-2.5px] text-[#05162E] whitespace-nowrap">
+          <div className="relative min-w-0 flex-1 lg:-top-6 lg:w-[560px] xl:w-[650px]">
+            <h1 className="break-words text-[38px] font-black leading-[1.05] tracking-tight text-[#05162E] sm:text-[56px] lg:text-[64px] xl:text-[72px]">
               Practice Real<br />
               <span className="text-[#1E3A6E]">IELTS</span> Mock Tests
             </h1>
@@ -159,23 +159,23 @@ export default function LandingPage() {
               instant scoring, and detailed performance analytics.
             </p>
 
-            <div className="flex flex-wrap gap-3 mt-7">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#1E3A6E] text-white font-bold text-sm shadow-[0_8px_24px_rgba(30,58,110,0.30)] hover:bg-[#162d57] transition-all duration-200"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] px-6 py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(30,58,110,0.30)] transition-all duration-200 hover:bg-[#162d57] sm:px-7"
               >
                 Start Free Mock Test →
               </Link>
               <Link
                 to="/tests"
-                className="px-7 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 sm:px-7"
               >
                 Explore Platform
               </Link>
             </div>
 
             {/* 4 icon badges */}
-            <div className="flex flex-wrap gap-6 mt-9">
+            <div className="mt-9 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-6">
               {[
                 { icon: <Monitor className="h-[18px] w-[18px]" />, label1: 'Real CBT Interface' },
                 { icon: <Clock className="h-[18px] w-[18px]" />, label1: 'Instant Results' },
@@ -195,18 +195,18 @@ export default function LandingPage() {
           </div>
 
           {/* ── Right mockup card ── */}
-          <div className="flex-1 flex justify-center lg:justify-end relative top-[-30px] lg:right-[100px] skew-x-[-6deg] scale-y-60 ">
+          <div className="relative flex w-full flex-1 justify-center lg:-top-6 lg:justify-end">
             <div
-              className="bg-white rounded-[28px] w-[900px] shrink-0  overflow-hidden h-[480px] "
+              className="h-[360px] w-full max-w-[900px] overflow-hidden rounded-[22px] bg-white sm:h-[420px] lg:h-[480px] lg:w-[min(58vw,900px)] lg:shrink-0 lg:rounded-[28px]"
               style={{
-                transform: 'perspective(900px) rotateY(-14deg) rotateX(4deg)',
+                transform: 'perspective(900px) rotateY(-8deg) rotateX(3deg)',
                 transformOrigin: 'right center',
                 boxShadow: '-16px 32px 72px rgba(15,23,42,0.22), 0 8px 32px rgba(15,23,42,0.10)',
               }}
             >
 
               {/* Card top bar */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
+              <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5">
                 <div className="flex items-center gap-2.5">
                   {/* Mini dot logo */}
                   <div className="grid grid-cols-3 gap-[3px]">
@@ -219,7 +219,7 @@ export default function LandingPage() {
                   <span className="font-black text-[#05162E] text-[13px]">Reading Test 01</span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <div>
                     <p className="text-[9px] text-slate-400 font-semibold">Time Left</p>
                     <p className="font-black text-[#1E3A6E] text-[14px] leading-tight">00:59:38</p>
@@ -232,10 +232,10 @@ export default function LandingPage() {
               </div>
 
               {/* Card body: passage | questions | palette */}
-              <div className="grid grid-cols-[.75fr_.75fr_180px] min-h-[500px]">
+              <div className="grid min-h-[500px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-[.75fr_.75fr_170px]">
 
                 {/* Passage */}
-                <div className="p-5 border-r border-slate-100">
+                <div className="border-r border-slate-100 p-4 sm:p-5">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Passage 1</p>
                   <p className="mt-2 text-[11px] font-black italic text-[#05162E] leading-snug">
                     The Impact of Social Media on Society
@@ -265,7 +265,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Questions */}
-                <div className="p-5 border-r border-slate-100">
+                <div className="border-r border-slate-100 p-4 sm:p-5">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Questions 11 – 14</p>
                   <p className="mt-2 text-[11px] font-black text-[#05162E] leading-snug">
                     Which of the following is NOT mentioned in paragraph 2?
@@ -294,7 +294,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Question Palette */}
-                <div className="p-3 bg-[#F8FAFC]">
+                <div className="hidden bg-[#F8FAFC] p-3 lg:block">
                   <p className="text-[9px] font-black text-[#05162E] mb-2.5">Question<br />Palette</p>
                   <div className="grid grid-cols-4 gap-[4px]">
                     {Array.from({ length: 32 }).map((_, i) => {
@@ -334,8 +334,8 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════
           STATS BAR
       ═══════════════════════════════════════════════════ */}
-      <section className="max-w-[1500px] mx-auto px-6 md:px-10 pb-8 relative z-10 lg:-mt-24">
-        <div className="bg-[#2C4B78] rounded-[28px] px-8 py-6 grid grid-cols-2 lg:grid-cols-4 gap-6 shadow-2xl">
+      <section className="relative z-10 mx-auto max-w-[1500px] px-4 pb-8 sm:px-6 md:px-10 lg:-mt-16 xl:-mt-24">
+        <div className="grid grid-cols-1 gap-4 rounded-[22px] bg-[#2C4B78] px-5 py-5 shadow-2xl sm:grid-cols-2 sm:gap-6 sm:rounded-[28px] sm:px-8 sm:py-6 lg:grid-cols-4">
           {[
             { icon: <Users className="h-5 w-5" />, val: '50K+', label: 'Students', accent: false },
             { icon: <FileText className="h-5 w-5" />, val: '1000+', label: 'Mock Tests', accent: false },
@@ -359,18 +359,18 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════
           FEATURES
       ═══════════════════════════════════════════════════ */}
-      <section className="max-w-[1280px] mx-auto px-6 md:px-10 py-16  -mt-20">
+      <section className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 md:px-10 lg:py-16">
         <div className="text-center mb-12">
           <h2 className="text-[28px] font-black text-[#05162E]">
             Everything You Need to Succeed in IELTS
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-14 gap-y-12 -mt-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-x-5 xl:gap-x-8">
           {features.map((f, i) => (
             <div
               key={i}
-              className="flex flex-col items-center text-center p-5 rounded-[18px] bg-white border border-slate-100 shadow-sm hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300 group min-w-[180px]"
+              className="group flex w-full flex-col items-center rounded-[18px] border border-slate-100 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg"
             >
               <div className="h-11 w-11 rounded-xl bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center mb-4 group-hover:bg-[#1E3A6E] group-hover:text-white transition-colors duration-300">
                 {f.icon}

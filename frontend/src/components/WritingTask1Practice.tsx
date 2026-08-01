@@ -64,17 +64,18 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
   });
 
   return (
-    <div className="flex flex-col gap-6 h-full max-w-[1400px] mx-auto pb-8">
+    <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-6 pb-8">
 
       {/* Hero Banner */}
-      <div className="relative w-full rounded-[32px] overflow-hidden bg-gradient-to-r from-white via-white to-[#F4F8FC] border border-slate-100 shadow-sm pt-14 pb-14 px-12 flex items-center justify-between min-h-[280px]">
+      <div className="relative flex min-h-[240px] w-full flex-col gap-5 overflow-hidden rounded-[24px] border border-slate-100 bg-gradient-to-r from-white via-white to-[#F4F8FC] px-5 py-6 shadow-sm sm:rounded-[32px] sm:px-8 sm:py-10 lg:min-h-[280px] lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-14">
         
         {/* Background Image with Smooth Faded Edges */}
-        <div className="absolute inset-0 z-0 flex justify-end items-end pr-[240px]">
+        <div className="absolute inset-0 z-0 hidden items-end justify-end pr-[240px] lg:flex">
           <img 
             src="/images/london-bg.png" 
             alt=""
-            className="h-[280px] w-auto object-contain max-w-none mix-blend-multiply"
+            loading="lazy"
+            className="h-[280px] w-auto max-w-full object-contain mix-blend-multiply"
             style={{ 
               WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 90%, transparent 100%)',
               maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 90%, transparent 100%)'
@@ -84,11 +85,11 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
         </div>
 
         {/* Left side: Text */}
-        <div className="relative z-10 min-w-[550px]">
+        <div className="relative z-10 min-w-0 text-center lg:text-left">
           <div className="inline-flex items-center gap-2 text-blue-600 text-[12px] font-black tracking-widest uppercase mb-4">
             <PenLine className="h-4 w-4" /> WRITING TASK 1
           </div>
-          <h1 className="text-[44px] font-black text-[#05162E] leading-tight mb-3 tracking-tight whitespace-nowrap">
+          <h1 className="mb-3 break-words text-[30px] font-black leading-tight tracking-tight text-[#05162E] sm:text-[38px] lg:text-[44px]">
             Writing Task 1 Practice Tests
           </h1>
           <p className="text-[16px] text-slate-500 font-medium">
@@ -97,7 +98,7 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
         </div>
 
         {/* Right side: Widget */}
-        <div className="bg-white rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col gap-2 w-[260px] relative z-10 border border-slate-50 shrink-0">
+        <div className="relative z-10 flex w-full shrink-0 flex-col gap-2 rounded-[24px] border border-slate-50 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.06)] sm:p-6 lg:w-[260px]">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-red-50 text-red-500 rounded-[14px] flex items-center justify-center shrink-0">
               <PenLine className="w-5 h-5" />
@@ -119,20 +120,20 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex gap-3 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
         {CATEGORIES.map(cat => {
           const isActive = activeCategory === cat.id;
           return (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2.5 px-6 py-3 rounded-full text-[13.5px] font-bold transition-all shadow-sm ${isActive
+              className={`flex min-h-11 shrink-0 items-center gap-2.5 rounded-full px-5 py-3 text-[13.5px] font-bold shadow-sm transition-all ${isActive
                   ? 'bg-[#05162E] text-white shadow-md border border-[#05162E]'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                 }`}
             >
               {cat.icon && (
-                <img src={cat.icon} alt={cat.label} className={`w-4 h-4 object-contain ${isActive ? 'invert brightness-0' : 'opacity-60'}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                <img src={cat.icon} alt={cat.label} loading="lazy" className={`h-4 w-4 object-contain ${isActive ? 'invert brightness-0' : 'opacity-60'}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               )}
               {cat.label}
             </button>
@@ -149,7 +150,7 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
           return (
             <div
               key={test.id}
-              className="bg-white rounded-3xl p-7 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all flex flex-col group h-full"
+              className="group flex h-full w-full flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] transition-all hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] sm:p-7"
             >
               <div className="flex justify-between items-start mb-5">
                 <div className={`px-3 py-1 rounded-full ${catConfig.lightBg} ${catConfig.text} text-[10px] font-black tracking-widest uppercase`}>
@@ -162,13 +163,13 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
                 )}
               </div>
 
-              <div className="flex gap-6 mb-6 items-center flex-1">
-                <div className="w-[120px] shrink-0 flex items-center justify-center">
+              <div className="mb-6 flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+                <div className="flex w-full shrink-0 items-center justify-center sm:w-[120px]">
                   <ImageWithFallback 
                     src={catConfig.img3d || ''} 
                     alt={categoryName} 
                     fallback={
-                      <div className={`w-[100px] h-[100px] rounded-2xl ${catConfig.lightBg} border-2 border-dashed ${catConfig.border} flex flex-col items-center justify-center text-center p-2`}>
+                        <div className={`flex h-[100px] w-[100px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-2 text-center ${catConfig.lightBg} ${catConfig.border}`}>
                         <span className={`text-xs font-bold ${catConfig.text}`}>
                           Put {categoryName}<br/>3D Image Here
                         </span>
@@ -176,14 +177,14 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
                     }
                   />
                 </div>
-                <div className="flex flex-col justify-center flex-1">
-                  <h3 className="text-[22px] font-black text-[#05162E] leading-tight mb-2 tracking-tight">{test.title}</h3>
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                  <h3 className="mb-2 break-words text-[22px] font-black leading-tight tracking-tight text-[#05162E]">{test.title}</h3>
                   <p className="text-[13px] text-slate-500 font-medium leading-relaxed line-clamp-2 mb-4">
                     {getTestDescription(test) || 'Jawaaf has prepared a simulated Cambridge IELTS exam versions.'}
                   </p>
 
                   {/* Stats Row Moved INSIDE the right column */}
-                  <div className="flex items-center gap-4 text-[12px] font-bold text-slate-400">
+                  <div className="flex flex-wrap items-center gap-3 text-[12px] font-bold text-slate-400 sm:gap-4">
                     <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {test.duration} min</span>
                     <div className="w-1 h-1 rounded-full bg-slate-200"></div>
                     <span className="flex items-center gap-1.5"><PenLine className="w-3.5 h-3.5" /> 1 Task</span>
@@ -202,7 +203,7 @@ export default function WritingTask1Practice({ tests, onBack, onStartTest }: Pro
 
               <button
                 onClick={() => onStartTest(test.id)}
-                className={`w-full mt-auto py-3.5 rounded-2xl text-white text-[14px] font-black flex items-center justify-center gap-2 ${catConfig.color} ${catConfig.hoverColor} transition-colors`}
+                className={`mt-auto flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[14px] font-black text-white transition-colors ${catConfig.color} ${catConfig.hoverColor}`}
               >
                 Start Practice <ChevronRight className="w-4 h-4" />
               </button>
@@ -243,6 +244,7 @@ function ImageWithFallback({ src, alt, fallback }: { src: string, alt: string, f
       src={src}
       alt={alt}
       className="w-full h-auto object-contain drop-shadow-2xl group-hover:scale-105 transition-transform duration-500"
+      loading="lazy"
       onError={() => setError(true)}
     />
   );

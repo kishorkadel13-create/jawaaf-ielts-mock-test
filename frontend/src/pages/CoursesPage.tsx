@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import StudentSidebar from '../components/StudentSidebar';
 import JawaafLogo from '../components/JawaafLogo';
+import MobileBottomNav from '../components/MobileBottomNav';
 import { resolveStorageUrl } from '../utils/storageUrl';
 import { getEmbeddableVideoUrl, getVideoThumbnailUrl, shouldUseVideoIframe } from '../utils/videoEmbed';
 
@@ -420,6 +421,7 @@ export default function CoursesPage() {
   const [postingQuestion, setPostingQuestion] = useState(false);
   const [detectedDurations, setDetectedDurations] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const saveTimerRef = useRef<number | null>(null);
 
@@ -561,10 +563,13 @@ export default function CoursesPage() {
 
   const activeLessonUnlocked = activeLesson ? isLessonUnlocked(activeLesson) : false;
   const rawVideoSource = activeLessonUnlocked ? activeLesson?.video_file || activeLesson?.video_url : '';
-  const videoSource = activeLessonUnlocked && activeLesson?.video_file
-    ? resolveStorageUrl(activeLesson.video_file, 'uploads')
-    : getEmbeddableVideoUrl(rawVideoSource);
-  const usesIframePlayer = shouldUseVideoIframe(rawVideoSource);
+  const shouldProxyVideo = Boolean(activeLessonUnlocked && activeLesson?.id && activeLesson.video_file);
+  const secureVideoSource = shouldProxyVideo && token
+    ? `${api.defaults.baseURL || '/api'}/courses/lessons/${activeLesson?.id}/video?token=${encodeURIComponent(token)}`
+    : '';
+  const videoSource = shouldProxyVideo ? secureVideoSource : getEmbeddableVideoUrl(rawVideoSource);
+  const usesIframePlayer = !shouldProxyVideo && shouldUseVideoIframe(rawVideoSource);
+  const activeLessonPoster = activeLesson ? getVideoThumbnailUrl(activeLesson.video_file || activeLesson.video_url, activeLesson.thumbnail_url) : '';
   const activeLessonIndex = activeSection?.lessons?.findIndex(lesson => lesson.id === activeLesson?.id) ?? -1;
   const activeSectionCompleted = activeSection?.lessons?.filter(lesson => lesson.progress?.completed).length || 0;
   const activeSectionTotal = activeSection?.lessons?.length || 0;
@@ -624,6 +629,7 @@ export default function CoursesPage() {
 
   if (isCourseOpen) {
     const cinemaLessons = activeSection?.lessons || [];
+    const cinemaPrevLesson = activeLessonIndex > 0 ? cinemaLessons[activeLessonIndex - 1] : null;
     const cinemaNextLesson = cinemaLessons[activeLessonIndex + 1] || cinemaLessons.find(lesson => lesson.id !== activeLesson?.id) || null;
     const cinemaTitle = `${activeSection?.title || 'IELTS'} Cinema`;
     const cinemaMascot = '/images/transition/jawaafielts-cutout.png';
@@ -653,8 +659,8 @@ export default function CoursesPage() {
               'radial-gradient(circle at 22% 18%, rgba(214, 166, 88, 0.10), transparent 34%), radial-gradient(circle at 78% 72%, rgba(181, 116, 45, 0.075), transparent 38%), linear-gradient(135deg, rgba(255, 248, 232, 0.52), rgba(241, 218, 181, 0.20))'
           }}
         >
-          <main className="grid min-h-screen min-w-0 gap-0 xl:h-full xl:min-h-0 xl:overflow-hidden xl:grid-cols-[22%_minmax(0,59%)_19%]">
-            <aside className="relative flex min-h-screen min-w-0 flex-col overflow-hidden border-r border-[#D2AE75] bg-[#F8EBD6]/88 px-4 py-4 shadow-[12px_0_35px_rgba(89,52,23,0.08)] xl:h-screen xl:min-h-0 2xl:px-5 2xl:py-5">
+          <main className="grid min-h-screen min-w-0 gap-4 pb-28 xl:h-full xl:min-h-0 xl:grid-cols-[280px_minmax(0,1fr)_300px] xl:gap-0 xl:overflow-hidden xl:pb-0 2xl:grid-cols-[320px_minmax(0,1fr)_320px]">
+            <aside className="order-2 relative mx-4 flex min-w-0 flex-col overflow-hidden rounded-[24px] border border-[#D2AE75] bg-[#F8EBD6]/88 px-4 py-4 shadow-[12px_0_35px_rgba(89,52,23,0.08)] xl:order-none xl:mx-0 xl:h-screen xl:min-h-0 xl:rounded-none xl:border-l-0 xl:border-y-0 2xl:px-5 2xl:py-5">
               <div className="mb-4 flex shrink-0 items-center justify-between gap-3 px-3">
                 <JawaafLogo className="w-[180px] 2xl:w-[198px]" />
                 <button
@@ -675,7 +681,7 @@ export default function CoursesPage() {
                   <span className="text-[#7D2D1E]">★</span> Today's Programme <span className="text-[#7D2D1E]">★</span>
                 </h2>
 
-                <div className="custom-scrollbar relative z-10 grid min-h-0 flex-1 content-start gap-2.5 overflow-y-auto overflow-x-hidden pr-1 2xl:gap-3">
+                <div className="custom-scrollbar relative z-10 grid max-h-[62dvh] min-h-0 flex-1 content-start gap-2.5 overflow-y-auto overflow-x-hidden pr-1 xl:max-h-none 2xl:gap-3">
 	                  {cinemaLessons.length ? cinemaLessons.map((lesson, index) => {
 	                    const unlocked = isLessonUnlocked(lesson);
 	                    const selected = activeLesson?.id === lesson.id;
@@ -702,19 +708,19 @@ export default function CoursesPage() {
                   )}
                 </div>
 
-                <button className="cinema-button-paper relative z-10 mt-3 flex shrink-0 w-[86%] self-center items-center justify-center gap-4 rounded-[14px] px-5 py-3 text-[14px] font-black text-[#2D1A10]">
+                <button className="cinema-button-paper relative z-10 mt-3 flex min-h-11 w-full shrink-0 items-center justify-center gap-4 rounded-[14px] px-5 py-3 text-[14px] font-black text-[#2D1A10] sm:w-[86%] sm:self-center">
                   <span className="text-[26px] leading-none">🍿</span>
                   <span className="text-left">Download Programme<br /><span className="text-[13px] font-semibold text-[#6E543A]">PDF</span></span>
                 </button>
               </section>
             </aside>
 
-            <section className="flex min-h-screen min-w-0 flex-col px-4 py-4 lg:px-6 xl:h-screen xl:min-h-0 xl:overflow-hidden">
-              <header className="mb-3 grid shrink-0 gap-4 border-b border-[#D4B27E] pb-3 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
-                <div className="flex items-center gap-4">
-                  <img src={cinemaReelRing} alt="" className="cinema-ring-icon h-[52px] w-[52px] shrink-0 object-contain" draggable={false} />
+            <section className="order-1 flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:order-none xl:h-screen xl:min-h-0 xl:overflow-hidden">
+              <header className="mb-3 grid shrink-0 gap-3 border-b border-[#D4B27E] pb-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <img src={cinemaReelRing} alt="" className="cinema-ring-icon h-[42px] w-[42px] shrink-0 object-contain sm:h-[52px] sm:w-[52px]" draggable={false} />
                   <div>
-                    <h1 className="cinema-serif text-[clamp(26px,2.45vw,36px)] font-black uppercase leading-none tracking-[0.02em] text-[#2D1A10]">
+                    <h1 className="cinema-serif break-words text-[clamp(22px,7vw,34px)] font-black uppercase leading-none tracking-[0.02em] text-[#2D1A10] xl:text-[clamp(26px,2.45vw,36px)]">
                       {cinemaTitle}
                     </h1>
                     <p className="mt-0.5 text-[13px] font-semibold text-[#674A32]">{activeSectionTotal} Premium Lessons</p>
@@ -738,7 +744,7 @@ export default function CoursesPage() {
                 </div>
               </header>
 
-              <div className="cinema-paper-panel min-h-0 flex-1 overflow-hidden rounded-[24px] p-3.5 2xl:p-4">
+              <div className="cinema-paper-panel min-h-0 flex-1 overflow-visible rounded-[20px] p-2.5 sm:rounded-[24px] sm:p-3.5 xl:overflow-hidden 2xl:p-4">
                 {loading ? (
                   <div className="grid min-h-[520px] place-items-center text-[14px] font-bold text-[#8B6A47]">Loading courses...</div>
                 ) : activeLesson && !activeLessonUnlocked ? (
@@ -758,24 +764,24 @@ export default function CoursesPage() {
                     </div>
                   </div>
                 ) : activeLesson ? (
-                  <div className="flex h-full min-h-0 flex-col gap-2.5">
-                    <div className="flex shrink-0 flex-wrap items-end justify-between gap-4">
-                      <div>
-                        <p className="mb-1 flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.12em] text-[#A23A24]">
+                  <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-2.5">
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
+                      <div className="min-w-0">
+                        <p className="mb-1 flex flex-wrap items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#A23A24] sm:text-[13px]">
                           <span>★</span> Now Showing <span>★</span>
                         </p>
-                        <h2 className="cinema-serif text-[clamp(26px,2.6vw,36px)] font-black leading-tight text-[#2D1A10]">
+                        <h2 className="cinema-serif break-words text-[clamp(23px,8vw,34px)] font-black leading-tight text-[#2D1A10] xl:text-[clamp(24px,2.6vw,36px)]">
                           {activeLesson.title}
                         </h2>
-                        <p className="mt-0.5 text-[16px] font-black text-[#A23A24]">{activeSection?.title || 'IELTS'}</p>
+                        <p className="mt-0.5 break-words text-[15px] font-black text-[#A23A24] sm:text-[16px]">{activeSection?.title || 'IELTS'}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-3 sm:justify-start">
                         <p className="flex items-center gap-2 text-[13px] font-semibold text-[#54351F]">
                           <Clock className="h-4 w-4" /> {getLessonDurationLabel(activeLesson)}
                         </p>
                         <button
                           onClick={markComplete}
-                          className={`rounded-full border px-3.5 py-2 text-[12px] font-black transition-colors ${activeLesson.progress?.completed
+                          className={`hidden min-h-11 rounded-full border px-3.5 py-2 text-[12px] font-black transition-colors sm:inline-flex sm:items-center ${activeLesson.progress?.completed
                             ? 'border-[#4F7B54]/45 bg-[#E6F0E2]/80 text-[#4F7B54]'
                             : 'border-[#D4A160] bg-[#FFF6E7]/90 text-[#6B351D] hover:border-[#A23A24] hover:text-[#A23A24]'
                           }`}
@@ -786,19 +792,18 @@ export default function CoursesPage() {
                       </div>
                     </div>
 
-                    <div className="cinema-video-frame h-[clamp(300px,42vh,470px)] shrink-0 overflow-hidden rounded-[18px] bg-[#061A36]">
+                    <div className="cinema-video-frame h-[240px] w-full shrink-0 overflow-hidden rounded-[14px] bg-black min-[390px]:h-[250px] sm:aspect-video sm:h-auto sm:rounded-[18px] xl:h-[clamp(300px,42vh,470px)] xl:aspect-auto">
                       {videoSource ? usesIframePlayer ? (
                         <div className="relative h-full w-full" onContextMenu={event => event.preventDefault()}>
                           <iframe
                             src={videoSource}
                             title={activeLesson.title}
-                            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; web-share"
                             allowFullScreen
                             sandbox="allow-scripts allow-same-origin allow-presentation"
                             referrerPolicy="no-referrer"
                             className="h-full w-full border-0"
                           />
-                          <div aria-hidden="true" className="absolute right-0 top-0 z-10 h-16 w-20 cursor-default bg-transparent" />
                         </div>
                       ) : (
                         <video
@@ -807,8 +812,10 @@ export default function CoursesPage() {
                           controls
                           controlsList="nodownload noplaybackrate"
                           disablePictureInPicture
+                          playsInline
+                          poster={activeLessonPoster}
                           preload="metadata"
-                          className="h-full w-full"
+                          className="h-full w-full bg-black object-contain"
                           onContextMenu={event => event.preventDefault()}
                           onLoadedMetadata={event => {
                             const duration = event.currentTarget.duration;
@@ -831,7 +838,7 @@ export default function CoursesPage() {
 
                     <div className="min-h-[220px] flex-1">
                       <section className="cinema-paper-panel flex h-full min-h-0 flex-col rounded-[22px] shadow-sm">
-                        <div className="cinema-tabs relative z-10 grid max-w-[680px] shrink-0 grid-cols-3 gap-0 px-0 pt-0 text-[14px] font-black text-[#2D1A10]">
+                        <div className="cinema-tabs relative z-10 grid w-full shrink-0 grid-cols-3 gap-0 px-0 pt-0 text-[13px] font-black text-[#2D1A10] sm:max-w-[680px] sm:text-[14px]">
                           {[
                             ['overview', 'Overview', BookOpen],
                             ['notes', 'Notes', PenLine],
@@ -845,18 +852,18 @@ export default function CoursesPage() {
                                   setActiveTab(key as 'overview' | 'notes' | 'qa');
                                   window.history.replaceState(null, '', key === 'overview' ? window.location.pathname + window.location.search : `#${key}`);
                                 }}
-                                className={`flex min-h-[46px] items-center justify-center gap-3 border border-b-0 px-5 py-2.5 transition-colors ${activeTab === key
+                                className={`flex min-h-[46px] items-center justify-center gap-1.5 border border-b-0 px-2 py-2.5 transition-colors sm:gap-3 sm:px-5 ${activeTab === key
                                   ? 'border-[#D4B27E] bg-[#FFF3DC] text-[#2D1A10] shadow-[inset_0_-3px_0_#C88A24]'
                                   : 'border-[#E3C996]/70 bg-[#F9E8CE]/55 hover:bg-[#FFF3DC]/70'
                                   }`}
                               >
-                                <TabIcon className="h-6 w-6" /> {label as string}
+                                <TabIcon className="h-4 w-4 sm:h-6 sm:w-6" /> <span className="truncate">{label as string}</span>
                               </button>
                             );
                           })}
                         </div>
 
-                        <div className="custom-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto p-4 2xl:p-5">
+                        <div className="custom-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 2xl:p-5">
                           {activeTab === 'overview' && (
                             <div className="grid min-h-full gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(240px,3fr)]">
                               <div className="cinema-copy-block min-w-0">
@@ -865,7 +872,7 @@ export default function CoursesPage() {
                                   {activeLesson.description || "In this lesson, you'll learn focused IELTS strategies and apply them through guided examples from the recorded class."}
                                 </p>
                               </div>
-                              <div className="cinema-copy-block min-w-0 border-l border-[#E1C79A] pl-5">
+                              <div className="cinema-copy-block min-w-0 border-[#E1C79A] lg:border-l lg:pl-5">
                                 <h3 className="cinema-serif text-[21px] font-black text-[#2D1A10]">What you'll learn</h3>
                                 <div className="mt-3 grid gap-2.5 text-[14px] font-semibold text-[#5F4630]">
                                   {activeLearningPoints.map(item => (
@@ -890,12 +897,12 @@ export default function CoursesPage() {
                               {activeLesson.resources?.length ? (
                                 <div className="grid gap-4">
                                   {activeLesson.resources.length > 1 && (
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="grid gap-2 sm:flex sm:flex-wrap">
                                       {activeLesson.resources.map(resource => (
                                         <button
                                           key={resource.id}
                                           onClick={() => setActiveResourceId(resource.id)}
-                                          className={`rounded-full border px-4 py-2 text-[12px] font-black transition-colors ${activeResourceId === resource.id ? 'border-[#31547A] bg-[#31547A] text-white' : 'border-[#D4B27E] bg-[#FFF4DF] text-[#5F3B20]'}`}
+                                          className={`min-h-11 rounded-full border px-4 py-2 text-[12px] font-black transition-colors ${activeResourceId === resource.id ? 'border-[#31547A] bg-[#31547A] text-white' : 'border-[#D4B27E] bg-[#FFF4DF] text-[#5F3B20]'}`}
                                         >
                                           {resource.title}
                                         </button>
@@ -922,7 +929,7 @@ export default function CoursesPage() {
                                   className="min-h-[96px] w-full rounded-xl border border-[#D4B27E] bg-white/80 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#A23A24]"
                                 />
                                 <div className="mt-3 flex justify-end">
-                                  <button onClick={postLessonQuestion} disabled={postingQuestion || !questionText.trim()} className="rounded-xl bg-[#31547A] px-5 py-3 text-[13px] font-black text-white disabled:opacity-50">
+                                  <button onClick={postLessonQuestion} disabled={postingQuestion || !questionText.trim()} className="flex min-h-11 w-full items-center justify-center rounded-xl bg-[#31547A] px-5 py-3 text-[13px] font-black text-white disabled:opacity-50 sm:w-auto">
                                     <Send className="mr-2 inline h-4 w-4" /> Post Question
                                   </button>
                                 </div>
@@ -974,9 +981,9 @@ export default function CoursesPage() {
               </div>
             </section>
 
-            <aside className="min-w-0 overflow-hidden border-l border-[#D2AE75] bg-[#F8EBD6]/70 px-3 py-4 xl:flex xl:h-screen xl:min-h-0 xl:flex-col xl:gap-3 2xl:px-4 2xl:py-5">
+            <aside className="order-3 hidden min-w-0 overflow-hidden border-l border-[#D2AE75] bg-[#F8EBD6]/70 px-3 py-4 xl:flex xl:h-screen xl:min-h-0 xl:flex-col xl:gap-3 2xl:px-4 2xl:py-5">
               <div className="relative min-h-[168px] shrink-0 2xl:min-h-[188px]">
-                <div className="cinema-speech-card absolute left-0 -top-1 w-[8px] rounded-[12px] p-3 2xl:w-[120px] 2xl:p-1.5">
+                <div className="cinema-speech-card absolute left-0 -top-1 w-[116px] rounded-[12px] p-3 2xl:w-[128px] 2xl:p-3">
                   <p className="relative z-10 text-[12px] font-semibold leading-5 text-[#54351F] 2xl:text-[12px] 2xl:leading-5">Enjoy the show!<br />Take notes as you watch.</p>
                   <div className="relative z-10 mt-2.5 flex items-center justify-center gap-2 text-[#C88A24]">
                     <span className="h-px w-8 bg-[#C88A24]/50" />
@@ -1038,7 +1045,7 @@ export default function CoursesPage() {
                       setActiveLessonId(cinemaNextLesson.id);
                       if (activeSection) setSearchParams({ section: activeSection.slug, lesson: cinemaNextLesson.id });
                     }}
-                    className="relative z-10 flex w-full items-center justify-between gap-0 text-left"
+                    className="relative z-10 flex min-h-11 w-full items-center justify-between gap-3 text-left"
                   >
                     <div className="min-w-0">
                       <h3 className="cinema-serif text-[18px] font-black leading-tight text-[#2D1A10] 2xl:text-[20px]">{cinemaNextLesson.title}</h3>
@@ -1060,7 +1067,7 @@ export default function CoursesPage() {
                       {activeLesson.resources?.length ? activeLesson.resources.map(resource => {
                         const href = resolveStorageUrl(resource.resource_file || resource.resource_url, 'uploads');
                         return (
-                          <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="cinema-button-paper flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20] hover:border-[#A23A24]">
+                          <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="cinema-button-paper flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20] hover:border-[#A23A24]">
                             {resource.title}
                             <Download className="h-4 w-4" />
                           </a>
@@ -1081,6 +1088,40 @@ export default function CoursesPage() {
               </section>
             </aside>
           </main>
+          <div className="fixed bottom-0 left-0 right-0 z-50 grid grid-cols-3 gap-2 border-t border-[#D2AE75] bg-[#FFF7E7]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(89,52,23,0.16)] backdrop-blur xl:hidden">
+            <button
+              type="button"
+              disabled={!cinemaPrevLesson}
+              onClick={() => {
+                if (!cinemaPrevLesson || !activeSection) return;
+                setActiveLessonId(cinemaPrevLesson.id);
+                setSearchParams({ section: activeSection.slug, lesson: cinemaPrevLesson.id });
+              }}
+              className="flex min-h-11 items-center justify-center rounded-xl border border-[#D6B27D] bg-white/80 px-3 text-[12px] font-black text-[#5F3B20] disabled:opacity-45"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={markComplete}
+              disabled={!activeLesson}
+              className="flex min-h-11 items-center justify-center rounded-xl bg-[#31547A] px-3 text-[12px] font-black text-white disabled:opacity-45"
+            >
+              {activeLesson?.progress?.completed ? 'Completed' : 'Complete'}
+            </button>
+            <button
+              type="button"
+              disabled={!cinemaNextLesson}
+              onClick={() => {
+                if (!cinemaNextLesson || !activeSection) return;
+                setActiveLessonId(cinemaNextLesson.id);
+                setSearchParams({ section: activeSection.slug, lesson: cinemaNextLesson.id });
+              }}
+              className="flex min-h-11 items-center justify-center rounded-xl bg-[#B93122] px-3 text-[12px] font-black text-white disabled:opacity-45"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1410,48 +1451,57 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#FBF2E6] font-sans text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      <StudentSidebar variant="cinema" />
+    <div className="flex min-h-screen bg-[#FBF2E6] pb-24 font-sans text-[#05162E] lg:pb-0" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <StudentSidebar variant="cinema" isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <main className="relative min-w-0 flex-1 border-l border-[#DED2C2] before:pointer-events-none before:absolute before:left-[8px] before:top-0 before:z-20 before:h-full before:w-px before:bg-[#E9DCCB]">
+      <main className="relative min-w-0 flex-1 border-[#DED2C2] lg:border-l lg:before:pointer-events-none lg:before:absolute lg:before:left-[8px] lg:before:top-0 lg:before:z-20 lg:before:h-full lg:before:w-px lg:before:bg-[#E9DCCB]">
         <div
-          className="relative min-h-screen overflow-hidden bg-[#FFF8ED] bg-cover bg-center p-5 lg:p-8"
+          className="relative min-h-screen overflow-hidden bg-[#FFF8ED] bg-cover bg-center p-4 sm:p-5 lg:p-8"
           style={{ backgroundImage: "url('/images/Recorded%20Courses/background.png')" }}
         >
           <div className="pointer-events-none absolute inset-0 bg-[#FFF8ED]/70" />
           {!isCourseOpen ? (
             <div className="relative z-10 grid gap-5">
-              <section className="flex items-center justify-end gap-4">
-                <label className="hidden h-[58px] w-[560px] items-center gap-4 rounded-[18px] border border-[#D7C2A3] bg-[#FFF8EE]/88 px-6 text-[#5E3E2B] shadow-[0_8px_20px_rgba(88,56,35,0.10)] backdrop-blur sm:flex">
+              <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="flex min-h-11 w-full items-center justify-center rounded-xl border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[13px] font-black text-[#3D2418] shadow-sm lg:hidden"
+                >
+                  Course Menu
+                </button>
+                <label className="flex min-h-[52px] w-full items-center gap-3 rounded-[18px] border border-[#D7C2A3] bg-[#FFF8EE]/88 px-4 text-[#5E3E2B] shadow-[0_8px_20px_rgba(88,56,35,0.10)] backdrop-blur sm:h-[58px] sm:w-[min(100%,560px)] sm:px-6">
                   <Search className="h-7 w-7" />
                   <input className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold outline-none placeholder:text-[#8D735F]" placeholder="Search for lessons..." />
                 </label>
-                <button className="relative grid h-[58px] w-[58px] place-items-center rounded-full border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[#3D2418] shadow-[0_8px_20px_rgba(88,56,35,0.10)]">
+                <div className="flex items-center justify-end gap-3">
+                <button className="relative grid h-[52px] w-[52px] place-items-center rounded-full border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[#3D2418] shadow-[0_8px_20px_rgba(88,56,35,0.10)] sm:h-[58px] sm:w-[58px]">
                   <Bell className="h-6 w-6" />
                   <span className="absolute right-3 top-3 h-3.5 w-3.5 rounded-full bg-[#E84332] ring-2 ring-[#FFF8EE]" />
                 </button>
-                <div className="flex items-center gap-2 border-l border-[#D7C2A3] pl-4">
-                  <div className="grid h-[58px] w-[58px] place-items-center rounded-full bg-[#EADBC5] text-[22px] font-black text-[#2E1D14] shadow-sm">
+                <div className="flex items-center gap-2 border-l border-[#D7C2A3] pl-3 sm:pl-4">
+                  <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-[#EADBC5] text-[22px] font-black text-[#2E1D14] shadow-sm sm:h-[58px] sm:w-[58px]">
                     {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'S'}
                   </div>
                   <ChevronDown className="h-5 w-5 text-[#5E3E2B]" />
                 </div>
+                </div>
               </section>
 
-              <section className="aspect-[2934/786] overflow-hidden rounded-[24px] shadow-[0_12px_24px_rgba(76,48,29,0.12)]">
-                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" className="block h-full w-full scale-[1.018] select-none object-cover brightness-[1.12]" draggable={false} />
+              <section className="h-[168px] overflow-hidden rounded-[20px] shadow-[0_12px_24px_rgba(76,48,29,0.12)] sm:h-[210px] lg:aspect-[2934/786] lg:h-auto lg:rounded-[24px]">
+                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" loading="lazy" className="block h-full w-full scale-[1.02] select-none object-cover object-center brightness-[1.12] sm:scale-[1.01] lg:scale-[1.018]" draggable={false} />
               </section>
 
               <section>
-                <div className="mb-5">
-                  <h1 className="flex items-center gap-4 text-[28px] font-black tracking-tight text-[#05162E]">
+                <div className="mb-4 sm:mb-5">
+                  <h1 className="flex flex-col gap-1 break-words text-[22px] font-black leading-tight tracking-tight text-[#05162E] sm:flex-row sm:items-center sm:gap-4 sm:text-[28px]">
                     Explore by Section
-                    <span className="text-[20px] font-black text-[#C56832]">~ ★ ~</span>
+                    <span className="text-[18px] font-black text-[#C56832] sm:text-[20px]">~ ★ ~</span>
                   </h1>
-                  <p className="mt-2 text-[15px] font-semibold text-[#6F6257]">Choose a section and start watching expert video lessons.</p>
+                  <p className="mt-2 text-[14px] font-semibold leading-6 text-[#6F6257] sm:text-[15px]">Choose a section and start watching expert video lessons.</p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-5 xl:grid-cols-5">
                   {visibleSections.map(section => {
                     const poster = recordedCoursePoster(section);
                     const Icon = poster.icon;
@@ -1463,14 +1513,17 @@ export default function CoursesPage() {
                           setActiveLessonId(section.lessons?.[0]?.id || '');
                           setSearchParams({ section: section.slug });
                         }}
-                        className="group overflow-hidden rounded-[12px] bg-[#F2D9B5] text-left shadow-[0_10px_22px_rgba(76,48,29,0.15)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_28px_rgba(76,48,29,0.20)]"
+                        className="group flex min-h-11 w-full overflow-hidden rounded-[12px] bg-[#F2D9B5] text-left shadow-[0_10px_22px_rgba(76,48,29,0.15)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_28px_rgba(76,48,29,0.20)] sm:block"
                       >
-                        <div className="relative aspect-[464/572] overflow-hidden">
-                          <img src={poster.image} alt={section.title} className="h-full w-full scale-[1.095] object-cover transition-transform duration-300 group-hover:scale-[1.115]" />
+                        <div className="relative h-[116px] w-[42%] shrink-0 overflow-hidden sm:h-auto sm:w-full sm:aspect-[464/572]">
+                          <img src={poster.image} alt={section.title} loading="lazy" className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.04] sm:scale-[1.04] sm:group-hover:scale-[1.07]" />
                         </div>
-                        <div className="flex items-center gap-4 bg-[#F0D5AB] px-6 py-3.5">
-                          <Icon className={`h-7 w-7 ${poster.accent}`} />
-                          <span className="text-[17px] font-semibold text-[#3E2B1D]">{section.lessons.length} Lessons</span>
+                        <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 bg-[#F0D5AB] px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5 xl:px-4">
+                          <Icon className={`h-6 w-6 shrink-0 sm:h-7 sm:w-7 ${poster.accent}`} />
+                          <div className="min-w-0">
+                            <span className="block break-words text-[17px] font-black leading-tight text-[#3E2B1D] sm:hidden">{section.title}</span>
+                            <span className="block text-[14px] font-semibold text-[#3E2B1D] sm:text-[16px] xl:text-[15px]">{section.lessons.length} Lessons</span>
+                          </div>
                         </div>
                       </button>
                     );
@@ -1691,6 +1744,7 @@ export default function CoursesPage() {
           )}
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

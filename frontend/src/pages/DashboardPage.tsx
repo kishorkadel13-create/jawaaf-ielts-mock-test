@@ -6,9 +6,10 @@ import StudentSidebar from '../components/StudentSidebar';
 import {
   Monitor, Headphones, BookOpen, History, Award,
   Settings, LogOut, Lock, CheckSquare, Calendar,
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Bell, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Bell, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu
 } from 'lucide-react';
 import { getVideoThumbnailUrl } from '../utils/videoEmbed';
+import MobileBottomNav from '../components/MobileBottomNav';
 // Interfaces for typing
 interface TestAttempt {
   id: string;
@@ -91,6 +92,7 @@ export default function DashboardPage() {
   const [courseLessons, setCourseLessons] = useState<CourseLessonPreview[]>([]);
   const [courseSections, setCourseSections] = useState<CourseSectionPreview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const [streakData, setStreakData] = useState<{ activeDates: string[], currentStreak: number }>({ activeDates: [], currentStreak: 0 });
@@ -285,37 +287,45 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+    <div className="flex min-h-screen flex-col bg-[#F8FAFC] pb-24 font-sans lg:flex-row lg:pb-0" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
 
-      <StudentSidebar />
+      <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* MAIN CONTENT WRAPPER */}
-      <div className="flex-grow flex flex-col xl:flex-row h-screen overflow-hidden">
+      <div className="flex min-w-0 flex-grow flex-col 2xl:flex-row">
 
         {/* COLUMN 1: MAIN PANEL */}
-        <main className="flex-1 p-6 md:p-8 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
+        <main className="flex min-w-0 flex-1 flex-col gap-5 p-4 sm:p-6 md:p-8 lg:gap-6 xl:gap-8">
 
           {/* Top Header */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-[#EBF0F9] text-[#1E3A6E] flex items-center justify-center font-black text-lg border border-[#1E3A6E]/10">
+          <div className="sticky top-0 z-30 -mx-4 -mt-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-[#F8FAFC]/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6 md:-mx-8 md:-mt-8 md:px-8 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#1E3A6E] shadow-sm lg:hidden"
+                aria-label="Open navigation"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#1E3A6E]/10 bg-[#EBF0F9] text-lg font-black text-[#1E3A6E] sm:flex">
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'T'}
               </div>
-              <div>
-                <h1 className="text-xl font-black text-[#05162E] tracking-tight">
-                  Welcome back, {profile?.full_name || 'test'} ! 👋
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-black tracking-tight text-[#05162E] sm:text-xl">
+                  Welcome back, {profile?.full_name || 'test'}!
                 </h1>
-                <p className="text-[13px] text-slate-500 font-semibold mt-0.5">Let's continue your IELTS preparation and achieve your target band.</p>
+                <p className="mt-0.5 hidden text-[13px] font-semibold text-slate-500 sm:block">Let's continue your IELTS preparation and achieve your target band.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-4">
               <div className="hidden sm:flex px-4 py-2 bg-[#EE6055]/10 text-[#EE6055] text-[12px] font-bold rounded-full items-center gap-2">
                 <Crown className="h-4 w-4 fill-current" />
                 <span>Premium Access Active</span>
               </div>
 
-              <button className="h-10 w-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm">
+              <button className="hidden h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:text-slate-600 sm:flex">
                 <Search className="h-4 w-4" />
               </button>
 
@@ -324,7 +334,7 @@ export default function DashboardPage() {
                 <span className="absolute top-0 right-0 h-4 w-4 bg-[#EE6055] border-2 border-white rounded-full text-[9px] font-bold text-white flex items-center justify-center">3</span>
               </button>
 
-              <div className="h-10 w-10 rounded-full bg-[#EBF0F9] text-[#1E3A6E] flex items-center justify-center font-black text-[14px] cursor-pointer shadow-sm">
+              <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#EBF0F9] text-[14px] font-black text-[#1E3A6E] shadow-sm">
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'T'}
                 <ChevronRight className="h-3 w-3 ml-1" />
               </div>
@@ -332,24 +342,25 @@ export default function DashboardPage() {
           </div>
 
           {/* Banner */}
-          <div className="relative rounded-[30px] p-8 md:p-16 flex flex-col justify-center overflow-hidden mt-2 bg-[#E9F0FA] min-h-[320px]">
+          <div className="relative mt-2 flex min-h-[250px] flex-col justify-center overflow-hidden rounded-[20px] bg-[#E9F0FA] p-5 sm:min-h-[280px] sm:p-8 md:min-h-[300px] md:rounded-[30px] lg:min-h-[320px] lg:p-10 xl:p-14">
             {/* Background Image (User's Exact Asset) */}
             <div className="absolute inset-0 z-0">
-              <img src="/images/cover.png" alt="Banner Background" className="w-full h-full  scale-[1.04]" />
+              <img src="/images/cover.png" alt="Banner Background" className="h-full w-full object-cover object-right sm:scale-[1.02] md:scale-[1.04] md:object-center" />
             </div>
 
             {/* Text Content */}
-            <div className="relative z-10 w-full max-w-sm flex flex-col">
-              <h2 className="text-[28px] font-black text-[#0B1B3D] mb-1.5 leading-tight">Ready for today's challenge?</h2>
-              <p className="text-[15px] text-[#4B5563] font-semibold mb-6">Quality Course, Quality Career</p>
+            <div className="relative z-10 flex w-[62%] max-w-[16rem] flex-col sm:max-w-sm md:w-full">
+              <h2 className="mb-1.5 break-words text-[22px] font-black leading-tight text-[#0B1B3D] min-[390px]:text-[24px] sm:text-[28px]">Ready for today's challenge?</h2>
+              <p className="mb-5 max-w-[13rem] break-words text-[13px] font-semibold leading-5 text-[#4B5563] min-[390px]:text-[14px] sm:mb-6 sm:max-w-none sm:text-[15px]">Quality Course, Quality Career</p>
 
               <div>
-                <Link to="/tests?mode=practice" className="inline-flex items-center gap-2 bg-[#0B1B3D] hover:bg-[#1E3A6E] text-white px-7 py-3 rounded-xl font-bold text-[15px] transition-colors shadow-lg shadow-[#0B1B3D]/20">
-                  Start a Practice Test <ArrowRight className="h-4 w-4" />
+                <Link to="/tests?mode=practice" className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-[#0B1B3D] px-4 py-3 text-[12px] font-bold leading-tight text-white shadow-lg shadow-[#0B1B3D]/20 transition-colors hover:bg-[#1E3A6E] min-[390px]:text-[13px] sm:w-auto sm:px-7 sm:text-[15px]">
+                  <span className="break-words text-center">Start a Practice Test</span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
                 </Link>
               </div>
 
-              <p className="text-[13px] text-[#6B7280] font-semibold mt-10">You have full access to all mock tests.</p>
+              <p className="mt-6 max-w-[13rem] break-words text-[11px] font-semibold leading-5 text-[#6B7280] min-[390px]:text-[12px] sm:mt-10 sm:max-w-none sm:text-[13px]">You have full access to all mock tests.</p>
             </div>
 
          
@@ -357,11 +368,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
 
             {/* Tests Taken */}
-            <div className="bg-white border border-slate-100 rounded-[18px] px-4 py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-              <div className="h-8 w-8 bg-[#EFF4FB] text-[#1E3A6E] rounded-lg flex items-center justify-center mb-2">
+            <div className="bg-white border border-slate-100 rounded-[16px] px-4 py-5 sm:rounded-[18px] sm:py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 sm:h-8 sm:w-8 bg-[#EFF4FB] text-[#1E3A6E] rounded-lg flex items-center justify-center mb-2">
                 <FileText className="h-4 w-4" />
               </div>
 
@@ -369,7 +380,7 @@ export default function DashboardPage() {
                 Tests Taken
               </p>
 
-              <div className="text-xl font-black text-[#05162E]">
+              <div className="text-[22px] font-black leading-none sm:text-xl text-[#05162E]">
                 {stats.attempts}
               </div>
 
@@ -380,8 +391,8 @@ export default function DashboardPage() {
 
 
             {/* Average Score */}
-            <div className="bg-white border border-slate-100 rounded-[18px] px-4 py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-              <div className="h-8 w-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center mb-2">
+            <div className="bg-white border border-slate-100 rounded-[16px] px-4 py-5 sm:rounded-[18px] sm:py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 sm:h-8 sm:w-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center mb-2">
                 <Star className="h-4 w-4 fill-current" />
               </div>
 
@@ -389,7 +400,7 @@ export default function DashboardPage() {
                 Average Score
               </p>
 
-              <div className="text-xl font-black text-[#05162E]">
+              <div className="text-[22px] font-black leading-none sm:text-xl text-[#05162E]">
                 {stats.avgScore}
               </div>
 
@@ -400,8 +411,8 @@ export default function DashboardPage() {
 
 
             {/* Reading Score */}
-            <div className="bg-white border border-slate-100 rounded-[18px] px-4 py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-              <div className="h-8 w-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center mb-2">
+            <div className="bg-white border border-slate-100 rounded-[16px] px-4 py-5 sm:rounded-[18px] sm:py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 sm:h-8 sm:w-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center mb-2">
                 <BookOpen className="h-4 w-4" />
               </div>
 
@@ -409,7 +420,7 @@ export default function DashboardPage() {
                 Reading Score
               </p>
 
-              <div className="text-xl font-black text-[#05162E]">
+              <div className="text-[22px] font-black leading-none sm:text-xl text-[#05162E]">
                 {stats.readingScore}
               </div>
 
@@ -420,8 +431,8 @@ export default function DashboardPage() {
 
 
             {/* Listening Score */}
-            <div className="bg-white border border-slate-100 rounded-[18px] px-4 py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-              <div className="h-8 w-8 bg-[#EE6055]/10 text-[#EE6055] rounded-lg flex items-center justify-center mb-2">
+            <div className="bg-white border border-slate-100 rounded-[16px] px-4 py-5 sm:rounded-[18px] sm:py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 sm:h-8 sm:w-8 bg-[#EE6055]/10 text-[#EE6055] rounded-lg flex items-center justify-center mb-2">
                 <Headphones className="h-4 w-4" />
               </div>
 
@@ -429,7 +440,7 @@ export default function DashboardPage() {
                 Listening Score
               </p>
 
-              <div className="text-xl font-black text-[#05162E]">
+              <div className="text-[22px] font-black leading-none sm:text-xl text-[#05162E]">
                 {stats.listeningScore}
               </div>
 
@@ -440,8 +451,8 @@ export default function DashboardPage() {
 
 
             {/* Writing Score */}
-            <div className="bg-white border border-slate-100 rounded-[18px] px-4 py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-              <div className="h-8 w-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center mb-2">
+            <div className="bg-white border border-slate-100 rounded-[16px] px-4 py-5 sm:rounded-[18px] sm:py-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+              <div className="h-9 w-9 sm:h-8 sm:w-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center mb-2">
                 <PenLine className="h-4 w-4" />
               </div>
 
@@ -449,7 +460,7 @@ export default function DashboardPage() {
                 Writing Score
               </p>
 
-              <div className="text-xl font-black text-[#05162E]">
+              <div className="text-[22px] font-black leading-none sm:text-xl text-[#05162E]">
                 {stats.writingScore}
               </div>
 
@@ -460,8 +471,8 @@ export default function DashboardPage() {
 
           </div>
           {/* Quick Links / Course Types */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Link to="/courses" className="bg-white border border-slate-50 rounded-[24px] p-7 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all relative overflow-hidden group">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
+            <Link to="/courses" className="group relative flex w-full flex-col overflow-hidden rounded-[24px] border border-slate-50 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-7">
               <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform">
                 <Play className="h-32 w-32" />
               </div>
@@ -471,13 +482,13 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-[17px] font-black text-[#05162E]">Recorded Courses</h3>
               </div>
-              <p className="text-[12px] font-semibold leading-relaxed text-slate-500 h-10 relative z-10">Watch IELTS lessons across Reading, Listening, Writing, and Speaking.</p>
+              <p className="relative z-10 min-h-10 text-[12px] font-semibold leading-relaxed text-slate-500">Watch IELTS lessons across Reading, Listening, Writing, and Speaking.</p>
               <div className="mt-6 text-[13px] font-black text-[#1E3A6E] flex items-center gap-1 group relative z-10">
                 Continue Learning <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
 
-            <Link to="/tests?mode=practice" className="bg-white border border-slate-50 rounded-[24px] p-7 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all relative overflow-hidden group">
+            <Link to="/tests?mode=practice" className="group relative flex w-full flex-col overflow-hidden rounded-[24px] border border-slate-50 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-7">
               <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform">
                 <Target className="h-32 w-32" />
               </div>
@@ -487,13 +498,13 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-[17px] font-black text-[#05162E]">Practice Tests</h3>
               </div>
-              <p className="text-[12px] font-semibold leading-relaxed text-slate-500 h-10 relative z-10">Practice individual IELTS skills with section-wise question sets.</p>
+              <p className="relative z-10 min-h-10 text-[12px] font-semibold leading-relaxed text-slate-500">Practice individual IELTS skills with section-wise question sets.</p>
               <div className="mt-6 text-[13px] font-black text-[#1E3A6E] flex items-center gap-1 group relative z-10">
                 Open Practice <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
 
-            <Link to="/tests?mode=mock" className="bg-white border border-slate-50 rounded-[24px] p-7 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all relative overflow-hidden group">
+            <Link to="/tests?mode=mock" className="group relative flex w-full flex-col overflow-hidden rounded-[24px] border border-slate-50 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-7">
               <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform">
                 <PenLine className="h-32 w-32" />
               </div>
@@ -503,7 +514,7 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-[17px] font-black text-[#05162E]">Full Mock Tests</h3>
               </div>
-              <p className="text-[12px] font-semibold leading-relaxed text-slate-500 h-10 relative z-10">Simulate the computer-based IELTS test with timing and results.</p>
+              <p className="relative z-10 min-h-10 text-[12px] font-semibold leading-relaxed text-slate-500">Simulate the computer-based IELTS test with timing and results.</p>
               <div className="mt-6 text-[13px] font-black text-[#1E3A6E] flex items-center gap-1 group relative z-10">
                 Start Mock <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -512,7 +523,7 @@ export default function DashboardPage() {
 
           {/* Browse Courses Sections */}
           <div className="flex flex-col gap-4">
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-[16px] font-black text-[#05162E]">Browse Recorded Course Videos</h3>
                 <p className="text-[12px] font-medium text-slate-500">Choose a skill and continue lessons section-wise.</p>
@@ -522,19 +533,19 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-4">
               {courseSections.length > 0 ? courseSections.map(section => {
                 const Icon = courseSectionIcon(section.slug);
                 return (
                   <Link
                     key={section.id}
                     to={'/courses?section=' + section.slug}
-                    className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center gap-2"
+                    className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-4"
                   >
                     <div className="h-10 w-10 rounded-xl bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center mb-1">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h4 className="text-[13px] font-black text-[#05162E] leading-tight">{section.title}</h4>
+                    <h4 className="break-words text-[13px] font-black leading-tight text-[#05162E]">{section.title}</h4>
                     <p className="text-[10px] font-bold text-slate-400">
                       {section.completedCount}/{section.lessonCount} lessons completed
                     </p>
@@ -550,7 +561,7 @@ export default function DashboardPage() {
 
           {/* Recorded Courses Video list */}
           <div className="flex flex-col gap-4 pb-10">
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-[16px] font-black text-[#05162E]">Recorded Courses</h3>
                 <p className="text-[12px] font-medium text-slate-500">Latest published IELTS lessons from your course library.</p>
@@ -560,7 +571,7 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5">
               {courseLessons.map(lesson => {
                 const thumbnailUrl = getVideoThumbnailUrl(lesson.video_file || lesson.video_url, lesson.thumbnail_url);
                 return (
@@ -574,7 +585,7 @@ export default function DashboardPage() {
                     {/* Background Image */}
                     {thumbnailUrl ? (
                       <div className="absolute inset-0 z-0">
-                        <img src={thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={thumbnailUrl} alt={lesson.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0B1B3D]/90 via-[#0B1B3D]/40 to-transparent"></div>
                       </div>
                     ) : (
@@ -615,7 +626,7 @@ export default function DashboardPage() {
                         <span>Pending</span>
                       )}
                     </div>
-                    <div className="h-8 w-8 rounded-full bg-white shadow-md text-[#1E3A6E] flex items-center justify-center border border-slate-100 group-hover:bg-[#1E3A6E] group-hover:text-white transition-colors">
+                    <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-full bg-white shadow-md text-[#1E3A6E] flex items-center justify-center border border-slate-100 group-hover:bg-[#1E3A6E] group-hover:text-white transition-colors">
                       <Play className="h-4 w-4 fill-current ml-0.5" />
                     </div>
                   </div>
@@ -628,7 +639,7 @@ export default function DashboardPage() {
         </main>
 
         {/* COLUMN 2: RIGHT SIDEBAR */}
-        <aside className="w-full xl:w-[320px] bg-white border-l border-slate-100 p-6 md:p-8 flex flex-col gap-8 overflow-y-auto custom-scrollbar shadow-sm">
+        <aside className="grid w-full gap-6 border-t border-slate-100 bg-white p-4 shadow-sm sm:p-6 md:p-8 lg:grid-cols-3 2xl:flex 2xl:w-[320px] 2xl:flex-col 2xl:border-l 2xl:border-t-0">
 
           {/* Your Streak */}
           <div>
@@ -670,7 +681,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-100 lg:hidden 2xl:block" />
 
           {/* Calendar */}
           <div>
@@ -739,7 +750,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-100 lg:hidden 2xl:block" />
 
           {/* Overall Progress */}
           <div>
@@ -764,7 +775,7 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[#EFF4FB] flex items-center justify-center text-[#1E3A6E]">
+                  <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-full bg-[#EFF4FB] flex items-center justify-center text-[#1E3A6E]">
                     <PenLine className="h-4 w-4" />
                   </div>
                   <span className="text-[12px] font-bold text-slate-600">Mock Tests</span>
@@ -773,7 +784,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                  <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
                     <Target className="h-4 w-4" />
                   </div>
                   <span className="text-[12px] font-bold text-slate-600">Practice Tests</span>
@@ -782,7 +793,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+                  <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
                     <Heart className="h-4 w-4" />
                   </div>
                   <span className="text-[12px] font-bold text-slate-600">Recorded Courses</span>
@@ -795,6 +806,7 @@ export default function DashboardPage() {
         </aside>
 
       </div>
+      <MobileBottomNav />
     </div>
   );
 }
