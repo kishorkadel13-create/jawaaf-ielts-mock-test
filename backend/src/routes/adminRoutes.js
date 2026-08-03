@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import {
   createTeacher,
+  getApprovedStudents,
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
   createQuestion, updateQuestion, deleteQuestion,
@@ -79,6 +80,7 @@ router.use(authMiddleware);
 router.use(adminMiddleware);
 
 router.post('/teachers', createTeacher);
+router.get('/students', getApprovedStudents);
 
 // Recorded Course / LMS management
 router.get('/courses', getAdminCourseLibrary);

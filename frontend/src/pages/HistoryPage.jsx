@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
 import StudentSidebar from '../components/StudentSidebar';
 import {
+  ArrowRight,
   Award,
   BookOpen,
   Calendar,
@@ -13,6 +14,7 @@ import {
   FileText,
   Headphones,
   History,
+  MessageSquareText,
   PenLine,
   Timer,
 } from 'lucide-react';
@@ -37,6 +39,54 @@ const getAttemptIcon = (attempt) => {
   if (section?.type === 'writing') return <PenLine className="h-5 w-5" />;
   if (section?.type === 'listening') return <Headphones className="h-5 w-5" />;
   return <BookOpen className="h-5 w-5" />;
+};
+
+const getWritingTaskKind = (attempt) => {
+  const section = getPrimarySection(attempt);
+  const sectionText = `${attempt.mock_tests?.title || ''} ${section?.title || ''}`.toLowerCase();
+
+  if (/task\s*1/.test(sectionText)) return 'task-1';
+  if (/task\s*2/.test(sectionText)) return 'task-2';
+  if ((attempt.writing_task_count || 0) >= 2) return 'both';
+  if (section?.type === 'writing' || attempt.writing_task_count > 0) return 'task-1';
+  return null;
+};
+
+const getWritingTaskCards = (attempt) => {
+  const kind = getWritingTaskKind(attempt);
+  if (!kind) return [];
+
+  const status = getStatus(attempt);
+  const baseCards = [
+    {
+      key: 'task-1',
+      title: 'Writing Task 1',
+      subtitle: 'Charts, maps, process, letter response',
+      time: '20 min',
+      accent: '#1F55D6',
+      softBg: 'bg-[#EFF4FB]',
+      border: 'border-[#1F55D6]/20',
+      to: `/attempts/${attempt.id}/writing-task-1-feedback`,
+    },
+    {
+      key: 'task-2',
+      title: 'Writing Task 2',
+      subtitle: 'Essay response with examiner feedback',
+      time: '40 min',
+      accent: '#7C3AED',
+      softBg: 'bg-violet-50',
+      border: 'border-violet-200',
+      to: `/attempts/${attempt.id}/writing-task-2-feedback`,
+    },
+  ];
+
+  return baseCards
+    .filter(card => kind === 'both' || card.key === kind)
+    .map(card => ({
+      ...card,
+      statusLabel: attempt.review_status === 'teacher_review_pending' ? 'Pending review' : 'Feedback ready',
+      scoreLabel: status.scoreLabel,
+    }));
 };
 
 const getStatus = (attempt) => {
@@ -67,6 +117,7 @@ export default function HistoryPage() {
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [activeWritingTaskFilter, setActiveWritingTaskFilter] = useState('all');
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -86,11 +137,19 @@ export default function HistoryPage() {
 
   const filteredAttempts = useMemo(() => attempts.filter((attempt) => {
     const section = getPrimarySection(attempt);
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'mock') return attempt.attempt_mode === 'mock';
-    if (activeFilter === 'practice') return attempt.attempt_mode === 'practice';
-    return section?.type === activeFilter;
-  }), [activeFilter, attempts]);
+    const matchesBaseFilter = (() => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'mock') return attempt.attempt_mode === 'mock';
+      if (activeFilter === 'practice') return attempt.attempt_mode === 'practice';
+      return section?.type === activeFilter;
+    })();
+
+    if (!matchesBaseFilter) return false;
+    if (activeFilter !== 'writing' || activeWritingTaskFilter === 'all') return true;
+
+    const taskCards = getWritingTaskCards(attempt);
+    return taskCards.some(card => card.key === activeWritingTaskFilter);
+  }), [activeFilter, activeWritingTaskFilter, attempts]);
 
   const reviewedCount = attempts.filter(attempt => attempt.review_status !== 'teacher_review_pending').length;
   const pendingCount = attempts.filter(attempt => attempt.review_status === 'teacher_review_pending').length;
@@ -106,6 +165,12 @@ export default function HistoryPage() {
     ['reading', 'Reading'],
     ['listening', 'Listening'],
     ['writing', 'Writing'],
+  ];
+
+  const writingTaskFilters = [
+    ['all', 'All Writing', 'All reviewed and pending writing attempts'],
+    ['task-1', 'Writing Task 1', 'Report and visual response feedback'],
+    ['task-2', 'Writing Task 2', 'Essay feedback and band descriptors'],
   ];
 
   return (
@@ -146,7 +211,10 @@ export default function HistoryPage() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setActiveFilter(key)}
+                onClick={() => {
+                  setActiveFilter(key);
+                  if (key !== 'writing') setActiveWritingTaskFilter('all');
+                }}
                 className={`rounded-xl px-4 py-2 text-[12px] font-black transition-colors ${
                   activeFilter === key
                     ? 'bg-[#294b77] text-white'
@@ -157,6 +225,42 @@ export default function HistoryPage() {
               </button>
             ))}
           </div>
+
+          {activeFilter === 'writing' && (
+            <div className="mt-6 grid gap-3 lg:grid-cols-3">
+              {writingTaskFilters.map(([key, label, description]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveWritingTaskFilter(key)}
+                  className={`group overflow-hidden rounded-2xl border p-4 text-left transition-all ${
+                    activeWritingTaskFilter === key
+                      ? 'border-[#294b77] bg-[#294b77] text-white shadow-lg shadow-[#294b77]/15'
+                      : 'border-slate-200 bg-[#F8FAFC] text-[#05162E] hover:border-[#294b77]/30 hover:bg-white hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${
+                      activeWritingTaskFilter === key ? 'bg-white/15 text-white' : 'bg-white text-[#294b77]'
+                    }`}>
+                      <PenLine className="h-5 w-5" />
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                      activeWritingTaskFilter === key ? 'bg-white/15 text-white' : 'bg-white text-slate-500'
+                    }`}>
+                      Tap
+                    </span>
+                  </div>
+                  <p className="mt-4 text-[16px] font-black">{label}</p>
+                  <p className={`mt-1 text-[12px] font-bold leading-5 ${
+                    activeWritingTaskFilter === key ? 'text-slate-200' : 'text-slate-500'
+                  }`}>
+                    {description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="grid gap-4">
@@ -190,6 +294,7 @@ export default function HistoryPage() {
                   ? submittedDate.toLocaleDateString()
                   : 'Date unavailable';
                 const totalQuestions = (attempt.objective_question_count || 0) + (attempt.writing_task_count || 0);
+                const writingTaskCards = getWritingTaskCards(attempt);
 
                 return (
                   <article key={attempt.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-[#294b77]/30 hover:shadow-md">
@@ -241,6 +346,70 @@ export default function HistoryPage() {
                         </Link>
                       </div>
                     </div>
+
+                    {writingTaskCards.length > 0 && (
+                      <div className="border-t border-slate-100 bg-[#F8FAFC] p-5">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#294b77]">Writing Feedback Pages</p>
+                            <p className="mt-1 text-[12px] font-bold text-slate-500">Choose a task to open the dedicated feedback result.</p>
+                          </div>
+                          <MessageSquareText className="hidden h-5 w-5 text-[#294b77] sm:block" />
+                        </div>
+
+                        <div className={`grid gap-3 ${writingTaskCards.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+                          {writingTaskCards.map((card) => (
+                            <Link
+                              key={`${attempt.id}-${card.key}`}
+                              to={card.to}
+                              className={`group relative overflow-hidden rounded-2xl border ${card.border} bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}
+                            >
+                              <div
+                                className="absolute inset-x-0 top-0 h-1"
+                                style={{ backgroundColor: card.accent }}
+                              ></div>
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex min-w-0 gap-3">
+                                  <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${card.softBg}`} style={{ color: card.accent }}>
+                                    <PenLine className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[17px] font-black text-[#05162E]">{card.title}</p>
+                                    <p className="mt-1 text-[12px] font-bold leading-5 text-slate-500">{card.subtitle}</p>
+                                  </div>
+                                </div>
+                                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#F8FAFC] text-slate-500 transition-colors group-hover:bg-[#294b77] group-hover:text-white">
+                                  <ArrowRight className="h-4 w-4" />
+                                </div>
+                              </div>
+
+                              <div className="mt-4 grid grid-cols-3 gap-2">
+                                <div className="rounded-xl border border-slate-100 bg-[#F8FAFC] px-3 py-2">
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Score</p>
+                                  <p className="mt-1 truncate text-[13px] font-black text-[#05162E]">{card.scoreLabel}</p>
+                                </div>
+                                <div className="rounded-xl border border-slate-100 bg-[#F8FAFC] px-3 py-2">
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Time</p>
+                                  <p className="mt-1 text-[13px] font-black text-[#05162E]">{card.time}</p>
+                                </div>
+                                <div className={`rounded-xl border px-3 py-2 ${
+                                  attempt.review_status === 'teacher_review_pending'
+                                    ? 'border-[#EE6055]/15 bg-[#FFF3F2]'
+                                    : 'border-emerald-100 bg-emerald-50'
+                                }`}>
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Status</p>
+                                  <p className={`mt-1 truncate text-[13px] font-black ${
+                                    attempt.review_status === 'teacher_review_pending' ? 'text-[#EE6055]' : 'text-emerald-700'
+                                  }`}>
+                                    {card.statusLabel}
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </article>
                 );
               })}

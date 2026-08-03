@@ -265,6 +265,9 @@ export default function AdminSubmissionsPage() {
               <Link to="/admin/tests" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-semibold rounded-xl flex items-center gap-3 transition-colors">
                 <BookOpen className="h-5 w-5" /> Mock Tests CMS
               </Link>
+              <Link to="/admin/students" className="px-4 py-3 text-slate-400 hover:bg-[#1E3A6E]/50 hover:text-white font-semibold rounded-xl flex items-center gap-3 transition-colors">
+                <Users className="h-5 w-5" /> Approved Students
+              </Link>
             </>
           )}
           {isTeacher && (

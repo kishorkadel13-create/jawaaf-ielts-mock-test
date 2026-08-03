@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import StudentSidebar from '../components/StudentSidebar';
 import JawaafLogo from '../components/JawaafLogo';
 import MobileBottomNav from '../components/MobileBottomNav';
+import { assets } from '../config/assets';
 import { resolveStorageUrl } from '../utils/storageUrl';
 import { getEmbeddableVideoUrl, getVideoThumbnailUrl, shouldUseVideoIframe } from '../utils/videoEmbed';
 
@@ -244,13 +245,13 @@ const VintageCinemaTicketCard = ({
           </p>
         </div>
 
-        {completed ? (
-          <img src={watchedStamp} alt="Watched" className="cinema-status-stamp shrink-0" draggable={false} />
-        ) : selected ? (
+        {selected ? (
           <span className="flex shrink-0 items-center gap-2">
             <img src={nowShowingStamp} alt="Now showing" className="cinema-status-stamp cinema-status-stamp--showing" draggable={false} />
             <span className="cinema-play-triangle" />
           </span>
+        ) : completed ? (
+          <img src={watchedStamp} alt="Watched" className="cinema-status-stamp shrink-0" draggable={false} />
         ) : !unlocked ? (
           <span className="cinema-lock-seal grid h-12 w-12 shrink-0 place-items-center text-[#8C6A3B]"><Lock className="h-5 w-5" /></span>
         ) : null}
@@ -367,7 +368,7 @@ const recordedCoursePoster = (section: CourseSection) => {
   const key = `${section.slug} ${section.title}`.toLowerCase();
   if (key.includes('listening')) {
     return {
-      image: '/images/Recorded%20Courses/listening.png',
+      image: assets.recordedCourses.listening,
       icon: Headphones,
       accent: 'text-[#2F8C6B]',
       border: 'border-[#CDBD8D]'
@@ -375,7 +376,7 @@ const recordedCoursePoster = (section: CourseSection) => {
   }
   if (key.includes('speaking')) {
     return {
-      image: '/images/Recorded%20Courses/speaking.png',
+      image: assets.recordedCourses.speaking,
       icon: User,
       accent: 'text-[#C64C1E]',
       border: 'border-[#D9B579]'
@@ -383,7 +384,7 @@ const recordedCoursePoster = (section: CourseSection) => {
   }
   if (key.includes('task 1') || key.includes('task-1')) {
     return {
-      image: '/images/Recorded%20Courses/writing%20task%201.png',
+      image: assets.recordedCourses.writingTask1,
       icon: PenLine,
       accent: 'text-[#7A2F78]',
       border: 'border-[#CDB18A]'
@@ -391,14 +392,14 @@ const recordedCoursePoster = (section: CourseSection) => {
   }
   if (key.includes('task 2') || key.includes('task-2')) {
     return {
-      image: '/images/Recorded%20Courses/writing%20task%202.png',
+      image: assets.recordedCourses.writingTask2,
       icon: PenLine,
       accent: 'text-[#C43D2C]',
       border: 'border-[#D8A277]'
     };
   }
   return {
-    image: '/images/Recorded%20Courses/Reading.png',
+    image: assets.recordedCourses.reading,
     icon: BookOpen,
     accent: 'text-[#294b77]',
     border: 'border-[#C6B78B]'
@@ -632,12 +633,12 @@ export default function CoursesPage() {
     const cinemaPrevLesson = activeLessonIndex > 0 ? cinemaLessons[activeLessonIndex - 1] : null;
     const cinemaNextLesson = cinemaLessons[activeLessonIndex + 1] || cinemaLessons.find(lesson => lesson.id !== activeLesson?.id) || null;
     const cinemaTitle = `${activeSection?.title || 'IELTS'} Cinema`;
-    const cinemaMascot = '/images/transition/jawaafielts-cutout.png';
-    const cinemaPopcornMascot = '/images/video%20course/popcorn-cutout.png?v=2';
-    const cinemaNotesMascot = '/images/video%20course/notes-cutout.png?v=2';
-    const cinemaWatchedStamp = '/images/video%20course/watch-transparent.png';
-    const cinemaNowShowingStamp = '/images/video%20course/now-showing-transparent.png';
-    const cinemaReelRing = '/images/video%20course/ring-transparent.png';
+    const cinemaMascot = assets.transition.jawaafIeltsCutout;
+    const cinemaPopcornMascot = assets.videoCourse.popcorn;
+    const cinemaNotesMascot = assets.videoCourse.notes;
+    const cinemaWatchedStamp = assets.videoCourse.watchStamp;
+    const cinemaNowShowingStamp = assets.videoCourse.nowShowingStamp;
+    const cinemaReelRing = assets.videoCourse.reelRing;
     const activeLearningPoints = getLessonLearningPoints(activeLesson);
     const matchingTodayGoals = todayGoals.filter(goal => !goal.section_slug || goal.section_slug === activeSection?.slug);
     const activeTodayGoal = matchingTodayGoals.length
@@ -649,7 +650,7 @@ export default function CoursesPage() {
         className="cinema-shell min-h-screen overflow-y-auto overflow-x-hidden bg-[#F6E7CF] bg-cover bg-center font-sans text-[#2D1A10] xl:h-screen xl:max-h-screen xl:overflow-hidden"
         style={{
           fontFamily: "'Inter', 'Segoe UI', sans-serif",
-          backgroundImage: "url('/images/Recorded%20Courses/background.png')"
+          backgroundImage: `url('${assets.recordedCourses.background}')`
         }}
       >
         <div
@@ -1457,7 +1458,7 @@ export default function CoursesPage() {
       <main className="relative min-w-0 flex-1 border-[#DED2C2] lg:border-l lg:before:pointer-events-none lg:before:absolute lg:before:left-[8px] lg:before:top-0 lg:before:z-20 lg:before:h-full lg:before:w-px lg:before:bg-[#E9DCCB]">
         <div
           className="relative min-h-screen overflow-hidden bg-[#FFF8ED] bg-cover bg-center p-4 sm:p-5 lg:p-8"
-          style={{ backgroundImage: "url('/images/Recorded%20Courses/background.png')" }}
+          style={{ backgroundImage: `url('${assets.recordedCourses.background}')` }}
         >
           <div className="pointer-events-none absolute inset-0 bg-[#FFF8ED]/70" />
           {!isCourseOpen ? (
@@ -1489,7 +1490,7 @@ export default function CoursesPage() {
               </section>
 
               <section className="h-[168px] overflow-hidden rounded-[20px] shadow-[0_12px_24px_rgba(76,48,29,0.12)] sm:h-[210px] lg:aspect-[2934/786] lg:h-auto lg:rounded-[24px]">
-                <img src="/images/Recorded%20Courses/header.png" alt="IELTS recorded courses" loading="lazy" className="block h-full w-full scale-[1.02] select-none object-cover object-center brightness-[1.12] sm:scale-[1.01] lg:scale-[1.018]" draggable={false} />
+                <img src={assets.recordedCourses.header} alt="IELTS recorded courses" loading="lazy" className="block h-full w-full scale-[1.02] select-none object-cover object-center brightness-[1.12] sm:scale-[1.01] lg:scale-[1.018]" draggable={false} />
               </section>
 
               <section>

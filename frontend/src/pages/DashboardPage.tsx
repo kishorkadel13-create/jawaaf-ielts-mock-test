@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
+import { assets } from '../config/assets';
 // Interfaces for typing
 interface TestAttempt {
   id: string;
@@ -345,7 +346,7 @@ export default function DashboardPage() {
           <div className="relative mt-2 flex min-h-[250px] flex-col justify-center overflow-hidden rounded-[20px] bg-[#E9F0FA] p-5 sm:min-h-[280px] sm:p-8 md:min-h-[300px] md:rounded-[30px] lg:min-h-[320px] lg:p-10 xl:p-14">
             {/* Background Image (User's Exact Asset) */}
             <div className="absolute inset-0 z-0">
-              <img src="/images/cover.png" alt="Banner Background" className="h-full w-full object-cover object-right sm:scale-[1.02] md:scale-[1.04] md:object-center" />
+              <img src={assets.dashboard.cover} alt="Banner Background" className="h-full w-full object-cover object-right sm:scale-[1.02] md:scale-[1.04] md:object-center" />
             </div>
 
             {/* Text Content */}

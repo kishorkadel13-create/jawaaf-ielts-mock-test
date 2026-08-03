@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Clock, PenLine, MessageSquare, Users, Lightbulb, Puzzle, Calendar, Bookmark, FileText, ChevronRight, LineChart, Search, LayoutGrid, List, Target, ShieldCheck, Award, ClipboardCheck } from 'lucide-react';
+import { assets } from '../config/assets';
+import SafeImage from './ui/SafeImage';
 
 interface MockTest {
   id: string;
@@ -30,8 +32,8 @@ const CATEGORIES = [
     id: 'Opinion Essay',
     label: 'Opinion Essay',
     icon: <MessageSquare className="w-4 h-4" />,
-    img3d: '/images/task2-assets/IMG_6538.PNG',
-    heroImg: '/images/task2-assets/IMG_6538.PNG',
+    img3d: assets.writingTask2.opinion,
+    heroImg: assets.writingTask2.opinion,
     color: 'bg-blue-600',
     hoverColor: 'hover:bg-blue-700',
     lightBg: 'bg-blue-50',
@@ -45,8 +47,8 @@ const CATEGORIES = [
     id: 'Discussion Essay',
     label: 'Discussion Essay',
     icon: <Users className="w-4 h-4" />,
-    img3d: '/images/task2-assets/IMG_6539.PNG',
-    heroImg: '/images/task2-assets/IMG_6539.PNG',
+    img3d: assets.writingTask2.discussion,
+    heroImg: assets.writingTask2.discussion,
     color: 'bg-[#05162E]',
     hoverColor: 'hover:bg-[#1a365d]',
     lightBg: 'bg-red-50',
@@ -60,8 +62,8 @@ const CATEGORIES = [
     id: 'Opinion-Discussion Essay',
     label: 'Opinion-Discussion Essay',
     icon: <Lightbulb className="w-4 h-4" />,
-    img3d: '/images/task2-assets/IMG_6540.PNG',
-    heroImg: '/images/task2-assets/IMG_6540.PNG',
+    img3d: assets.writingTask2.opinionDiscussion,
+    heroImg: assets.writingTask2.opinionDiscussion,
     color: 'bg-[#05162E]',
     hoverColor: 'hover:bg-[#1a365d]',
     lightBg: 'bg-purple-50',
@@ -75,8 +77,8 @@ const CATEGORIES = [
     id: 'Mixed Essay',
     label: 'Mixed Essay',
     icon: <Puzzle className="w-4 h-4" />,
-    img3d: '/images/task2-assets/IMG_6541.PNG',
-    heroImg: '/images/task2-assets/IMG_6541.PNG',
+    img3d: assets.writingTask2.mixed,
+    heroImg: assets.writingTask2.mixed,
     color: 'bg-[#05162E]',
     hoverColor: 'hover:bg-[#1a365d]',
     lightBg: 'bg-orange-50',
@@ -96,28 +98,7 @@ const DIFFICULTIES = [
   { id: 'Recently Added', label: 'Recently Added', icon: <Calendar className="w-3.5 h-3.5" /> }
 ];
 
-const TASK2_HERO_COVER_IMAGE = '/images/task2-assets/hero-bg-cover.png';
-
-function ImageWithFallback({ src, alt, fallback, className }: { src: string, alt: string, fallback: React.ReactNode, className?: string }) {
-  const [error, setError] = useState(false);
-
-  React.useEffect(() => {
-    setError(false);
-  }, [src]);
-
-  if (error) {
-    return <>{fallback}</>;
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      onError={() => setError(true)}
-    />
-  );
-}
+const TASK2_HERO_COVER_IMAGE = assets.writingTask2.heroCover;
 
 export default function WritingTask2Practice({ tests, onBack, onStartTest }: Props) {
   // Navigation State
@@ -219,7 +200,7 @@ export default function WritingTask2Practice({ tests, onBack, onStartTest }: Pro
         <div className="relative w-full rounded-[32px] overflow-hidden bg-gradient-to-r from-white via-white to-[#F4F8FC] border border-slate-100 shadow-sm pt-14 pb-14 px-12 flex items-center justify-between min-h-[280px] mb-4">
           <div className="absolute inset-0 z-0 flex justify-end items-end pr-[260px]">
             <img
-              src="/images/task2-assets/hero-bg-main.png"
+              src={assets.writingTask2.heroMain}
               alt=""
               className="h-[280px] w-auto object-contain max-w-none mix-blend-multiply"
               style={{
@@ -310,7 +291,7 @@ export default function WritingTask2Practice({ tests, onBack, onStartTest }: Pro
               </div>
 
               <div className="flex items-center justify-center h-[130px] mb-4">
-                <ImageWithFallback
+                <SafeImage
                   src={cat.img3d}
                   alt={cat.label}
                   className="w-auto h-[120px] object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"

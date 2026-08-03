@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 import { api } from '../services/api.js';
 import { ArrowLeft, ArrowRight, CheckCircle, Clock, Crown, ShieldAlert, ShieldCheck, Zap } from 'lucide-react';
 import JawaafLogo from '../components/JawaafLogo';
 import MobileBottomNav from '../components/MobileBottomNav';
+import { assets } from '../config/assets';
 
 export default function AccessRequestPage() {
   const { profile, updateProfileAccess } = useAuthStore();
@@ -128,7 +129,7 @@ export default function AccessRequestPage() {
     <div
       className="relative flex min-h-screen flex-1 overflow-x-hidden bg-[#f7fbff] px-4 pb-28 pt-5 text-[#294b77] sm:px-6 sm:py-7 md:px-12 lg:px-16 lg:pb-7"
       style={{
-        backgroundImage: "url('/images/premium access/background.png')",
+        backgroundImage: `url('${assets.premiumAccess.background}')`,
         backgroundSize: '100% 100%',
         backgroundPosition: 'center center',
       }}
@@ -174,7 +175,7 @@ export default function AccessRequestPage() {
             <div className="absolute inset-y-0 left-0 z-20 hidden w-20 bg-gradient-to-r from-white/92 via-white/70 to-transparent sm:block"></div>
             <div className="absolute inset-y-8 right-4 z-0 w-[78%] rounded-[34px] bg-white/75 blur-xl"></div>
             <img
-              src="/images/premium access/active.png"
+              src={assets.premiumAccess.active}
               alt="Jawaaf premium access mascot"
               loading="lazy"
               className="relative z-10 h-auto max-h-[300px] w-full max-w-sm object-contain drop-shadow-[0_16px_22px_rgba(41,75,119,0.11)] md:max-h-[420px] lg:-mr-10 lg:h-[470px] lg:w-auto lg:max-w-none"

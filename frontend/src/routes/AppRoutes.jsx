@@ -14,6 +14,8 @@ const loadHistoryPage = () => import('../pages/HistoryPage');
 const loadAccessRequestPage = () => import('../pages/AccessRequestPage');
 const loadExamInterface = () => import('../pages/ExamInterface');
 const loadResultPage = () => import('../pages/ResultPage');
+const loadWritingTask1FeedbackPage = () => import('../pages/feedback/writing-task-1');
+const loadWritingTask2FeedbackPage = () => import('../pages/feedback/writing-task-2');
 import RecordedCoursesTransition from '../components/RecordedCoursesTransition';
 
 const loadAdminDashboardPage = () => import('../pages/admin/AdminDashboardPage');
@@ -23,6 +25,7 @@ const loadAdminTodayGoalsPage = () => import('../pages/admin/AdminTodayGoalsPage
 const loadAdminTestDetailsPage = () => import('../pages/admin/AdminTestDetailsPage');
 const loadAdminAccessPage = () => import('../pages/admin/AdminAccessPage');
 const loadAdminSubmissionsPage = () => import('../pages/admin/AdminSubmissionsPage');
+const loadAdminStudentsPage = () => import('../pages/admin/AdminStudentsPage');
 const loadTeacherDashboardPage = () => import('../pages/admin/TeacherDashboardPage');
 
 const LandingPage = lazy(loadLandingPage);
@@ -36,6 +39,8 @@ const HistoryPage = lazy(loadHistoryPage);
 const AccessRequestPage = lazy(loadAccessRequestPage);
 const ExamInterface = lazy(loadExamInterface);
 const ResultPage = lazy(loadResultPage);
+const WritingTask1FeedbackPage = lazy(loadWritingTask1FeedbackPage);
+const WritingTask2FeedbackPage = lazy(loadWritingTask2FeedbackPage);
 const AdminDashboardPage = lazy(loadAdminDashboardPage);
 const AdminTestsPage = lazy(loadAdminTestsPage);
 const AdminCoursesPage = lazy(loadAdminCoursesPage);
@@ -43,6 +48,7 @@ const AdminTodayGoalsPage = lazy(loadAdminTodayGoalsPage);
 const AdminTestDetailsPage = lazy(loadAdminTestDetailsPage);
 const AdminAccessPage = lazy(loadAdminAccessPage);
 const AdminSubmissionsPage = lazy(loadAdminSubmissionsPage);
+const AdminStudentsPage = lazy(loadAdminStudentsPage);
 const TeacherDashboardPage = lazy(loadTeacherDashboardPage);
 
 export const prefetchStudentRoutes = () => {
@@ -129,6 +135,22 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route
+        path="/attempts/:id/writing-task-1-feedback"
+        element={
+          <ProtectedRoute roles={['student', 'admin', 'teacher']}>
+            <WritingTask1FeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attempts/:id/writing-task-2-feedback"
+        element={
+          <ProtectedRoute roles={['student', 'admin', 'teacher']}>
+            <WritingTask2FeedbackPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Admin CMS Routes */}
       <Route 
@@ -184,6 +206,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute adminOnly={true}>
             <AdminAccessPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/students" 
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminStudentsPage />
           </ProtectedRoute>
         } 
       />

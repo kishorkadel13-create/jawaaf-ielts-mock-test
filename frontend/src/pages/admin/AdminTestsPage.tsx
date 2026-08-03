@@ -305,6 +305,9 @@ export default function AdminTestsPage() {
             </Link>
 
             <p className="px-4 pt-8 pb-3 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
+            <Link to="/admin/students" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
+              <UsersRound className="h-5 w-5" /> Approved Students
+            </Link>
             <Link to="/admin" className="flex items-center gap-4 rounded-xl px-5 py-3.5 text-[16px] font-semibold text-slate-200 hover:bg-[#243047] hover:text-white">
               <UsersRound className="h-5 w-5" /> Teachers
             </Link>

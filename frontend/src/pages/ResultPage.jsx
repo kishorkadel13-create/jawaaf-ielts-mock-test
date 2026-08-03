@@ -4,7 +4,7 @@ import { api } from '../services/api.js';
 import { Award, ShieldCheck, CheckCircle2, XCircle, ArrowLeft, RefreshCw, HelpCircle, Eye, PenLine, ClipboardCheck } from 'lucide-react';
 import JawaafLogo from '../components/JawaafLogo';
 
-export default function ResultPage() {
+export default function ResultPage({ writingTaskType = null }) {
   const { id } = useParams(); // attempt_id
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,20 @@ export default function ResultPage() {
     );
   }
 
-  const { attempt, answers } = data;
+  const { attempt } = data;
+  const allAnswers = data.answers || [];
+  const allWritingAnswers = allAnswers.filter(a => a.question_type === 'WRITING_TASK');
+  const getAnswerWritingTaskType = (answer) => {
+    const taskLabel = String(answer.extra_data?.task_type || answer.extra_data_json?.task_type || '').toLowerCase();
+    if (taskLabel.includes('1')) return 'task-1';
+    if (taskLabel.includes('2')) return 'task-2';
+
+    const fallbackIndex = allWritingAnswers.findIndex(writingAnswer => writingAnswer.id === answer.id);
+    return fallbackIndex >= 0 ? `task-${fallbackIndex + 1}` : null;
+  };
+  const answers = writingTaskType
+    ? allWritingAnswers.filter(answer => getAnswerWritingTaskType(answer) === writingTaskType)
+    : allAnswers;
   const writingAnswers = answers.filter(a => a.question_type === 'WRITING_TASK');
   const objectiveAnswers = answers.filter(a => a.question_type !== 'WRITING_TASK');
   const isWritingOnly = writingAnswers.length > 0 && objectiveAnswers.length === 0;
@@ -76,7 +89,7 @@ export default function ResultPage() {
 
   const currentQ = answers[activeQuestionIndex];
   const currentTaskFeedback = currentQ?.question_type === 'WRITING_TASK' ? getTaskFeedback(currentQ) : {};
-  const currentTaskTitle = currentQ?.extra_data?.task_type || (currentQ?.question_type === 'WRITING_TASK' ? `Writing Task ${writingAnswers.findIndex(answer => answer.id === currentQ.id) + 1}` : '');
+  const currentTaskTitle = currentQ?.extra_data?.task_type || (currentQ?.question_type === 'WRITING_TASK' ? `Writing Task ${allWritingAnswers.findIndex(answer => answer.id === currentQ.id) + 1}` : '');
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>

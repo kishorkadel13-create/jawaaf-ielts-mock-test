@@ -664,3 +664,46 @@ export const createAssetUpload = async (req, res) => {
     });
   }
 };
+
+// Admin lists all approved student users (Admin Only)
+export const getApprovedStudents = async (req, res) => {
+  try {
+    // Fetch approved student profiles
+    const { data: profiles, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('role', 'student')
+      .eq('has_full_access', true);
+
+    if (profileError) throw profileError;
+
+    // Fetch all users to get their metadata (phone, country, target score)
+    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000
+    });
+    
+    if (authError) throw authError;
+
+    // Map profiles with user metadata
+    const userMetaMap = new Map(users.map(u => [u.id, u.user_metadata]));
+
+    const students = profiles.map(profile => {
+      const meta = userMetaMap.get(profile.id) || {};
+      return {
+        id: profile.id,
+        full_name: profile.full_name || meta.full_name || 'N/A',
+        email: profile.email || 'N/A',
+        phone: meta.phone || 'N/A',
+        interested_country: meta.interested_country || 'N/A',
+        target_score: meta.target_score || 'N/A',
+        created_at: profile.created_at
+      };
+    });
+
+    res.status(200).json(students);
+  } catch (err) {
+    console.error('getApprovedStudents Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to retrieve approved students.' });
+  }
+};
+

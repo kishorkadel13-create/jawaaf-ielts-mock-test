@@ -1,5 +1,6 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import JawaafLogo from './JawaafLogo';
+import { assets } from '../config/assets';
 
 interface RecordedCoursesTransitionProps {
   children: ReactNode;
@@ -41,7 +42,7 @@ export default function RecordedCoursesTransition({ children }: RecordedCoursesT
           className={`fixed inset-0 z-[9999] grid place-items-center overflow-hidden bg-[#FFF8ED] bg-cover bg-center transition-opacity duration-500 ${
             showContent ? 'opacity-0' : 'opacity-100'
           }`}
-          style={{ backgroundImage: "url('/images/Recorded%20Courses/background.png')" }}
+          style={{ backgroundImage: `url('${assets.recordedCourses.background}')` }}
           aria-live="polite"
           aria-label="Opening Jawaaf recorded classes"
         >
@@ -51,7 +52,7 @@ export default function RecordedCoursesTransition({ children }: RecordedCoursesT
           <div className="relative z-10 grid w-[min(92vw,1180px)] items-center gap-2 px-3 py-8 md:grid-cols-[0.9fr_1.1fr] md:gap-10 lg:px-8">
             <div className="flex items-end justify-center md:justify-end">
               <img
-                src="/images/transition/jawaafielts-cutout.png"
+                src={assets.transition.jawaafIeltsCutout}
                 alt=""
                 className="animate-recorded-course-mascot-reveal h-[min(48vh,440px)] max-h-[440px] w-auto select-none object-contain drop-shadow-[0_26px_34px_rgba(72,45,26,0.24)] md:h-[min(64vh,560px)] md:max-h-[560px]"
                 draggable={false}
