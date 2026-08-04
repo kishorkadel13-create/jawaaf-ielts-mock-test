@@ -97,8 +97,8 @@ const FORMAT_GUIDES: Record<string, { title: string; hint: string; example: stri
   },
   MATCHING_HEADINGS: {
     title: '12. Matching Headings',
-    hint: 'Paste paragraph prompts/questions and heading options in roman numerals.',
-    example: `1. Paragraph A\n2. Paragraph B\n3. Paragraph C\n\ni. Early discovery of silk\nii. Silk as money and gifts\niii. Silk production spreads\niv. Modern uses of silk\n\nAnswer Key:\n1 i\n2 ii\n3 iii`,
+    hint: 'Paste paragraph prompts and heading options. Options can use roman numerals (i, ii, iii) OR letters (A, B, C, D).',
+    example: `1. Paragraph A\n2. Paragraph B\n3. Paragraph C\n\ni. Early discovery of silk\nii. Silk as money and gifts\niii. Silk production spreads\niv. Modern uses of silk\n\nAnswer Key:\n1 i\n2 ii\n3 iii\n\n--- OR with letters ---\n\n1. Paragraph A\n2. Paragraph B\n\nA. may improve the number and quality of plants\nB. may contain data from up to nine countries\nC. may not be put back into the soil\n\nAnswer Key:\n1 A\n2 B`,
   },
   MULTI_SELECT: {
     title: '13. Choose Two / Multi-select',
@@ -443,7 +443,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
     }
 
     if (bulkType === 'MATCHING_HEADINGS' && !extractSharedOptions(sourceText).length) {
-      setError('Please add the List of Headings options using roman numerals like "i. ...", "ii. ...".');
+      setError('Please add the List of Headings options. Use roman numerals (i. ..., ii. ...) OR letters (A. ..., B. ..., C. ...).');
       return;
     }
 

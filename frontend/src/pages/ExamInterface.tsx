@@ -136,6 +136,15 @@ export default function ExamInterface() {
   const [clipboardMessage, setClipboardMessage] = useState('');
   const internalClipboardRef = useRef<{ text: string; taskId: string | null } | null>(null);
   
+  useEffect(() => {
+    if (activeQuestionId) {
+      const el = document.getElementById(`question-${activeQuestionId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeQuestionId]);
+
   // Custom Audio parameters
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -1201,16 +1210,20 @@ export default function ExamInterface() {
                 <div className="space-y-6">
                   {buildOrderedQuestionBlocks(group.questions || [], group.instruction || '').map((block) => {
                     if (block.kind === 'matching') {
-                      return (
-                        <MatchingHeadingsGroup
-                          key={block.id}
-                          questions={block.questions}
-                          instruction={block.instruction || group.instruction || ''}
-                          answers={answers}
-                          onAnswer={setAnswer}
-                          onActivateQuestion={setActiveQuestionId}
-                        />
-                      );
+                      const headingQuestion = getMatchingHeadingQuestion(block.questions, block.instruction || group.instruction || '');
+                      if (headingQuestion) {
+                        return (
+                          <MatchingHeadingsGroup
+                            key={block.id}
+                            questions={block.questions}
+                            instruction={block.instruction || group.instruction || ''}
+                            answers={answers}
+                            onAnswer={setAnswer}
+                            onActivateQuestion={setActiveQuestionId}
+                          />
+                        );
+                      }
+                      // Fall through to standard rendering if options are missing
                     }
 
                     if (block.kind === 'summary') {
@@ -1234,6 +1247,7 @@ export default function ExamInterface() {
                         {block.questions.map((question: any) => (
                           <div 
                             key={question.id} 
+                            id={`question-${question.id}`}
                             className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${
                               activeQuestionId === question.id 
                                 ? 'border-[#1E3A6E]/50' 

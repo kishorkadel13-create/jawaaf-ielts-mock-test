@@ -149,7 +149,7 @@ export default function QuestionBuilder({ question, onChange, onSave, onCancel, 
       'SUMMARY_COMPLETION_OPTIONS': 'Add the word bank options. Mark all correct ones.',
       'MATCHING': 'Add the items to match. Mark the correct pairing.',
       'MATCHING_INFORMATION': 'Add paragraph labels (A, B, C, D...). Mark the correct paragraph.',
-      'MATCHING_HEADINGS': 'Add headings using Roman numerals (i, ii, iii...). Mark the correct heading.',
+      'MATCHING_HEADINGS': 'Add headings using Roman numerals (i, ii, iii...) OR letters (A, B, C, D...). Mark the correct heading.',
     };
 
     return (

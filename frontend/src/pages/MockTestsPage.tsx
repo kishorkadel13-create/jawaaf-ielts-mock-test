@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import StudentSidebar from '../components/StudentSidebar';
 import WritingTask1Practice from '../components/WritingTask1Practice';
 import WritingTask2Practice from '../components/WritingTask2Practice';
+import ReadingPracticeList from '../components/ReadingPracticeList';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video, SlidersHorizontal, X, Search } from 'lucide-react';
@@ -16,6 +17,9 @@ interface MockTest {
   duration: number;
   is_locked: boolean;
   is_demo: boolean;
+  cover_image_url?: string;
+  star_rating?: number;
+  difficulty?: string;
   sections?: Array<{
     id: string;
     type: 'reading' | 'listening' | 'writing';
@@ -44,19 +48,20 @@ interface MockTest {
 
 const READING_QUESTION_TYPES = [
   { key: 'all', label: 'All Question Types' },
-  { key: 'matching_headings', label: 'Matching Headings', aliases: ['MATCHING_HEADINGS'] },
-  { key: 'matching_information', label: 'Matching Information', aliases: ['MATCHING_INFORMATION'] },
-  { key: 'matching_features', label: 'Matching Features', aliases: ['MATCHING_FEATURES', 'MATCHING'] },
-  { key: 'multiple_choice', label: 'Multiple Choice', aliases: ['SINGLE_MCQ', 'MULTI_SELECT', 'MULTIPLE_CHOICE'] },
-  { key: 'sentence_completion', label: 'Sentence Completion', aliases: ['SENTENCE_COMPLETION'] },
-  { key: 'summary_completion', label: 'Summary Completion', aliases: ['SUMMARY_COMPLETION', 'SUMMARY_COMPLETION_OPTIONS'] },
-  { key: 'note_completion', label: 'Note Completion', aliases: ['NOTE_COMPLETION', 'FILL_IN_THE_BLANK', 'INPUT_TEXT'] },
-  { key: 'table_completion', label: 'Table Completion', aliases: ['TABLE_COMPLETION'] },
-  { key: 'flowchart_completion', label: 'Flowchart Completion', aliases: ['FLOWCHART_COMPLETION', 'FLOW_CHART_COMPLETION'] },
+  { key: 'fill_in_the_blanks', label: 'Fill in the Blanks', aliases: ['FILL_IN_THE_BLANKS', 'FILL_IN_THE_BLANK'] },
+  { key: 'summary_completion', label: 'Summary Completion', aliases: ['SUMMARY_COMPLETION'] },
+  { key: 'short_answer', label: 'Short Answer Question', aliases: ['SHORT_ANSWER_QUESTION', 'SHORT_ANSWER', 'SHORT_ANSWER_QUESTIONS'] },
   { key: 'diagram_labelling', label: 'Diagram Labelling', aliases: ['DIAGRAM_LABELLING', 'DIAGRAM_LABELING'] },
-  { key: 'true_false_not_given', label: 'True / False / Not Given', aliases: ['TRUE_FALSE_NOT_GIVEN'] },
-  { key: 'yes_no_not_given', label: 'Yes / No / Not Given', aliases: ['YES_NO_NOT_GIVEN'] },
-  { key: 'short_answer', label: 'Short Answer Questions', aliases: ['SHORT_ANSWER', 'SHORT_ANSWER_QUESTIONS'] }
+  { key: 'summary_completion_options', label: 'Summary Completion with Options', aliases: ['SUMMARY_COMPLETION_WITH_OPTIONS'] },
+  { key: 'table_completion', label: 'Table Completion', aliases: ['TABLE_COMPLETION'] },
+  { key: 'tfng', label: 'True / False / Not Given', aliases: ['TRUE_FALSE_NOT_GIVEN', 'TFNG'] },
+  { key: 'ynng', label: 'Yes / No / Not Given', aliases: ['YES_NO_NOT_GIVEN', 'YNNG'] },
+  { key: 'multiple_choice', label: 'Standard Multiple Choice', aliases: ['STANDARD_MULTIPLE_CHOICE', 'SINGLE_MCQ', 'MULTIPLE_CHOICE'] },
+  { key: 'sentence_completion', label: 'Sentence Completion', aliases: ['SENTENCE_COMPLETION_FIND_THE_TAIL', 'SENTENCE_COMPLETION'] },
+  { key: 'matching', label: 'Matching Question', aliases: ['MATCHING_QUESTION', 'MATCHING_FEATURES', 'MATCHING'] },
+  { key: 'matching_information', label: 'Matching Information', aliases: ['MATCHING_INFORMATION'] },
+  { key: 'matching_headings', label: 'Matching Headings', aliases: ['MATCHING_HEADINGS'] },
+  { key: 'multi_select', label: 'Choose Two / Multi-select', aliases: ['CHOOSE_TWO_MULTI_SELECT', 'MULTI_SELECT'] }
 ] as const;
 
 type ReadingQuestionTypeKey = typeof READING_QUESTION_TYPES[number]['key'];
@@ -73,29 +78,77 @@ const normalizeReadingType = (value?: string) =>
   String(value || '')
     .trim()
     .toUpperCase()
+    .replace(/^\d+\.\s*/, '') // Strip numbers like "1. ", "12. "
     .replace(/&/g, 'AND')
     .replace(/[^A-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
 const getReadingTypeMeta = (values: string[] = [], fallbackText = '') => {
-  const normalizedValues = new Set(values.map(normalizeReadingType).filter(Boolean));
-  const normalizedText = normalizeReadingType(fallbackText);
+  const normalizedValues = values.map(normalizeReadingType).filter(Boolean);
+  
+  for (const val of normalizedValues) {
+    const type = READING_QUESTION_TYPES.find(t => t.key !== 'all' && (t.aliases as readonly string[] | undefined)?.includes(val));
+    if (type) return type;
+  }
 
-  return READING_QUESTION_TYPES.find(type => {
-    if (type.key === 'all') return false;
-    return type.aliases?.some(alias => normalizedValues.has(alias) || normalizedText.includes(alias));
-  }) || READING_QUESTION_TYPES[0];
+  const normalizedText = normalizeReadingType(fallbackText);
+  for (const type of READING_QUESTION_TYPES) {
+    if (type.key !== 'all' && type.aliases?.some(alias => normalizedText.includes(alias))) {
+      return type;
+    }
+  }
+
+  return READING_QUESTION_TYPES[0];
 };
 
 const getReadingTypeLabels = (values: string[] = [], fallbackText = '') => {
-  const normalizedValues = new Set(values.map(normalizeReadingType).filter(Boolean));
-  const normalizedText = normalizeReadingType(fallbackText);
-  const labels = READING_QUESTION_TYPES
-    .filter(type => type.key !== 'all')
-    .filter(type => type.aliases?.some(alias => normalizedValues.has(alias) || normalizedText.includes(alias)))
-    .map(type => type.label);
+  const normalizedValues = values.map(normalizeReadingType).filter(Boolean);
+  const labels: string[] = [];
 
-  return [...new Set(labels)];
+  for (const val of normalizedValues) {
+    const type = READING_QUESTION_TYPES.find(t => t.key !== 'all' && (t.aliases as readonly string[] | undefined)?.includes(val));
+    if (type && !labels.includes(type.label)) {
+      labels.push(type.label);
+    }
+  }
+
+  if (fallbackText) {
+    const normalizedText = normalizeReadingType(fallbackText);
+    for (const type of READING_QUESTION_TYPES) {
+      if (type.key !== 'all' && !labels.includes(type.label)) {
+        if (type.aliases?.some(alias => normalizedText.includes(alias))) {
+          labels.push(type.label);
+        }
+      }
+    }
+  }
+
+  return labels;
+};
+
+const getReadingTypeKeys = (values: string[] = [], fallbackText = ''): ReadingQuestionTypeKey[] => {
+  const normalizedValues = values.map(normalizeReadingType).filter(Boolean);
+  const keys: ReadingQuestionTypeKey[] = [];
+
+  for (const val of normalizedValues) {
+    const type = READING_QUESTION_TYPES.find(t => t.key !== 'all' && (t.aliases as readonly string[] | undefined)?.includes(val));
+    if (type && !keys.includes(type.key as ReadingQuestionTypeKey)) {
+      keys.push(type.key as ReadingQuestionTypeKey);
+    }
+  }
+
+  if (fallbackText && keys.length === 0) {
+    const normalizedText = normalizeReadingType(fallbackText);
+    for (const type of READING_QUESTION_TYPES) {
+      if (type.key !== 'all' && !keys.includes(type.key as ReadingQuestionTypeKey)) {
+        if ((type.aliases as readonly string[])?.some(alias => normalizedText.includes(alias))) {
+          keys.push(type.key as ReadingQuestionTypeKey);
+        }
+      }
+    }
+  }
+
+  return keys;
 };
 
 export default function MockTestsPage() {
@@ -112,6 +165,7 @@ export default function MockTestsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
+  const [readingPracticeListType, setReadingPracticeListType] = useState<ReadingCategoryKey | null>(null);
 
   const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set());
 
@@ -147,8 +201,15 @@ export default function MockTestsPage() {
     if (nextTab === 'mock') {
       setPracticeType(null);
       setWritingPracticeType(null);
+      setReadingPracticeListType(null);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (practiceType !== 'reading') {
+      setReadingPracticeListType(null);
+    }
+  }, [practiceType]);
 
   const handleStartTest = async (testId: string) => {
     try {
@@ -210,11 +271,30 @@ export default function MockTestsPage() {
   };
 
   const getReadingPassageNumber = (test: MockTest): 1 | 2 | 3 | null => {
+    try {
+      if (test.description?.trim().startsWith('{')) {
+        const descData = JSON.parse(test.description);
+        if (descData.section_template === 'reading_passage_1') return 1;
+        if (descData.section_template === 'reading_passage_2') return 2;
+        if (descData.section_template === 'reading_passage_3') return 3;
+      }
+    } catch (e) {}
+
     const section = test.sections?.find(item => item.type === 'reading');
     return getReadingPassageFromLabel(`${test.title || ''} ${test.description || ''} ${section?.title || ''}`);
   };
 
   const getReadingCategory = (test: MockTest): ReadingCategoryKey => {
+    try {
+      if (test.description?.trim().startsWith('{')) {
+        const descData = JSON.parse(test.description);
+        if (descData.section_template === 'reading_passage_1') return 'passage-1';
+        if (descData.section_template === 'reading_passage_2') return 'passage-2';
+        if (descData.section_template === 'reading_passage_3') return 'passage-3';
+        if (descData.section_template === 'reading') return 'complete';
+      }
+    } catch (e) {}
+
     const passageNumber = getReadingPassageNumber(test);
     if (passageNumber) return `passage-${passageNumber}` as ReadingCategoryKey;
 
@@ -230,10 +310,26 @@ export default function MockTestsPage() {
   };
 
   const getReadingDifficulty = (test: MockTest) => {
+    const normalizeDifficulty = (val: string) => {
+      const v = (val || '').trim().toLowerCase();
+      if (v === 'beginner' || v === 'easy') return 'Beginner';
+      if (v === 'advanced' || v === 'hard' || v === 'legend') return 'Advanced';
+      return 'Standard'; // Medium, Standard, or anything else
+    };
+
+    try {
+      if (test.description?.trim().startsWith('{')) {
+        const descData = JSON.parse(test.description);
+        if (descData.difficulty) {
+          return normalizeDifficulty(descData.difficulty);
+        }
+      }
+    } catch (e) {}
+    
+    // Fallback logic
     const label = `${test.title || ''} ${test.description || ''}`.toLowerCase();
-    if (label.includes('hard') || label.includes('difficult')) return 'Hard';
-    if (label.includes('easy') || label.includes('beginner')) return 'Easy';
-    if (label.includes('medium') || label.includes('intermediate')) return 'Medium';
+    if (label.includes('advanced') || label.includes('hard') || label.includes('difficult') || label.includes('legend')) return 'Advanced';
+    if (label.includes('beginner') || label.includes('easy')) return 'Beginner';
     return 'Standard';
   };
 
@@ -254,7 +350,7 @@ export default function MockTestsPage() {
     id: `${test.id}-${idSuffix}`,
     test,
     category,
-    passage,
+    passage: passage === null ? undefined : passage,
     title,
     questionTypeKey,
     questionTypeLabel,
@@ -262,7 +358,25 @@ export default function MockTestsPage() {
     questionTypeLabels,
     questionCount,
     duration: duration || section?.duration || test.duration || 20,
-    difficulty: getReadingDifficulty(test)
+    difficulty: getReadingDifficulty(test),
+    cover_image_url: (() => {
+      if (test.cover_image_url) return test.cover_image_url;
+      try {
+        if (test.description?.trim().startsWith('{')) {
+          return JSON.parse(test.description).cover_image_url || undefined;
+        }
+      } catch (e) {}
+      return undefined;
+    })(),
+    star_rating: (() => {
+      if (test.star_rating !== undefined) return test.star_rating;
+      try {
+        if (test.description?.trim().startsWith('{')) {
+          return JSON.parse(test.description).star_rating;
+        }
+      } catch (e) {}
+      return undefined;
+    })()
   });
 
   const readingPracticeCards = practiceTests
@@ -272,9 +386,17 @@ export default function MockTestsPage() {
       const baseCategory = getReadingCategory(test);
       const testPassage = getReadingPassageNumber(test);
       const groups = section?.question_groups || [];
-      const sectionTypeMeta = getReadingTypeMeta(section?.question_types || [], `${test.title} ${section?.title || ''}`);
-      const sectionTypeLabels = getReadingTypeLabels(section?.question_types || [], `${test.title} ${section?.title || ''}`);
-      const wholeTestTypeKey = groups.length > 0 ? 'all' : sectionTypeMeta.key;
+      const allQuestions = groups.flatMap(g => g.questions || []);
+      const sectionExplicitTypes = [
+        ...(section?.question_types || []),
+        ...groups.flatMap(g => g.question_types || []),
+        ...allQuestions.map(q => q.question_type).filter(Boolean)
+      ] as string[];
+
+      const sectionTypeMeta = getReadingTypeMeta(sectionExplicitTypes, `${test.title} ${section?.title || ''}`);
+      const sectionTypeLabels = getReadingTypeLabels(sectionExplicitTypes, `${test.title} ${section?.title || ''}`);
+      const sectionTypeKeys = getReadingTypeKeys(sectionExplicitTypes, `${test.title} ${section?.title || ''}`);
+      const wholeTestTypeKey = sectionTypeKeys.length > 1 ? 'all' : (sectionTypeKeys[0] ?? sectionTypeMeta.key);
       const wholeTestCard = createReadingCard(
         test,
         section,
@@ -282,11 +404,9 @@ export default function MockTestsPage() {
         testPassage,
         test.title,
         wholeTestTypeKey,
-        sectionTypeLabels.length > 1 ? sectionTypeLabels.join(', ') : wholeTestTypeKey === 'all' ? 'Mixed Question Types' : sectionTypeMeta.label,
-        sectionTypeLabels.length > 0 ? sectionTypeLabels
-          .map(label => READING_QUESTION_TYPES.find(type => type.label === label)?.key)
-          .filter(Boolean) as ReadingQuestionTypeKey[] : [wholeTestTypeKey],
-        sectionTypeLabels.length > 0 ? sectionTypeLabels : [wholeTestTypeKey === 'all' ? 'Mixed Question Types' : sectionTypeMeta.label],
+        sectionTypeLabels.length > 1 ? 'Mixed Question Types' : (sectionTypeMeta.key === 'all' ? 'Mixed Question Types' : sectionTypeMeta.label),
+        sectionTypeKeys.length > 0 ? sectionTypeKeys : [wholeTestTypeKey as ReadingQuestionTypeKey],
+        sectionTypeLabels.length > 0 ? sectionTypeLabels : [],
         section?.question_count || 0,
         section?.duration || test.duration || (baseCategory === 'complete' ? 60 : 20)
       );
@@ -296,8 +416,14 @@ export default function MockTestsPage() {
       }
 
       const groupCards = groups.map((group, index) => {
-        const typeMeta = getReadingTypeMeta(group.question_types || [], `${group.title || ''} ${group.instruction || ''}`);
-        const typeLabels = getReadingTypeLabels(group.question_types || [], `${group.title || ''} ${group.instruction || ''}`);
+        const groupExplicitTypes = [
+          ...(group.question_types || []),
+          ...(group.questions?.map(q => q.question_type).filter(Boolean) || [])
+        ] as string[];
+
+        const typeMeta = getReadingTypeMeta(groupExplicitTypes, `${group.title || ''} ${group.instruction || ''}`);
+        const typeLabels = getReadingTypeLabels(groupExplicitTypes, `${group.title || ''} ${group.instruction || ''}`);
+        const typeKeys = getReadingTypeKeys(groupExplicitTypes, `${group.title || ''} ${group.instruction || ''}`);
         const explicitPassage = getReadingPassageFromLabel(`${group.title || ''} ${group.instruction || ''}`);
         const fallbackPassage = baseCategory === 'complete'
           ? Math.min(3, Math.max(1, Math.ceil(((index + 1) / Math.max(groups.length, 1)) * 3))) as 1 | 2 | 3
@@ -310,13 +436,11 @@ export default function MockTestsPage() {
           section,
           category,
           passage,
-          group.title || test.title,
-          typeMeta.key,
-          typeLabels.length > 1 ? typeLabels.join(', ') : typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label,
-          typeLabels.length > 0 ? typeLabels
-            .map(label => READING_QUESTION_TYPES.find(type => type.label === label)?.key)
-            .filter(Boolean) as ReadingQuestionTypeKey[] : [typeMeta.key],
-          typeLabels.length > 0 ? typeLabels : [typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label],
+          test.title || group.title || 'Practice Test',
+          typeKeys[0] ?? typeMeta.key,
+          typeLabels.length > 1 ? 'Mixed Question Types' : (typeMeta.key === 'all' ? 'Mixed Question Types' : typeMeta.label),
+          typeKeys.length > 0 ? typeKeys : [typeMeta.key as ReadingQuestionTypeKey],
+          typeLabels.length > 0 ? typeLabels : [],
           group.question_count || 0,
           baseCategory === 'complete' ? 20 : section?.duration || test.duration || 20,
           group.id
@@ -658,67 +782,88 @@ export default function MockTestsPage() {
           <button
             type="button"
             onClick={() => setIsSidebarOpen(true)}
-            className={`grid h-11 w-11 shrink-0 place-items-center text-[#05162E] hover:bg-slate-50 lg:hidden ${
-              activeTab === 'practice' && practiceType === 'reading'
-                ? 'rounded-none bg-transparent shadow-none'
-                : 'rounded-xl'
-            }`}
+            className="mr-2 p-2 text-slate-500 hover:text-slate-800 lg:hidden"
             aria-label="Open navigation"
           >
             <Menu className="h-6 w-6" />
           </button>
-          {activeTab === 'practice' && practiceType === 'reading' ? (
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-[21px] font-black leading-tight text-[#05162E] sm:text-[24px]">
-                Hi, {profile?.full_name?.split(' ')[0] || 'Student'}!
-              </h1>
-              <p className="mt-0.5 hidden text-[14px] font-semibold text-[#294b77] sm:block">Let's make today's practice count.</p>
-            </div>
-          ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
-            <button
-              type="button"
-              onClick={() => {
-                setPracticeType(null);
-                setWritingPracticeType(null);
-              }}
-              className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to Practice
-            </button>
-          ) : (
-            <Link 
-              to="/dashboard" 
-              className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-[#1E3A6E] transition-colors text-[14px] font-bold"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-            </Link>
-          )}
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+          
+          <div className="flex w-[200px] items-center">
+            {activeTab === 'practice' && practiceType === 'reading' ? (
+              <button
+                type="button"
+                onClick={() => setPracticeType(null)}
+                className="hidden sm:flex items-center gap-2 text-[14px] font-bold text-[#05162E] hover:text-[#2259D8] transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Reading Practice
+              </button>
+            ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setPracticeType(null);
+                  setWritingPracticeType(null);
+                }}
+                className="hidden sm:flex items-center gap-2 text-[#05162E] hover:text-[#2259D8] transition-colors text-[14px] font-bold"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Practice
+              </button>
+            ) : (
+              <Link 
+                to="/dashboard" 
+                className="hidden sm:flex items-center gap-2 text-[#05162E] hover:text-[#2259D8] transition-colors text-[14px] font-bold"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+              </Link>
+            )}
+          </div>
+
+          <div className="flex-1 text-center hidden md:block">
+            <h2 className="text-[17px] font-extrabold text-[#05162E]">
+              Hi, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
+            </h2>
+            <p className="mt-0.5 text-[12px] font-semibold text-slate-500">
+              Let's make today's practice count.
+            </p>
+          </div>
+
+          <div className="flex w-[200px] shrink-0 items-center justify-end gap-5">
             {activeTab === 'practice' && practiceType === 'reading' && (
-              <div className="hidden min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 shadow-sm xl:flex">
-                <img src={readingAssets.complete} alt="" className="h-7 w-7 object-contain" />
-                <div className="leading-tight">
-                  <p className="text-[20px] font-black text-[#05162E]">7</p>
-                  <p className="text-[10px] font-black text-[#294b77]">Day Streak</p>
+              <div className="hidden items-center gap-2 xl:flex">
+                <span className="text-[20px]">🔥</span>
+                <div className="leading-[1.1]">
+                  <p className="text-[15px] font-black text-[#05162E]">7</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Day Streak</p>
                 </div>
               </div>
             )}
-            <span className="hidden md:flex items-center gap-2 text-[12px] text-slate-500 font-black uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Jawaaf Testing Platform
-            </span>
-            <div className="h-10 w-10 rounded-full bg-[#EFF4FB] text-[#1E3A6E] flex items-center justify-center font-black">
+            
+            <div className="hidden items-center gap-4 text-slate-400 xl:flex">
+              <button className="hover:text-slate-600 transition-colors">
+                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button className="relative hover:text-slate-600 transition-colors">
+                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute -top-1 -right-1 flex h-[14px] w-[14px] items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border border-white">3</span>
+              </button>
+            </div>
+            
+            <div className="h-8 w-8 rounded-full bg-[#05162E] text-white flex items-center justify-center text-[13px] font-bold shadow-sm">
               {profile?.full_name?.charAt(0).toUpperCase() || 'S'}
             </div>
           </div>
         </header>
 
         <div
-          className={`w-full ${activeTab === 'practice' && practiceType === 'reading' ? 'bg-no-repeat px-4 py-4 sm:px-6 xl:px-8 xl:py-4' : 'p-4 md:p-5 xl:p-6'} ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-visible' : 'overflow-visible'}`}
+          className={`w-full ${activeTab === 'practice' && practiceType === 'reading' ? 'h-[calc(100vh-80px)] overflow-hidden bg-no-repeat px-4 py-4 sm:px-6 xl:px-8 xl:py-4' : 'p-4 md:p-5 xl:p-6'} ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-visible' : ''}`}
           style={activeTab === 'practice' && practiceType === 'reading' ? {
             backgroundImage: `url('${readingAssets.background}')`,
-            backgroundPosition: 'center top',
-            backgroundSize: '100% 100%',
+            backgroundPosition: 'bottom center',
+            backgroundSize: '100% auto',
           } : undefined}
         >
         
@@ -903,7 +1048,18 @@ export default function MockTestsPage() {
             </div>
           </div>
 	        ) : activeTab === 'practice' && practiceType === 'reading' ? (
-          <div className="mx-auto grid w-full max-w-[1560px] gap-3 text-[#05162E]">
+            readingPracticeListType ? (
+              <ReadingPracticeList
+                category={readingPracticeListType}
+                cards={readingPracticeCards}
+                completedTestIds={completedTestIds}
+                startingTestId={startingTestId}
+                onStartTest={handleStartTest}
+                onBack={() => setReadingPracticeListType(null)}
+                onCategoryChange={(cat) => setReadingPracticeListType(cat)}
+              />
+            ) : (
+              <div className="mx-auto grid w-full max-w-[1560px] gap-3 text-[#05162E]">
             <section className="grid gap-4 overflow-x-hidden sm:gap-5 lg:h-[120px] lg:grid-cols-[minmax(0,1fr)_minmax(0,580px)] lg:items-center">
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-4">
@@ -1022,6 +1178,7 @@ export default function MockTestsPage() {
                             onClick={() => {
                               setReadingCategory(card.key);
                               setReadingQuestionType('all');
+                              setReadingPracticeListType(card.key);
                             }}
                             className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full border ${activeCard ? accentClass : 'border-slate-200 bg-white text-slate-400 hover:text-[#294b77]'}`}
                             aria-label={`Select ${card.label}`}
@@ -1096,11 +1253,14 @@ export default function MockTestsPage() {
                           ) : testId ? (
                             <button
                               type="button"
-                              disabled={startingTestId === testId}
-                              onClick={() => handleStartTest(testId)}
-                              className={`mt-2.5 flex min-h-11 w-full items-center justify-center gap-3 rounded-[10px] border px-4 text-[14px] font-black shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${buttonClass}`}
+                              onClick={() => {
+                                setReadingCategory(card.key);
+                                setReadingQuestionType('all');
+                                setReadingPracticeListType(card.key);
+                              }}
+                              className={`mt-2.5 flex min-h-11 w-full items-center justify-center gap-3 rounded-[10px] border px-4 text-[14px] font-black shadow-sm transition-all active:scale-[0.98] ${buttonClass}`}
                             >
-                              {startingTestId === testId ? 'Starting...' : card.isCompleted ? 'Retake Practice' : card.cta}
+                              {card.isCompleted ? 'Retake Practice' : card.cta}
                               <ArrowRight className="h-5 w-5" />
                             </button>
                           ) : (
@@ -1214,6 +1374,7 @@ export default function MockTestsPage() {
                     })}
                   </div>
                 </section>
+
               </div>
 
               <aside className="xl:mt-[-40px] xl:w-[360px] xl:-translate-x-[76px] 2xl:-translate-x-[96px]">
@@ -1279,7 +1440,8 @@ export default function MockTestsPage() {
               </aside>
             </div>
           </div>
-        ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
+        )
+      ) : activeTab === 'practice' && practiceType === 'writing' && !writingPracticeType ? (
           <div className="mx-auto flex h-full w-full max-w-[1360px] flex-col gap-5">
             <section className="relative min-h-[260px] overflow-hidden rounded-[24px] bg-transparent lg:aspect-[2856/626] lg:max-h-[250px] lg:min-h-0">
               <img

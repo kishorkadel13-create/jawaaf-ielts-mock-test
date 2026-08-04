@@ -16,9 +16,9 @@ interface MockTest {
   title: string;
   description: string;
   duration: number;
-  is_locked: boolean;
   is_demo: boolean;
   is_published: boolean;
+  created_at?: string;
   sections?: Array<{
     id: string;
     type: 'reading' | 'listening' | 'writing';
@@ -52,14 +52,29 @@ export default function AdminTestsPage() {
   const [essayCategory, setEssayCategory] = useState('Opinion Essay');
   const [difficulty, setDifficulty] = useState('Medium');
   const [isWritingTask2Edit, setIsWritingTask2Edit] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState('');
+  const [starRating, setStarRating] = useState(4);
   const [isDemo, setIsDemo] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [duration, setDuration] = useState(60);
   const [sectionTemplate, setSectionTemplate] = useState<SectionTemplate>('full_mock');
   const [submitting, setSubmitting] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const pageMode = searchParams.get('mode') === 'practice' || searchParams.get('create') === 'practice'
     ? 'practice'
     : 'mock';
+
+  const PRACTICE_CATEGORIES = [
+    { key: 'all', label: 'All Practice Tests' },
+    { key: 'reading', label: 'Reading Practice (Full)' },
+    { key: 'reading_passage_1', label: 'Reading Passage 1' },
+    { key: 'reading_passage_2', label: 'Reading Passage 2' },
+    { key: 'reading_passage_3', label: 'Reading Passage 3' },
+    { key: 'listening', label: 'Listening Practice' },
+    { key: 'writing', label: 'Writing Practice (Full)' },
+    { key: 'writing_task_1', label: 'Writing Task 1' },
+    { key: 'writing_task_2', label: 'Writing Task 2' }
+  ];
 
   const fetchTests = async () => {
     if (authLoading) return;
@@ -100,6 +115,8 @@ export default function AdminTestsPage() {
     setCreateContext(template === 'full_mock' ? 'mock' : 'practice');
     setTitle('');
     setDescription('');
+    setCoverImageUrl('');
+    setStarRating(4);
     setIsDemo(false);
     setIsPublished(false);
     setSectionTemplate(template);
@@ -138,19 +155,26 @@ export default function AdminTestsPage() {
     let parsedEssayCategory = 'Opinion Essay';
     let parsedDifficulty = 'Medium';
     let isTask2 = false;
+    let parsedCover = '';
+    let parsedStars = 4;
 
     try {
       if (parsedDesc.trim().startsWith('{')) {
         const parsed = JSON.parse(parsedDesc);
+        parsedDesc = parsed.text || '';
         if (parsed.chartCategory) {
-          parsedDesc = parsed.text || '';
           parsedCategory = parsed.chartCategory;
           isTask1 = true;
         } else if (parsed.essayCategory) {
-          parsedDesc = parsed.text || '';
           parsedEssayCategory = parsed.essayCategory;
           parsedDifficulty = parsed.difficulty || 'Medium';
           isTask2 = true;
+        }
+        if (parsed.cover_image_url) {
+          parsedCover = parsed.cover_image_url;
+        }
+        if (parsed.star_rating !== undefined) {
+          parsedStars = parsed.star_rating;
         }
       }
     } catch (e) {}
@@ -177,6 +201,8 @@ export default function AdminTestsPage() {
     setEssayCategory(parsedEssayCategory);
     setDifficulty(parsedDifficulty);
     setIsWritingTask2Edit(isTask2);
+    setCoverImageUrl(parsedCover);
+    setStarRating(parsedStars);
     
     setIsDemo(test.is_demo);
     setIsPublished(test.is_published);
@@ -192,12 +218,15 @@ export default function AdminTestsPage() {
       
       const isWritingTask1 = sectionTemplate === 'writing_task_1' || (modalMode === 'edit' && isWritingTask1Edit);
       const isWritingTask2 = sectionTemplate === 'writing_task_2' || (modalMode === 'edit' && isWritingTask2Edit);
+      const isReadingPractice = createContext === 'practice' && sectionTemplate.startsWith('reading');
       
       const finalDescription = isWritingTask1 
         ? JSON.stringify({ text: description, chartCategory })
         : isWritingTask2
           ? JSON.stringify({ text: description, essayCategory, difficulty })
-          : description;
+          : isReadingPractice
+            ? JSON.stringify({ text: description, cover_image_url: coverImageUrl, star_rating: starRating, section_template: sectionTemplate, difficulty })
+            : description;
 
       const payload = {
         title,
@@ -276,7 +305,60 @@ export default function AdminTestsPage() {
     return sections.length === 1 || sectionTypes.size === 1;
   };
 
-  const visibleTests = tests.filter(test => pageMode === 'practice' ? isPracticeTest(test) : !isPracticeTest(test));
+  const getTestCategory = (test: MockTest): string => {
+    try {
+      if (test.description?.trim().startsWith('{')) {
+        const descData = JSON.parse(test.description);
+        if (descData.section_template) return descData.section_template;
+      }
+    } catch (e) {}
+
+    const title = test.title.toLowerCase();
+    
+    // Writing
+    const isTask1 = /graph|table|pie|map|diagram|process|task\s*1/i.test(title) && !/task\s*2/i.test(title);
+    const isTask2 = /opinion|discussion|mixed|task\s*2/i.test(title);
+    if (isTask1) return 'writing_task_1';
+    if (isTask2) return 'writing_task_2';
+    if (title.includes('writ') || title.includes('essay')) return 'writing';
+    
+    // Listening
+    if (title.includes('listen') || title.includes('audio')) return 'listening';
+    
+    // Reading Passages
+    if (title.includes('passage 1') || title.includes('passage one') || title.includes('test 1')) return 'reading_passage_1';
+    if (title.includes('passage 2') || title.includes('passage two') || title.includes('test 2')) return 'reading_passage_2';
+    if (title.includes('passage 3') || title.includes('passage three') || title.includes('test 3')) return 'reading_passage_3';
+    
+    // Reading Full
+    if (title.includes('read') || title.includes('passage')) return 'reading';
+
+    // Fallback from sections
+    const sections = test.sections || [];
+    if (sections.length > 0) {
+      const types = new Set(sections.map(s => s.type));
+      if (types.has('writing')) return 'writing';
+      if (types.has('listening')) return 'listening';
+      if (types.has('reading')) return 'reading';
+    }
+    return 'reading';
+  };
+
+  const visibleTests = tests
+    .filter(test => {
+      if (pageMode === 'practice') {
+        if (!isPracticeTest(test)) return false;
+        if (activeCategory === 'all') return true;
+        return getTestCategory(test) === activeCategory;
+      } else {
+        return !isPracticeTest(test);
+      }
+    })
+    .sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -385,6 +467,24 @@ export default function AdminTestsPage() {
                 <Plus className="h-4 w-4" /> {pageMode === 'practice' ? 'Add Practice Test' : 'Add Mock Test'}
               </button>
             </div>
+
+            {pageMode === 'practice' && (
+              <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/60 pb-5">
+                {PRACTICE_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.key}
+                    onClick={() => setActiveCategory(cat.key)}
+                    className={`px-4 py-2 text-[13px] font-bold rounded-xl transition-all ${
+                      activeCategory === cat.key 
+                        ? 'bg-[#1E3A6E] text-white shadow-sm' 
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
         {/* Tests List */}
         {loading ? (
@@ -678,6 +778,45 @@ export default function AdminTestsPage() {
                             <option value="Easy">Easy</option>
                             <option value="Medium">Medium</option>
                             <option value="Legend">Legend</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    {(createContext === 'practice' && sectionTemplate.startsWith('reading')) && (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-purple-600">Cover Icon (Emoji or URL)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 🎨 or https://..."
+                            value={coverImageUrl}
+                            onChange={(e) => setCoverImageUrl(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-purple-200 focus:border-purple-600 focus:ring-4 focus:ring-purple-600/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-amber-500">Star Rating</label>
+                          <select
+                            value={starRating}
+                            onChange={(e) => setStarRating(Number(e.target.value))}
+                            className="w-full px-4 py-3 bg-white border border-amber-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
+                          >
+                            {[1, 2, 3, 4, 5].map(num => (
+                              <option key={num} value={num}>{num} {num === 1 ? 'Star' : 'Stars'}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider text-[#F59E0B]">Difficulty</label>
+                          <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-[#F59E0B]/30 focus:border-[#F59E0B] focus:ring-4 focus:ring-[#F59E0B]/10 rounded-xl text-[14px] text-[#05162E] outline-none transition-all appearance-none cursor-pointer font-bold"
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Advanced">Advanced</option>
                           </select>
                         </div>
                       </>
