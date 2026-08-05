@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'teacher')),
     has_full_access BOOLEAN NOT NULL DEFAULT FALSE,
+    premium_access_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -97,7 +98,8 @@ CREATE TABLE IF NOT EXISTS access_requests (
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     reviewed_at TIMESTAMP WITH TIME ZONE,
-    reviewed_by UUID REFERENCES profiles(id)
+    reviewed_by UUID REFERENCES profiles(id),
+    premium_access_expires_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Enable RLS

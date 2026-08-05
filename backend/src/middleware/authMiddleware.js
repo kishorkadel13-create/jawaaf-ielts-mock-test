@@ -52,7 +52,25 @@ export const authMiddleware = async (req, res, next) => {
       return next();
     }
 
-    req.user = profile;
+    const premiumExpiry = profile.premium_access_expires_at ? new Date(profile.premium_access_expires_at) : null;
+    const isExpired = premiumExpiry && premiumExpiry.getTime() <= Date.now();
+    const isStudent = profile.role === 'student';
+
+    if (isStudent && profile.has_full_access && isExpired) {
+      const { error: expireError } = await supabaseAdmin
+        .from('profiles')
+        .update({ has_full_access: false })
+        .eq('id', profile.id);
+
+      if (expireError) {
+        console.error('Failed to expire premium access:', expireError);
+      }
+    }
+
+    req.user = {
+      ...profile,
+      has_full_access: Boolean(profile.has_full_access && !isExpired)
+    };
     next();
   } catch (err) {
     console.error('Auth Middleware Exception:', err);

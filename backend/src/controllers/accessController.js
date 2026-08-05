@@ -1,5 +1,23 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
+const DEFAULT_ACCESS_DURATION_DAYS = 30;
+
+const getPremiumAccessExpiry = ({ status, access_duration_days, premium_access_expires_at }) => {
+  if (status !== 'approved') return null;
+
+  if (premium_access_expires_at === null) return null;
+
+  if (premium_access_expires_at) {
+    const expiry = new Date(premium_access_expires_at);
+    if (!Number.isNaN(expiry.getTime()) && expiry.getTime() > Date.now()) return expiry.toISOString();
+  }
+
+  const durationDays = Number(access_duration_days || DEFAULT_ACCESS_DURATION_DAYS);
+  const expiry = new Date();
+  expiry.setDate(expiry.getDate() + durationDays);
+  return expiry.toISOString();
+};
+
 // Student requests full platform access
 export const requestAccess = async (req, res) => {
   try {
@@ -68,10 +86,17 @@ export const getAccessRequests = async (req, res) => {
 export const reviewAccessRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // 'approved' or 'rejected'
+    const { status, access_duration_days, premium_access_expires_at } = req.body; // 'approved' or 'rejected'
 
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'BadRequest', message: 'Invalid status choice.' });
+    }
+
+    if (status === 'approved' && premium_access_expires_at) {
+      const requestedExpiry = new Date(premium_access_expires_at);
+      if (Number.isNaN(requestedExpiry.getTime()) || requestedExpiry.getTime() <= Date.now()) {
+        return res.status(400).json({ error: 'BadRequest', message: 'Premium access expiry must be a future date.' });
+      }
     }
 
     // 1. Fetch access request record
@@ -85,13 +110,20 @@ export const reviewAccessRequest = async (req, res) => {
       return res.status(404).json({ error: 'NotFoundError', message: 'Access request not found.' });
     }
 
+    const premiumAccessExpiresAt = getPremiumAccessExpiry({
+      status,
+      access_duration_days,
+      premium_access_expires_at
+    });
+
     // 2. Perform transaction update
     const { error: updateReqError } = await supabaseAdmin
       .from('access_requests')
       .update({
         status,
         reviewed_at: new Date().toISOString(),
-        reviewed_by: req.user.id
+        reviewed_by: req.user.id,
+        premium_access_expires_at: premiumAccessExpiresAt
       })
       .eq('id', id);
 
@@ -101,7 +133,10 @@ export const reviewAccessRequest = async (req, res) => {
     if (status === 'approved') {
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({ has_full_access: true })
+        .update({
+          has_full_access: true,
+          premium_access_expires_at: premiumAccessExpiresAt
+        })
         .eq('id', request.user_id);
 
       if (profileError) throw profileError;
@@ -109,7 +144,10 @@ export const reviewAccessRequest = async (req, res) => {
       // If rejected and they previously had access, optionally reset access (not required but secure)
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({ has_full_access: false })
+        .update({
+          has_full_access: false,
+          premium_access_expires_at: null
+        })
         .eq('id', request.user_id);
 
       if (profileError) throw profileError;
@@ -118,7 +156,8 @@ export const reviewAccessRequest = async (req, res) => {
     res.status(200).json({
       message: `Access request ${status} successfully.`,
       request_id: id,
-      status
+      status,
+      premium_access_expires_at: premiumAccessExpiresAt
     });
   } catch (err) {
     console.error('reviewAccessRequest Error:', err);

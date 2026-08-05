@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Award,
   BookOpen,
+  CalendarClock,
   CheckSquare,
   Crown,
-  History,
   LogOut,
   Monitor,
   PenLine,
@@ -23,7 +23,6 @@ const navItems = [
   { label: 'Practice Tests', to: '/tests?mode=practice', icon: BookOpen, match: (path: string, search: string) => path === '/tests' && search !== '?mode=mock' },
   { label: 'Mock Tests', to: '/tests?mode=mock', icon: PenLine, match: (path: string, search: string) => path === '/tests' && search === '?mode=mock' },
   { label: 'Results', to: '/history', icon: CheckSquare, match: (path: string) => path === '/history' },
-  { label: 'History', to: '/history', icon: History, match: (path: string) => path === '/history' },
   { label: 'Profile', to: '/dashboard', icon: User, match: () => false },
   { label: 'Settings', to: '/dashboard', icon: Settings, match: () => false }
 ];
@@ -37,11 +36,25 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ variant = 'default', isOpen = false, onClose }: StudentSidebarProps) {
   const location = useLocation();
   const { profile, logout } = useAuthStore();
+  const [now, setNow] = useState(() => Date.now());
   const isCinema = variant === 'cinema';
-  const hasPremiumAccess = Boolean(profile?.has_full_access || profile?.role === 'admin' || profile?.role === 'teacher');
+  const isStaff = profile?.role === 'admin' || profile?.role === 'teacher';
+  const premiumExpiry = profile?.premium_access_expires_at ? new Date(profile.premium_access_expires_at) : null;
+  const isPremiumExpired = Boolean(premiumExpiry && premiumExpiry.getTime() <= now);
+  const premiumDaysLeft = premiumExpiry && !isPremiumExpired
+    ? Math.max(1, Math.ceil((premiumExpiry.getTime() - now) / (1000 * 60 * 60 * 24)))
+    : null;
+  const hasPremiumAccess = Boolean(isStaff || (profile?.has_full_access && !isPremiumExpired));
+  const isPremiumEndingSoon = Boolean(hasPremiumAccess && premiumDaysLeft !== null && premiumDaysLeft <= 3);
+  const premiumCardName = String(profile?.full_name || profile?.email?.split('@')[0] || 'Student').trim();
   const panelBackground = isCinema
     ? 'linear-gradient(180deg, #FFF8ED 0%, #FFF4E5 100%)'
     : 'linear-gradient(to right, #16243a 0%, #16243a 100%)';
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(Date.now()), 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -124,10 +137,14 @@ export default function StudentSidebar({ variant = 'default', isOpen = false, on
               }`}>
                 {hasPremiumAccess ? <CheckSquare className="h-5 w-5" /> : <Crown className="h-5 w-5" />}
               </div>
-              <div className="min-w-0">
-                <h4 className={`truncate text-[14px] font-black ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>Premium Access Active</h4>
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-col items-start">
+                  <h4 className={`max-w-full break-words text-[14px] font-black leading-tight ${isCinema ? 'text-[#3A2417]' : 'text-white'}`}>
+                    {hasPremiumAccess ? premiumCardName : 'Premium Access'}
+                  </h4>
+                </div>
                 <p className={`text-[10px] font-semibold ${isCinema ? 'text-[#6D5A4C]' : hasPremiumAccess ? 'text-emerald-100/90' : 'text-white/60'}`}>
-                  {hasPremiumAccess ? 'Premium account verified' : 'Click to request access'}
+                  {hasPremiumAccess ? 'Premium account verified' : isPremiumExpired ? 'Renew premium access' : 'Click to request access'}
                 </p>
               </div>
             </div>
@@ -148,14 +165,23 @@ export default function StudentSidebar({ variant = 'default', isOpen = false, on
             <div className={`mb-1 h-2.5 w-full overflow-hidden rounded-full ${isCinema ? 'bg-[#E4D0B5]' : 'bg-white/10'}`}>
               <div
                 className={`h-2.5 rounded-full transition-all duration-1000 ${
-                  hasPremiumAccess ? 'bg-gradient-to-r from-emerald-500 to-lime-300' : 'bg-gradient-to-r from-[#D76343] to-[#E9A164]'
+                  hasPremiumAccess
+                    ? isPremiumEndingSoon
+                      ? 'bg-gradient-to-r from-[#ef5f55] to-red-400'
+                      : 'bg-gradient-to-r from-emerald-500 to-lime-300'
+                    : 'bg-gradient-to-r from-[#D76343] to-[#E9A164]'
                 }`}
                 style={{ width: hasPremiumAccess ? '100%' : '34%' }}
               ></div>
             </div>
             {hasPremiumAccess && (
-              <p className={`mt-2 text-[10px] font-bold uppercase tracking-[0.12em] ${isCinema ? 'text-emerald-700' : 'text-emerald-200'}`}>
-                Access unlocked
+              <p className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                isPremiumEndingSoon
+                  ? isCinema ? 'text-red-600' : 'text-red-200'
+                  : isCinema ? 'text-emerald-700' : 'text-emerald-200'
+              }`}>
+                <CalendarClock className="h-3 w-3" />
+                {premiumDaysLeft !== null ? `${premiumDaysLeft} ${premiumDaysLeft === 1 ? 'day' : 'days'} remaining` : 'Access unlocked'}
               </p>
             )}
           </div>

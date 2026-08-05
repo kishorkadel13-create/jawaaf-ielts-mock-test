@@ -677,6 +677,12 @@ export const getApprovedStudents = async (req, res) => {
 
     if (profileError) throw profileError;
 
+    const activeProfiles = profiles.filter(profile => {
+      if (!profile.premium_access_expires_at) return true;
+      const expiry = new Date(profile.premium_access_expires_at);
+      return !Number.isNaN(expiry.getTime()) && expiry.getTime() > Date.now();
+    });
+
     // Fetch all users to get their metadata (phone, country, target score)
     const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
       perPage: 1000
@@ -687,7 +693,7 @@ export const getApprovedStudents = async (req, res) => {
     // Map profiles with user metadata
     const userMetaMap = new Map(users.map(u => [u.id, u.user_metadata]));
 
-    const students = profiles.map(profile => {
+    const students = activeProfiles.map(profile => {
       const meta = userMetaMap.get(profile.id) || {};
       return {
         id: profile.id,
@@ -696,6 +702,8 @@ export const getApprovedStudents = async (req, res) => {
         phone: meta.phone || 'N/A',
         interested_country: meta.interested_country || 'N/A',
         target_score: meta.target_score || 'N/A',
+        has_full_access: profile.has_full_access,
+        premium_access_expires_at: profile.premium_access_expires_at,
         created_at: profile.created_at
       };
     });
@@ -707,3 +715,52 @@ export const getApprovedStudents = async (req, res) => {
   }
 };
 
+export const updateStudentAccess = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { has_full_access, access_duration_days, premium_access_expires_at } = req.body;
+
+    let premiumAccessExpiresAt = null;
+
+    if (has_full_access) {
+      if (premium_access_expires_at === null) {
+        premiumAccessExpiresAt = null;
+      } else if (premium_access_expires_at) {
+        const expiry = new Date(premium_access_expires_at);
+        if (Number.isNaN(expiry.getTime())) {
+          return res.status(400).json({ error: 'BadRequest', message: 'Invalid premium access expiry date.' });
+        }
+        if (expiry.getTime() <= Date.now()) {
+          return res.status(400).json({ error: 'BadRequest', message: 'Premium access expiry must be a future date.' });
+        }
+        premiumAccessExpiresAt = expiry.toISOString();
+      } else {
+        const durationDays = Number(access_duration_days || 30);
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + durationDays);
+        premiumAccessExpiresAt = expiry.toISOString();
+      }
+    }
+
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        has_full_access,
+        premium_access_expires_at: premiumAccessExpiresAt
+      })
+      .eq('id', studentId)
+      .eq('role', 'student')
+      .select('id, full_name, email, role, has_full_access, premium_access_expires_at, created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      message: has_full_access ? 'Student premium access updated successfully.' : 'Student premium access revoked successfully.',
+      student: profile
+    });
+  } catch (err) {
+    console.error('updateStudentAccess Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to update student premium access.' });
+  }
+};

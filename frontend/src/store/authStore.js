@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabase.js';
 
+const normalizeProfileAccess = (profile) => {
+  if (!profile) return profile;
+
+  const premiumExpiry = profile.premium_access_expires_at ? new Date(profile.premium_access_expires_at) : null;
+  const isExpired = premiumExpiry && premiumExpiry.getTime() <= Date.now();
+
+  return {
+    ...profile,
+    has_full_access: Boolean(profile.has_full_access && !isExpired)
+  };
+};
+
 export const useAuthStore = create((set, get) => ({
   user: null,
   profile: null,
@@ -33,11 +45,12 @@ export const useAuthStore = create((set, get) => ({
             id: user.id,
             email: user.email,
             role: user.user_metadata?.role || 'student',
-            has_full_access: user.user_metadata?.role === 'admin'
+            has_full_access: user.user_metadata?.role === 'admin',
+            premium_access_expires_at: null
           };
           set({
             user,
-            profile: fallbackProfile,
+            profile: normalizeProfileAccess(fallbackProfile),
             token: access_token,
             isAuthenticated: true,
             isLoading: false
@@ -47,7 +60,7 @@ export const useAuthStore = create((set, get) => ({
 
         set({
           user,
-          profile,
+          profile: normalizeProfileAccess(profile),
           token: access_token,
           isAuthenticated: true,
           isLoading: false
@@ -83,7 +96,7 @@ export const useAuthStore = create((set, get) => ({
 
       set({
         user,
-        profile,
+        profile: normalizeProfileAccess(profile),
         token: session.access_token,
         isAuthenticated: true,
         isLoading: false
@@ -133,7 +146,7 @@ export const useAuthStore = create((set, get) => ({
 
         set({
           user,
-          profile: profile || { id: user.id, email: user.email, role: 'student', has_full_access: false },
+          profile: normalizeProfileAccess(profile || { id: user.id, email: user.email, role: 'student', has_full_access: false, premium_access_expires_at: null }),
           token: session.access_token,
           isAuthenticated: true,
           isLoading: false
@@ -170,10 +183,16 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // Admin access update profile helper
-  updateProfileAccess: (hasAccess) => {
+  updateProfileAccess: (hasAccess, premiumAccessExpiresAt = null) => {
     const { profile } = get();
     if (profile) {
-      set({ profile: { ...profile, has_full_access: hasAccess } });
+      set({
+        profile: normalizeProfileAccess({
+          ...profile,
+          has_full_access: hasAccess,
+          premium_access_expires_at: premiumAccessExpiresAt
+        })
+      });
     }
   }
 }));

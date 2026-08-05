@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { 
-  Award, ShieldCheck, ShieldAlert, Clock, Check, X, 
-  Search, Mail, Calendar, UserPlus
+import {
+  ShieldCheck, ShieldAlert, Clock, Check, X,
+  Search, Mail, Calendar, UserPlus, CalendarClock
 } from 'lucide-react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 
 interface AccessRequest {
   id: string;
+  user_id: string;
   status: 'pending' | 'approved' | 'rejected';
   requested_at: string;
   reviewed_at: string | null;
+  premium_access_expires_at: string | null;
   profiles: {
     full_name: string;
     email: string;
@@ -26,6 +28,10 @@ export default function AdminAccessPage() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [teacherForm, setTeacherForm] = useState({ full_name: '', email: '', password: '' });
   const [creatingTeacher, setCreatingTeacher] = useState(false);
+  const [durationByRequest, setDurationByRequest] = useState<Record<string, string>>({});
+  const [expiryByRequest, setExpiryByRequest] = useState<Record<string, string>>({});
+  const [editingAccessId, setEditingAccessId] = useState<string | null>(null);
+  const [approvedExpiryByRequest, setApprovedExpiryByRequest] = useState<Record<string, string>>({});
 
   const fetchRequests = async () => {
     try {
@@ -64,15 +70,54 @@ export default function AdminAccessPage() {
     setFilteredRequests(result);
   }, [requests, filter, searchTerm]);
 
+  const accessDurations = [
+    { label: '30 days', value: '30' },
+    { label: '3 months', value: '90' },
+    { label: '6 months', value: '180' },
+    { label: '1 year', value: '365' },
+  ];
+
+  const formatPremiumExpiry = (value?: string | null) => {
+    if (!value) return 'No expiry set';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? 'No expiry set'
+      : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getDateInputValue = (value?: string | null) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+  };
+
+  const todayInputValue = new Date().toISOString().slice(0, 10);
+
   const handleReviewRequest = async (id: string, status: 'approved' | 'rejected') => {
     try {
       setActioningId(id);
-      await api.put(`/access/requests/${id}`, { status });
+      const selectedDays = Number(durationByRequest[id] || 30);
+      const selectedExpiry = expiryByRequest[id]
+        ? new Date(`${expiryByRequest[id]}T23:59:59`).toISOString()
+        : null;
+      const payload = status === 'approved'
+        ? {
+            status,
+            access_duration_days: selectedDays,
+            ...(selectedExpiry ? { premium_access_expires_at: selectedExpiry } : {})
+          }
+        : { status };
+      const response = await api.put(`/access/requests/${id}`, payload);
       
       // Update local state instead of re-fetching
       setRequests(prev => prev.map(req => {
         if (req.id === id) {
-          return { ...req, status, reviewed_at: new Date().toISOString() };
+          return {
+            ...req,
+            status,
+            reviewed_at: new Date().toISOString(),
+            premium_access_expires_at: response.data?.premium_access_expires_at || null
+          };
         }
         return req;
       }));
@@ -80,6 +125,41 @@ export default function AdminAccessPage() {
     } catch (err: any) {
       console.error(`Failed to ${status} request:`, err);
       alert(err.message || `Failed to update request status to ${status}`);
+      setActioningId(null);
+    }
+  };
+
+  const handleUpdateApprovedAccess = async (req: AccessRequest) => {
+    const expiryValue = approvedExpiryByRequest[req.id] ?? getDateInputValue(req.premium_access_expires_at);
+
+    if (!expiryValue) {
+      alert('Please choose the premium access end date.');
+      return;
+    }
+
+    try {
+      setActioningId(req.id);
+      const premiumAccessExpiresAt = new Date(`${expiryValue}T23:59:59`).toISOString();
+      const response = await api.put(`/access/requests/${req.id}`, {
+        status: 'approved',
+        premium_access_expires_at: premiumAccessExpiresAt
+      });
+
+      setRequests(prev => prev.map(item => {
+        if (item.id !== req.id) return item;
+
+        return {
+          ...item,
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          premium_access_expires_at: response.data?.premium_access_expires_at || premiumAccessExpiresAt
+        };
+      }));
+      setEditingAccessId(null);
+    } catch (err: any) {
+      console.error('Failed to update premium expiry:', err);
+      alert(err.message || 'Failed to update premium access expiry.');
+    } finally {
       setActioningId(null);
     }
   };
@@ -272,14 +352,93 @@ export default function AdminAccessPage() {
                             <ShieldCheck className="h-4 w-4 text-emerald-500" /> Reviewed: {new Date(req.reviewed_at).toLocaleDateString()}
                           </span>
                         )}
+                        {req.status === 'approved' && (
+                          <span className="flex items-center gap-1.5 text-[#294b77]">
+                            <CalendarClock className="h-4 w-4 text-[#294b77]" /> Premium until: {formatPremiumExpiry(req.premium_access_expires_at)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex flex-row md:flex-col lg:flex-row items-center gap-4 self-start md:self-center">
+                    <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-start sm:items-center gap-3 self-start md:self-center">
                       {getStatusBadge(req.status)}
+
+                      {req.status === 'approved' && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          {editingAccessId === req.id ? (
+                            <>
+                              <label className="sr-only" htmlFor={`approved-expiry-${req.id}`}>Premium access end date</label>
+                              <input
+                                id={`approved-expiry-${req.id}`}
+                            type="date"
+                            min={todayInputValue}
+                            value={approvedExpiryByRequest[req.id] ?? getDateInputValue(req.premium_access_expires_at)}
+                                onChange={(event) => setApprovedExpiryByRequest(current => ({ ...current, [req.id]: event.target.value }))}
+                                className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-[#061A36] outline-none transition-all focus:border-[#294b77] focus:ring-4 focus:ring-[#294b77]/10"
+                              />
+                              <button
+                                type="button"
+                                disabled={actioningId !== null}
+                                onClick={() => handleUpdateApprovedAccess(req)}
+                                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#294b77] px-4 py-2 text-[13px] font-black text-white shadow-sm transition-colors disabled:opacity-50"
+                              >
+                                {actioningId === req.id ? (
+                                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                                ) : (
+                                  <><Check className="h-4 w-4" /> Save</>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actioningId !== null}
+                                onClick={() => setEditingAccessId(null)}
+                                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setApprovedExpiryByRequest(current => ({
+                                  ...current,
+                                  [req.id]: getDateInputValue(req.premium_access_expires_at)
+                                }));
+                                setEditingAccessId(req.id);
+                              }}
+                              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-black text-[#294b77] transition-all hover:border-[#294b77] hover:bg-[#F8FAFC]"
+                            >
+                              <CalendarClock className="h-4 w-4" />
+                              Edit Access
+                            </button>
+                          )}
+                        </div>
+                      )}
                       
                       {req.status === 'pending' && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <label className="sr-only" htmlFor={`duration-${req.id}`}>Premium access duration</label>
+                          <select
+                            id={`duration-${req.id}`}
+                            value={durationByRequest[req.id] || '30'}
+                            onChange={(event) => setDurationByRequest(current => ({ ...current, [req.id]: event.target.value }))}
+                            className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-[#061A36] outline-none transition-all focus:border-[#294b77] focus:ring-4 focus:ring-[#294b77]/10"
+                          >
+                            {accessDurations.map(option => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                          <label className="sr-only" htmlFor={`expiry-${req.id}`}>Exact premium expiry date</label>
+                          <input
+                            id={`expiry-${req.id}`}
+                            type="date"
+                            min={todayInputValue}
+                            value={expiryByRequest[req.id] || ''}
+                            onChange={(event) => setExpiryByRequest(current => ({ ...current, [req.id]: event.target.value }))}
+                            className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-[#061A36] outline-none transition-all focus:border-[#294b77] focus:ring-4 focus:ring-[#294b77]/10"
+                            title="Optional exact expiry date"
+                          />
                           <button
                             disabled={actioningId !== null}
                             onClick={() => handleReviewRequest(req.id, 'approved')}

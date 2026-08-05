@@ -3,6 +3,7 @@ import multer from 'multer';
 import {
   createTeacher,
   getApprovedStudents,
+  updateStudentAccess,
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
   createQuestion, updateQuestion, deleteQuestion,
@@ -32,7 +33,7 @@ import {
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 import { validateBody } from '../middleware/validationMiddleware.js';
-import { testSectionSchema, questionGroupSchema, questionSchema } from '../models/types.js';
+import { testSectionSchema, questionGroupSchema, questionSchema, studentAccessSchema } from '../models/types.js';
 
 const router = Router();
 
@@ -81,6 +82,7 @@ router.use(adminMiddleware);
 
 router.post('/teachers', createTeacher);
 router.get('/students', getApprovedStudents);
+router.put('/students/:studentId/access', validateBody(studentAccessSchema), updateStudentAccess);
 
 // Recorded Course / LMS management
 router.get('/courses', getAdminCourseLibrary);

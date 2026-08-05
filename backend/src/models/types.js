@@ -69,6 +69,14 @@ export const questionSchema = z.object({
 // Access Request Schema
 export const accessRequestStatusSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']),
+  access_duration_days: z.coerce.number().int().min(1).max(3650).optional(),
+  premium_access_expires_at: z.string().datetime().nullable().optional(),
+});
+
+export const studentAccessSchema = z.object({
+  has_full_access: z.boolean(),
+  access_duration_days: z.coerce.number().int().min(1).max(3650).optional(),
+  premium_access_expires_at: z.string().datetime().nullable().optional(),
 });
 
 // Attempt Answer Schema (for individual updates/saves)

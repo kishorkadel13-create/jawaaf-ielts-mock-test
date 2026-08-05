@@ -11,6 +11,8 @@ import {
   Loader2,
   ShieldCheck,
   Calendar,
+  CalendarClock,
+  Save,
   X
 } from 'lucide-react';
 import { api } from '../../services/api';
@@ -23,6 +25,8 @@ interface Student {
   phone: string;
   interested_country: string;
   target_score: string;
+  has_full_access: boolean;
+  premium_access_expires_at: string | null;
   created_at: string;
 }
 
@@ -31,6 +35,8 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [accessExpiryInput, setAccessExpiryInput] = useState('');
+  const [savingAccess, setSavingAccess] = useState(false);
 
   const loadStudents = async () => {
     try {
@@ -47,6 +53,108 @@ export default function AdminStudentsPage() {
   useEffect(() => {
     loadStudents();
   }, []);
+
+  useEffect(() => {
+    if (!selectedStudent?.premium_access_expires_at) {
+      setAccessExpiryInput('');
+      return;
+    }
+
+    const parsed = new Date(selectedStudent.premium_access_expires_at);
+    if (Number.isNaN(parsed.getTime())) {
+      setAccessExpiryInput('');
+      return;
+    }
+
+    setAccessExpiryInput(parsed.toISOString().slice(0, 10));
+  }, [selectedStudent]);
+
+  const formatPremiumExpiry = (value?: string | null) => {
+    if (!value) return 'No expiry set';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? 'No expiry set'
+      : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const todayInputValue = new Date().toISOString().slice(0, 10);
+
+  const getAccessStatus = (student: Student) => {
+    if (!student.has_full_access) return { label: 'Revoked', className: 'bg-slate-100 text-slate-500 border-slate-200' };
+    if (!student.premium_access_expires_at) return { label: 'No expiry set', className: 'bg-amber-50 text-amber-700 border-amber-100' };
+
+    const expiry = new Date(student.premium_access_expires_at);
+    if (Number.isNaN(expiry.getTime())) return { label: 'No expiry set', className: 'bg-amber-50 text-amber-700 border-amber-100' };
+    if (expiry.getTime() <= Date.now()) return { label: 'Expired', className: 'bg-red-50 text-red-600 border-red-100' };
+
+    return { label: `Until ${formatPremiumExpiry(student.premium_access_expires_at)}`, className: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
+  };
+
+  const updateSelectedStudent = (updatedProfile: Partial<Student>) => {
+    setStudents(current => current
+      .map(student => student.id === updatedProfile.id ? { ...student, ...updatedProfile } : student)
+      .filter(student => student.has_full_access)
+    );
+
+    if (updatedProfile.has_full_access === false) {
+      setSelectedStudent(null);
+      return;
+    }
+
+    setSelectedStudent(current => current && current.id === updatedProfile.id ? { ...current, ...updatedProfile } : current);
+  };
+
+  const handleSaveAccess = async () => {
+    if (!selectedStudent) return;
+
+    try {
+      setSavingAccess(true);
+      const premiumAccessExpiresAt = accessExpiryInput
+        ? new Date(`${accessExpiryInput}T23:59:59`).toISOString()
+        : null;
+
+      const response = await api.put(`/admin/students/${selectedStudent.id}/access`, {
+        has_full_access: true,
+        premium_access_expires_at: premiumAccessExpiresAt
+      });
+
+      updateSelectedStudent({
+        id: selectedStudent.id,
+        has_full_access: response.data?.student?.has_full_access ?? true,
+        premium_access_expires_at: response.data?.student?.premium_access_expires_at || null
+      });
+    } catch (error: any) {
+      console.error('Failed to update student premium access:', error);
+      alert(error.message || 'Failed to update student premium access.');
+    } finally {
+      setSavingAccess(false);
+    }
+  };
+
+  const handleRevokeAccess = async () => {
+    if (!selectedStudent) return;
+
+    const confirmed = window.confirm(`Revoke premium access for ${selectedStudent.full_name}?`);
+    if (!confirmed) return;
+
+    try {
+      setSavingAccess(true);
+      await api.put(`/admin/students/${selectedStudent.id}/access`, {
+        has_full_access: false,
+        premium_access_expires_at: null
+      });
+      updateSelectedStudent({
+        id: selectedStudent.id,
+        has_full_access: false,
+        premium_access_expires_at: null
+      });
+    } catch (error: any) {
+      console.error('Failed to revoke student premium access:', error);
+      alert(error.message || 'Failed to revoke student premium access.');
+    } finally {
+      setSavingAccess(false);
+    }
+  };
 
   const filteredStudents = students.filter(student => {
     const term = searchTerm.toLowerCase();
@@ -164,6 +272,7 @@ export default function AdminStudentsPage() {
                         <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Contact Info</th>
                         <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Target Country</th>
                         <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Target Band</th>
+                        <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Premium Access</th>
                         <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Joined Date</th>
                         <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                       </tr>
@@ -203,6 +312,12 @@ export default function AdminStudentsPage() {
                           <td className="py-4 px-6 text-center">
                             <span className="inline-block px-3 py-1 rounded-xl text-white text-xs font-black" style={{ backgroundColor: '#ef5f55' }}>
                               Band {student.target_score || '7.0'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[12px] font-black ${getAccessStatus(student).className}`}>
+                              <CalendarClock className="h-3.5 w-3.5" />
+                              {getAccessStatus(student).label}
                             </span>
                           </td>
                           <td className="py-4 px-6 text-slate-500 text-[13px] font-medium">
@@ -271,6 +386,47 @@ export default function AdminStudentsPage() {
                     <Target className="h-4 w-4" />
                     Band {selectedStudent.target_score || '7.0'}
                   </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-[#F8FAFC] p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="premium-expiry" className="text-slate-400 text-xs font-bold uppercase tracking-wider block">
+                      Premium Access Until
+                    </label>
+                    <input
+                      id="premium-expiry"
+                      type="date"
+                      min={todayInputValue}
+                      value={accessExpiryInput}
+                      onChange={(event) => setAccessExpiryInput(event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] font-bold text-[#061A36] outline-none transition-all focus:border-[#294b77] focus:ring-4 focus:ring-[#294b77]/10"
+                    />
+                    <p className="mt-2 text-[12px] font-semibold text-slate-500">
+                      Current: {formatPremiumExpiry(selectedStudent.premium_access_expires_at)}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleSaveAccess}
+                      disabled={savingAccess}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black text-white shadow-sm transition-colors disabled:opacity-60"
+                      style={{ backgroundColor: '#294b77' }}
+                    >
+                      {savingAccess ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Save Access
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRevokeAccess}
+                      disabled={savingAccess}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-black text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                    >
+                      Revoke
+                    </button>
+                  </div>
                 </div>
               </div>
 
