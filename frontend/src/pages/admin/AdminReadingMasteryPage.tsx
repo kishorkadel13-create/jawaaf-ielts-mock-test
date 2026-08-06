@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Bold,
   BookOpenCheck,
   FileQuestion,
+  Highlighter,
   Layers3,
   Menu,
   Pencil,
@@ -55,6 +57,18 @@ const toNumber = (value: string, fallback: number) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const formatFeedbackHtml = (value: string) => escapeHtml(value || '')
+  .replace(/&lt;(\/?(strong|b|mark|em))&gt;/gi, '<$1>')
+  .replace(/&lt;br\s*\/?&gt;/gi, '<br/>')
+  .replace(/\n/g, '<br/>');
+
 const initialLevelForm = {
   level_no: '1',
   level_name: '',
@@ -90,6 +104,7 @@ export default function AdminReadingMasteryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
+  const feedbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const selectedLevel = useMemo(
     () => levels.find(level => level.id === selectedLevelId) || null,
@@ -461,6 +476,25 @@ export default function AdminReadingMasteryPage() {
     }
   };
 
+  const applyFeedbackMarkup = (tag: 'strong' | 'mark') => {
+    const textarea = feedbackTextareaRef.current;
+    const currentFeedback = questionForm.feedback;
+    const start = textarea?.selectionStart ?? currentFeedback.length;
+    const end = textarea?.selectionEnd ?? currentFeedback.length;
+    const selected = currentFeedback.slice(start, end);
+    const fallbackText = tag === 'strong' ? 'bold text' : 'highlighted text';
+    const wrapped = `<${tag}>${selected || fallbackText}</${tag}>`;
+    const nextFeedback = `${currentFeedback.slice(0, start)}${wrapped}${currentFeedback.slice(end)}`;
+
+    setQuestionForm(prev => ({ ...prev, feedback: nextFeedback }));
+    window.requestAnimationFrame(() => {
+      textarea?.focus();
+      const cursorStart = start + tag.length + 2;
+      const cursorEnd = cursorStart + (selected || fallbackText).length;
+      textarea?.setSelectionRange(cursorStart, cursorEnd);
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <div className="flex min-h-screen">
@@ -624,8 +658,27 @@ export default function AdminReadingMasteryPage() {
                       <textarea required value={questionForm.question_text} onChange={event => setQuestionForm({ ...questionForm, question_text: event.target.value })} className={`${inputClass} min-h-[100px]`} />
                     </label>
                     <label className="grid gap-2 md:col-span-2">
-                      <span className={labelClass}>Feedback</span>
-                      <textarea required value={questionForm.feedback} onChange={event => setQuestionForm({ ...questionForm, feedback: event.target.value })} placeholder="Why this answer is TRUE/FALSE/NOT GIVEN..." className={`${inputClass} min-h-[130px]`} />
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className={labelClass}>Feedback</span>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => applyFeedbackMarkup('strong')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black text-[#294b77] hover:bg-[#294b77]/10">
+                            <Bold className="h-4 w-4" /> Bold
+                          </button>
+                          <button type="button" onClick={() => applyFeedbackMarkup('mark')} className="inline-flex items-center gap-1 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] font-black text-yellow-700 hover:bg-yellow-100">
+                            <Highlighter className="h-4 w-4" /> Highlight
+                          </button>
+                        </div>
+                      </div>
+                      <textarea ref={feedbackTextareaRef} required value={questionForm.feedback} onChange={event => setQuestionForm({ ...questionForm, feedback: event.target.value })} placeholder="Why this answer is TRUE/FALSE/NOT GIVEN..." className={`${inputClass} min-h-[130px]`} />
+                      {questionForm.feedback.trim() && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">Student Preview</p>
+                          <div
+                            className="text-[13px] font-bold leading-6 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                            dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(questionForm.feedback) }}
+                          />
+                        </div>
+                      )}
                     </label>
                     <div className="flex flex-wrap justify-end gap-3 md:col-span-2">
                       {editingQuestionId && (

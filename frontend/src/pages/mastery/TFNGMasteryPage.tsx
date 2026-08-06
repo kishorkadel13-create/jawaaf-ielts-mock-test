@@ -12,6 +12,18 @@ type TFNGMasteryPageProps = {
 
 const answerOptions = ['TRUE', 'FALSE', 'NOT GIVEN'] as const;
 
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const formatFeedbackHtml = (value: string) => escapeHtml(value || '')
+  .replace(/&lt;(\/?(strong|b|mark|em))&gt;/gi, '<$1>')
+  .replace(/&lt;br\s*\/?&gt;/gi, '<br/>')
+  .replace(/\n/g, '<br/>');
+
 export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   const navigate = useNavigate();
   const { attemptId, passageAttemptId } = useParams();
@@ -286,7 +298,10 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
                     <p>Correct answer: <b>{currentFeedbackQuestion.correct_answer}</b></p>
                     <p>Trap: <b>{currentFeedbackQuestion.trap_type || 'TFNG reasoning'}</b></p>
                     <p>Locate: <b>{[currentFeedbackQuestion.locate_paragraph, currentFeedbackQuestion.locate_sentence].filter(Boolean).join(', ') || 'See highlighted text'}</b></p>
-                    <p className="rounded-xl bg-white p-3 leading-5">{currentFeedbackQuestion.detailed_explanation}</p>
+                    <div
+                      className="rounded-xl bg-white p-3 leading-5 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                      dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(currentFeedbackQuestion.detailed_explanation || '') }}
+                    />
                   </div>
                 </div>
                 {isLastFeedbackQuestion ? (
