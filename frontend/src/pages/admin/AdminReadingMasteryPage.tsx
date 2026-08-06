@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   BookOpenCheck,
-  CheckCircle2,
   FileQuestion,
   Layers3,
   Menu,
+  Pencil,
   RefreshCw,
   Save,
+  Trash2,
+  Unlink,
+  X,
   Zap
 } from 'lucide-react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
@@ -81,6 +84,9 @@ export default function AdminReadingMasteryPage() {
   const [levelForm, setLevelForm] = useState(initialLevelForm);
   const [passageForm, setPassageForm] = useState(initialPassageForm);
   const [questionForm, setQuestionForm] = useState(initialQuestionForm);
+  const [editingLevelId, setEditingLevelId] = useState('');
+  const [editingPassageId, setEditingPassageId] = useState('');
+  const [editingQuestionId, setEditingQuestionId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
@@ -118,6 +124,11 @@ export default function AdminReadingMasteryPage() {
   const totalQuestions = useMemo(
     () => passages.reduce((sum, passage) => sum + (passage.questions?.length || 0), 0),
     [passages]
+  );
+
+  const editingPassage = useMemo(
+    () => passages.find(passage => passage.id === editingPassageId) || null,
+    [editingPassageId, passages]
   );
 
   const questionPassageOptions = levelPassages.length > 0 ? levelPassages : passages;
@@ -176,32 +187,60 @@ export default function AdminReadingMasteryPage() {
     }
   }, [selectedLevel, selectedSetNo]);
 
+  const resetLevelForm = () => {
+    setEditingLevelId('');
+    setLevelForm(initialLevelForm);
+  };
+
+  const resetPassageForm = () => {
+    setEditingPassageId('');
+    setPassageForm(initialPassageForm);
+  };
+
+  const resetQuestionForm = () => {
+    setEditingQuestionId('');
+    setQuestionForm(prev => ({
+      ...initialQuestionForm,
+      passage_id: prev.passage_id
+    }));
+  };
+
   const handleCreateLevel = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving('level');
     try {
       const levelNo = toNumber(levelForm.level_no, 1);
-      const { data } = await api.post('/mastery/tfng/admin/evolutions', {
+      const payload = {
         evolution_number: levelNo,
         name: levelForm.level_name,
         timer_seconds: toNumber(levelForm.timer_seconds, 180),
         order_no: levelNo,
-        is_published: true,
-        description: '',
-        hooty_wisdom: '',
-        current_hooty_artwork: '',
-        next_hooty_artwork: '',
-        unlock_animation_key: '',
-        xp_per_passage: 20,
-        xp_completion_bonus: 120,
-        first_attempt_required_accuracy: 60,
-        second_attempt_required_accuracy: 60,
-        instructor_support_url: '/teacher'
-      });
-      setLevelForm({ level_no: String(levelNo + 1), level_name: '', timer_seconds: levelForm.timer_seconds });
-      setSelectedLevelId(data.id);
-      setSelectedPassageIds([]);
-      setNotice(`Level ${levelNo} saved. अब यही level भित्र passages थप्नुहोस्.`);
+        is_published: true
+      };
+
+      if (editingLevelId) {
+        await api.put(`/mastery/tfng/admin/evolutions/${editingLevelId}`, payload);
+        setEditingLevelId('');
+        setNotice(`Level ${levelNo} updated.`);
+      } else {
+        const { data } = await api.post('/mastery/tfng/admin/evolutions', {
+          ...payload,
+          description: '',
+          hooty_wisdom: '',
+          current_hooty_artwork: '',
+          next_hooty_artwork: '',
+          unlock_animation_key: '',
+          xp_per_passage: 20,
+          xp_completion_bonus: 120,
+          first_attempt_required_accuracy: 60,
+          second_attempt_required_accuracy: 60,
+          instructor_support_url: '/teacher'
+        });
+        setLevelForm({ level_no: String(levelNo + 1), level_name: '', timer_seconds: levelForm.timer_seconds });
+        setSelectedLevelId(data.id);
+        setSelectedPassageIds([]);
+        setNotice(`Level ${levelNo} saved. अब यही level भित्र passages थप्नुहोस्.`);
+      }
       await loadMasteryAdmin();
     } catch (err: any) {
       setNotice(err.message || 'Level save हुन सकेन.');
@@ -212,21 +251,32 @@ export default function AdminReadingMasteryPage() {
 
   const handleCreatePassage = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedLevelId) {
+    if (!selectedLevelId && !editingPassageId) {
       setNotice('पहिला कुन level मा passage हाल्ने हो select गर्नुहोस्.');
       return;
     }
 
     setSaving('passage');
     try {
-      const { data } = await api.post('/mastery/tfng/admin/passages', {
+      const payload = {
         title: passageForm.title,
         passage_html: passageForm.passage_html,
         source_label: null,
         difficulty: null,
         estimated_minutes: null,
         is_published: true
-      });
+      };
+
+      if (editingPassageId) {
+        await api.put(`/mastery/tfng/admin/passages/${editingPassageId}`, payload);
+        setPassageForm(initialPassageForm);
+        setEditingPassageId('');
+        setNotice('Passage updated.');
+        await loadMasteryAdmin();
+        return;
+      }
+
+      const { data } = await api.post('/mastery/tfng/admin/passages', payload);
 
       const nextPassageIds = [...selectedPassageIds, data.id];
       await api.put(`/mastery/tfng/admin/evolutions/${selectedLevelId}/passages`, {
@@ -263,7 +313,7 @@ export default function AdminReadingMasteryPage() {
     setSaving('question');
     try {
       const questionNumber = toNumber(questionForm.question_number, 1);
-      await api.post(`/mastery/tfng/admin/passages/${questionForm.passage_id}/questions`, {
+      const payload = {
         question_number: questionNumber,
         question_text: questionForm.question_text,
         correct_answer: questionForm.correct_answer,
@@ -275,17 +325,137 @@ export default function AdminReadingMasteryPage() {
         highlight_phrases: [],
         order_no: questionNumber,
         marks: 1
-      });
+      };
+
+      if (editingQuestionId) {
+        await api.put(`/mastery/tfng/admin/questions/${editingQuestionId}`, payload);
+        setEditingQuestionId('');
+        setNotice('Question, answer and feedback updated.');
+      } else {
+        await api.post(`/mastery/tfng/admin/passages/${questionForm.passage_id}/questions`, payload);
+        setNotice('Question, answer and feedback saved. अर्को question हाल्नुस्, वा next passage थप्नुस्.');
+      }
 
       setQuestionForm(prev => ({
         ...initialQuestionForm,
         passage_id: prev.passage_id,
         question_number: String(questionNumber + 1)
       }));
-      setNotice('Question, answer and feedback saved. अर्को question हाल्नुस्, वा next passage थप्नुस्.');
       await loadMasteryAdmin();
     } catch (err: any) {
       setNotice(err.message || 'Question save हुन सकेन.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const handleEditLevel = (level: TfngLevel) => {
+    setEditingLevelId(level.id);
+    setSelectedLevelId(level.id);
+    setLevelForm({
+      level_no: String(level.evolution_number),
+      level_name: level.name,
+      timer_seconds: String(level.timer_seconds || 180)
+    });
+    setNotice('Level edit mode खुल्यो. Changes गरेर Update Level थिच्नुहोस्.');
+  };
+
+  const handleDeleteLevel = async (level: TfngLevel) => {
+    if (!window.confirm(`Delete Level ${level.evolution_number}: ${level.name}? This removes its set links and student attempts.`)) return;
+    setSaving(`level-delete-${level.id}`);
+    try {
+      await api.delete(`/mastery/tfng/admin/evolutions/${level.id}`);
+      setSelectedLevelId('');
+      setSelectedPassageIds([]);
+      if (editingLevelId === level.id) resetLevelForm();
+      setNotice('Level deleted.');
+      await loadMasteryAdmin();
+    } catch (err: any) {
+      setNotice(err.message || 'Level delete हुन सकेन.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const handleDeleteSet = async () => {
+    if (!selectedLevelId) return;
+    if (!window.confirm(`Delete Set ${selectedSetNo} from this level? Passages stay saved, only this flow is removed.`)) return;
+    setSaving(`set-delete-${selectedLevelId}-${selectedSetNo}`);
+    try {
+      await api.delete(`/mastery/tfng/admin/evolutions/${selectedLevelId}/sets/${selectedSetNo}`);
+      setSelectedPassageIds([]);
+      setNotice(`Set ${selectedSetNo} removed from selected level.`);
+      await loadMasteryAdmin();
+    } catch (err: any) {
+      setNotice(err.message || 'Set delete हुन सकेन.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const handleEditPassage = (passage: TfngPassage) => {
+    setEditingPassageId(passage.id);
+    setPassageForm({
+      title: passage.title,
+      passage_html: passage.passage_html
+    });
+    setQuestionForm(prev => ({ ...prev, passage_id: passage.id }));
+    setNotice('Passage edit mode खुल्यो. Update Passage थिचेपछि content save हुन्छ.');
+  };
+
+  const handleRemovePassageFromSet = async (passage: TfngPassage) => {
+    if (!selectedLevelId) return;
+    if (!window.confirm(`Remove "${passage.title}" from Set ${selectedSetNo}? Passage and questions will remain saved.`)) return;
+    setSaving(`flow-remove-${passage.id}`);
+    try {
+      await api.delete(`/mastery/tfng/admin/evolutions/${selectedLevelId}/sets/${selectedSetNo}/passages/${passage.id}`);
+      setNotice('Passage removed from this set.');
+      await loadMasteryAdmin();
+    } catch (err: any) {
+      setNotice(err.message || 'Passage set बाट remove हुन सकेन.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const handleDeletePassage = async (passage: TfngPassage) => {
+    if (!window.confirm(`Permanently delete "${passage.title}" and all its questions/feedback?`)) return;
+    setSaving(`passage-delete-${passage.id}`);
+    try {
+      await api.delete(`/mastery/tfng/admin/passages/${passage.id}`);
+      if (editingPassageId === passage.id) resetPassageForm();
+      if (questionForm.passage_id === passage.id) setQuestionForm(initialQuestionForm);
+      setNotice('Passage and its questions deleted.');
+      await loadMasteryAdmin();
+    } catch (err: any) {
+      setNotice(err.message || 'Passage delete हुन सकेन.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const handleEditQuestion = (question: TfngQuestion) => {
+    setEditingQuestionId(question.id);
+    setQuestionForm({
+      passage_id: question.passage_id,
+      question_number: String(question.question_number),
+      question_text: question.question_text,
+      correct_answer: question.correct_answer,
+      feedback: question.detailed_explanation
+    });
+    setNotice('Question edit mode खुल्यो. Answer/feedback मिलाएर Update Question थिच्नुहोस्.');
+  };
+
+  const handleDeleteQuestion = async (question: TfngQuestion) => {
+    if (!window.confirm(`Delete Q${question.question_number} and its feedback?`)) return;
+    setSaving(`question-delete-${question.id}`);
+    try {
+      await api.delete(`/mastery/tfng/admin/questions/${question.id}`);
+      if (editingQuestionId === question.id) resetQuestionForm();
+      setNotice('Question deleted.');
+      await loadMasteryAdmin();
+    } catch (err: any) {
+      setNotice(err.message || 'Question delete हुन सकेन.');
     } finally {
       setSaving('');
     }
@@ -345,7 +515,7 @@ export default function AdminReadingMasteryPage() {
                   <div className="mb-5 flex items-center gap-3">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-500"><Zap className="h-5 w-5" /></div>
                     <div>
-                      <h2 className="text-[18px] font-black text-[#061A36]">1. Create Level</h2>
+                      <h2 className="text-[18px] font-black text-[#061A36]">{editingLevelId ? '1. Edit Level' : '1. Create Level'}</h2>
                       <p className="text-[13px] font-semibold text-slate-500">Only level number, level name and same timer for every passage inside this level.</p>
                     </div>
                   </div>
@@ -363,9 +533,14 @@ export default function AdminReadingMasteryPage() {
                       <span className={labelClass}>Timer Seconds</span>
                       <input required type="number" min="30" value={levelForm.timer_seconds} onChange={event => setLevelForm({ ...levelForm, timer_seconds: event.target.value })} className={inputClass} />
                     </label>
-                    <div className="flex justify-end md:col-span-3">
+                    <div className="flex flex-wrap justify-end gap-3 md:col-span-3">
+                      {editingLevelId && (
+                        <button type="button" onClick={resetLevelForm} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[14px] font-black text-slate-600 hover:bg-slate-50">
+                          <X className="h-4 w-4" /> Cancel
+                        </button>
+                      )}
                       <button disabled={saving === 'level'} className="inline-flex items-center gap-2 rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white shadow-lg shadow-[#294b77]/20 hover:bg-[#1f3d64] disabled:opacity-60">
-                        <Save className="h-4 w-4" /> Save Level
+                        <Save className="h-4 w-4" /> {editingLevelId ? 'Update Level' : 'Save Level'}
                       </button>
                     </div>
                   </form>
@@ -375,8 +550,8 @@ export default function AdminReadingMasteryPage() {
                   <div className="mb-5 flex items-center gap-3">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><BookOpenCheck className="h-5 w-5" /></div>
                     <div>
-                      <h2 className="text-[18px] font-black text-[#061A36]">2. Add Passage Inside Level</h2>
-                      <p className="text-[13px] font-semibold text-slate-500">Same level भित्र Passage 1, Passage 2, Passage 3... जति पनि add गर्न मिल्छ.</p>
+                      <h2 className="text-[18px] font-black text-[#061A36]">{editingPassageId ? '2. Edit Passage' : '2. Add Passage Inside Level'}</h2>
+                      <p className="text-[13px] font-semibold text-slate-500">{editingPassageId ? `Editing: ${editingPassage?.title || 'selected passage'}` : 'Same level भित्र Passage 1, Passage 2, Passage 3... जति पनि add गर्न मिल्छ.'}</p>
                     </div>
                   </div>
 
@@ -402,9 +577,14 @@ export default function AdminReadingMasteryPage() {
                       <span className={labelClass}>Passage Content</span>
                       <textarea required value={passageForm.passage_html} onChange={event => setPassageForm({ ...passageForm, passage_html: event.target.value })} className={`${inputClass} min-h-[240px] font-medium leading-7`} />
                     </label>
-                    <div className="flex justify-end">
+                    <div className="flex flex-wrap justify-end gap-3">
+                      {editingPassageId && (
+                        <button type="button" onClick={resetPassageForm} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[14px] font-black text-slate-600 hover:bg-slate-50">
+                          <X className="h-4 w-4" /> Cancel
+                        </button>
+                      )}
                       <button disabled={saving === 'passage'} className="inline-flex items-center gap-2 rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white shadow-lg shadow-[#294b77]/20 hover:bg-[#1f3d64] disabled:opacity-60">
-                        <Save className="h-4 w-4" /> Save Passage
+                        <Save className="h-4 w-4" /> {editingPassageId ? 'Update Passage' : 'Save Passage'}
                       </button>
                     </div>
                   </form>
@@ -414,7 +594,7 @@ export default function AdminReadingMasteryPage() {
                   <div className="mb-5 flex items-center gap-3">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><FileQuestion className="h-5 w-5" /></div>
                     <div>
-                      <h2 className="text-[18px] font-black text-[#061A36]">3. Add Question, Answer And Feedback</h2>
+                      <h2 className="text-[18px] font-black text-[#061A36]">{editingQuestionId ? '3. Edit Question, Answer And Feedback' : '3. Add Question, Answer And Feedback'}</h2>
                       <p className="text-[13px] font-semibold text-slate-500">Each question save हुन answer र feedback compulsory छ.</p>
                     </div>
                   </div>
@@ -447,9 +627,14 @@ export default function AdminReadingMasteryPage() {
                       <span className={labelClass}>Feedback</span>
                       <textarea required value={questionForm.feedback} onChange={event => setQuestionForm({ ...questionForm, feedback: event.target.value })} placeholder="Why this answer is TRUE/FALSE/NOT GIVEN..." className={`${inputClass} min-h-[130px]`} />
                     </label>
-                    <div className="flex justify-end md:col-span-2">
+                    <div className="flex flex-wrap justify-end gap-3 md:col-span-2">
+                      {editingQuestionId && (
+                        <button type="button" onClick={resetQuestionForm} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[14px] font-black text-slate-600 hover:bg-slate-50">
+                          <X className="h-4 w-4" /> Cancel
+                        </button>
+                      )}
                       <button disabled={saving === 'question'} className="inline-flex items-center gap-2 rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white shadow-lg shadow-[#294b77]/20 hover:bg-[#1f3d64] disabled:opacity-60">
-                        <Save className="h-4 w-4" /> Save Question
+                        <Save className="h-4 w-4" /> {editingQuestionId ? 'Update Question' : 'Save Question'}
                       </button>
                     </div>
                   </form>
@@ -484,6 +669,17 @@ export default function AdminReadingMasteryPage() {
                     <div className="mb-4 rounded-2xl bg-[#294b77]/5 p-4">
                       <p className="text-[13px] font-black text-[#061A36]">Level {selectedLevel.evolution_number}: {selectedLevel.name}</p>
                       <p className="mt-1 text-[12px] font-bold leading-5 text-slate-500">Set {selectedSetNo} · {selectedLevel.timer_seconds} seconds per passage</p>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <button type="button" onClick={() => handleEditLevel(selectedLevel)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] font-black text-[#294b77] hover:bg-slate-50">
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </button>
+                        <button type="button" onClick={handleDeleteSet} disabled={levelPassages.length === 0 || saving.startsWith('set-delete')} className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-black text-amber-700 hover:bg-amber-100 disabled:opacity-50">
+                          <Unlink className="h-3.5 w-3.5" /> Set
+                        </button>
+                        <button type="button" onClick={() => handleDeleteLevel(selectedLevel)} disabled={saving === `level-delete-${selectedLevel.id}`} className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-[11px] font-black text-red-600 hover:bg-red-100 disabled:opacity-50">
+                          <Trash2 className="h-3.5 w-3.5" /> Level
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -498,30 +694,42 @@ export default function AdminReadingMasteryPage() {
                             <p className="mt-1 text-[12px] font-bold text-slate-500">{passage.questions?.length || 0} questions saved</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                  <h2 className="mb-4 text-[18px] font-black text-[#061A36]">All Content</h2>
-                  <div className="space-y-4">
-                    {passages.length === 0 && <p className="text-[14px] font-semibold text-slate-500">अहिले passage छैन.</p>}
-                    {passages.slice(0, 8).map(passage => (
-                      <div key={passage.id} className="rounded-2xl border border-slate-200 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-[15px] font-black text-[#061A36]">{passage.title}</p>
-                            <p className="text-[12px] font-bold text-slate-500">{passage.questions?.length || 0} TFNG questions</p>
-                          </div>
-                          {passage.is_published && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          <button type="button" onClick={() => handleEditPassage(passage)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] font-black text-[#294b77] hover:bg-slate-50">
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button type="button" onClick={() => handleRemovePassageFromSet(passage)} disabled={saving === `flow-remove-${passage.id}`} className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-black text-amber-700 hover:bg-amber-100 disabled:opacity-50">
+                            <Unlink className="h-3.5 w-3.5" /> Remove
+                          </button>
+                          <button type="button" onClick={() => handleDeletePassage(passage)} disabled={saving === `passage-delete-${passage.id}`} className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-[11px] font-black text-red-600 hover:bg-red-100 disabled:opacity-50">
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </button>
                         </div>
-                        {(passage.questions || []).slice(0, 3).map(question => (
-                          <div key={question.id} className="mt-3 rounded-xl bg-slate-50 px-3 py-2">
-                            <p className="line-clamp-2 text-[12px] font-bold text-slate-600">Q{question.question_number}. {question.question_text}</p>
-                            <p className="mt-1 text-[11px] font-black text-[#294b77]">{question.correct_answer}</p>
+                        {(passage.questions || []).length > 0 && (
+                          <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                            {(passage.questions || []).slice(0, 4).map(question => (
+                              <div key={question.id} className="rounded-xl bg-slate-50 px-3 py-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="line-clamp-2 text-[12px] font-bold text-slate-600">Q{question.question_number}. {question.question_text}</p>
+                                <p className="mt-1 text-[11px] font-black text-[#294b77]">{question.correct_answer}</p>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button type="button" onClick={() => handleEditQuestion(question)} className="grid h-7 w-7 place-items-center rounded-lg text-[#294b77] hover:bg-[#294b77]/10" aria-label={`Edit question ${question.question_number}`}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteQuestion(question)} disabled={saving === `question-delete-${question.id}`} className="grid h-7 w-7 place-items-center rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50" aria-label={`Delete question ${question.question_number}`}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        ))}
+                            ))}
+                          </div>
+                        )}
+                        {(passage.questions || []).length > 4 && (
+                          <p className="mt-2 text-[11px] font-black text-slate-400">{(passage.questions || []).length - 4} more questions saved</p>
+                        )}
                       </div>
                     ))}
                   </div>

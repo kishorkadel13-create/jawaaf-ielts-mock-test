@@ -6,6 +6,10 @@ import {
   createTfngEvolution,
   createTfngPassage,
   createTfngQuestion,
+  deleteTfngEvolution,
+  deleteTfngEvolutionSet,
+  deleteTfngPassage,
+  deleteTfngQuestion,
   getTfngCurrentPractice,
   getTfngDesignPage,
   getTfngFeedback,
@@ -13,6 +17,7 @@ import {
   getTfngPerformance,
   listTfngMasteryAdmin,
   listTfngPassagesAdmin,
+  removeTfngEvolutionSetPassage,
   saveTfngPassageAnswers,
   startOrResumeTfngMastery,
   submitTfngPassage,
@@ -31,11 +36,16 @@ router.get('/admin', listTfngMasteryAdmin);
 router.get('/admin/passages', listTfngPassagesAdmin);
 router.post('/admin/evolutions', createTfngEvolution);
 router.put('/admin/evolutions/:evolutionId', updateTfngEvolution);
+router.delete('/admin/evolutions/:evolutionId', deleteTfngEvolution);
 router.put('/admin/evolutions/:evolutionId/passages', assignTfngEvolutionPassages);
+router.delete('/admin/evolutions/:evolutionId/sets/:setNo', deleteTfngEvolutionSet);
+router.delete('/admin/evolutions/:evolutionId/sets/:setNo/passages/:passageId', removeTfngEvolutionSetPassage);
 router.post('/admin/passages', createTfngPassage);
 router.put('/admin/passages/:passageId', updateTfngPassage);
+router.delete('/admin/passages/:passageId', deleteTfngPassage);
 router.post('/admin/passages/:passageId/questions', createTfngQuestion);
 router.put('/admin/questions/:questionId', updateTfngQuestion);
+router.delete('/admin/questions/:questionId', deleteTfngQuestion);
 
 router.get('/attempts/:attemptId/design', getTfngDesignPage);
 router.get('/attempts/:attemptId/practice', getTfngCurrentPractice);

@@ -904,6 +904,23 @@ export const updateTfngEvolution = async (req, res) => {
   }
 };
 
+export const deleteTfngEvolution = async (req, res) => {
+  try {
+    if (!requireStaff(req, res)) return;
+
+    const { error } = await supabaseAdmin
+      .from('tfng_mastery_evolutions')
+      .delete()
+      .eq('id', req.params.evolutionId);
+    if (error) throw error;
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('deleteTfngEvolution Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to delete TFNG evolution.' });
+  }
+};
+
 const pickPassagePayload = (body, userId) => ({
   title: body.title,
   passage_html: body.passage_html,
@@ -962,6 +979,23 @@ export const updateTfngPassage = async (req, res) => {
   } catch (err) {
     console.error('updateTfngPassage Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to update TFNG passage.' });
+  }
+};
+
+export const deleteTfngPassage = async (req, res) => {
+  try {
+    if (!requireStaff(req, res)) return;
+
+    const { error } = await supabaseAdmin
+      .from('tfng_mastery_passages')
+      .delete()
+      .eq('id', req.params.passageId);
+    if (error) throw error;
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('deleteTfngPassage Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to delete TFNG passage.' });
   }
 };
 
@@ -1025,6 +1059,78 @@ export const assignTfngEvolutionPassages = async (req, res) => {
   } catch (err) {
     console.error('assignTfngEvolutionPassages Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to assign TFNG evolution passages.' });
+  }
+};
+
+export const deleteTfngEvolutionSet = async (req, res) => {
+  try {
+    if (!requireStaff(req, res)) return;
+    const setNo = Math.max(1, toNumber(req.params.setNo, 1));
+
+    const { error } = await supabaseAdmin
+      .from('tfng_mastery_evolution_passages')
+      .delete()
+      .eq('evolution_id', req.params.evolutionId)
+      .eq('set_no', setNo);
+
+    if (error && isMissingSetNoColumn(error)) {
+      if (setNo !== 1) {
+        return res.status(409).json({
+          error: 'MigrationRequired',
+          message: 'Practice sets need the latest TFNG Mastery migration before deleting Set 2 or above.'
+        });
+      }
+
+      const { error: fallbackError } = await supabaseAdmin
+        .from('tfng_mastery_evolution_passages')
+        .delete()
+        .eq('evolution_id', req.params.evolutionId);
+      if (fallbackError) throw fallbackError;
+      return res.status(200).json({ success: true });
+    }
+
+    if (error) throw error;
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('deleteTfngEvolutionSet Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to delete TFNG evolution set.' });
+  }
+};
+
+export const removeTfngEvolutionSetPassage = async (req, res) => {
+  try {
+    if (!requireStaff(req, res)) return;
+    const setNo = Math.max(1, toNumber(req.params.setNo, 1));
+
+    const { error } = await supabaseAdmin
+      .from('tfng_mastery_evolution_passages')
+      .delete()
+      .eq('evolution_id', req.params.evolutionId)
+      .eq('set_no', setNo)
+      .eq('passage_id', req.params.passageId);
+
+    if (error && isMissingSetNoColumn(error)) {
+      if (setNo !== 1) {
+        return res.status(409).json({
+          error: 'MigrationRequired',
+          message: 'Practice sets need the latest TFNG Mastery migration before removing passages from Set 2 or above.'
+        });
+      }
+
+      const { error: fallbackError } = await supabaseAdmin
+        .from('tfng_mastery_evolution_passages')
+        .delete()
+        .eq('evolution_id', req.params.evolutionId)
+        .eq('passage_id', req.params.passageId);
+      if (fallbackError) throw fallbackError;
+      return res.status(200).json({ success: true });
+    }
+
+    if (error) throw error;
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('removeTfngEvolutionSetPassage Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to remove TFNG passage from set.' });
   }
 };
 
@@ -1111,5 +1217,22 @@ export const updateTfngQuestion = async (req, res) => {
   } catch (err) {
     console.error('updateTfngQuestion Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to update TFNG question.' });
+  }
+};
+
+export const deleteTfngQuestion = async (req, res) => {
+  try {
+    if (!requireStaff(req, res)) return;
+
+    const { error } = await supabaseAdmin
+      .from('tfng_mastery_questions')
+      .delete()
+      .eq('id', req.params.questionId);
+    if (error) throw error;
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('deleteTfngQuestion Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: err.message || 'Failed to delete TFNG question.' });
   }
 };
