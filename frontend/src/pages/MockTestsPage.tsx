@@ -1357,9 +1357,13 @@ export default function MockTestsPage() {
                               </p>
                               <button
                                 type="button"
-                                disabled={!masteryCard || startingTestId === masteryCard.test.id}
+                                disabled={card.typeKey !== 'true_false_not_given' && (!masteryCard || startingTestId === masteryCard.test.id)}
                                 onClick={() => {
                                   setReadingQuestionType(card.typeKey);
+                                  if (card.typeKey === 'true_false_not_given') {
+                                    navigate('/mastery/tfng');
+                                    return;
+                                  }
                                   if (masteryCard) handleStartTest(masteryCard.test.id);
                                 }}
                                 className={`mt-2 inline-flex h-[30px] min-h-[30px] w-full items-center justify-center gap-3 rounded-[8px] px-3 text-[12px] font-black shadow-md transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[135px] ${card.buttonClass}`}

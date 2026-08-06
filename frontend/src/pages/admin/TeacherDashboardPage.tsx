@@ -2,17 +2,26 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  Bell,
   BookOpen,
+  ChevronDown,
   CheckCircle2,
   CheckSquare,
   Clock,
+  ClipboardCheck,
   FileText,
+  Home,
+  LibraryBig,
+  ListChecks,
   LogOut,
   Mail,
   MessageCircle,
+  MoreVertical,
   PenLine,
   Save,
+  Search,
   Send,
+  Settings,
   Star,
   Target,
   TrendingUp,
@@ -20,8 +29,9 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import JawaafLogo from '../../components/JawaafLogo';
 
-type TeacherView = 'dashboard' | 'reviews' | 'students' | 'qa';
+type TeacherView = 'dashboard' | 'reviews' | 'students' | 'qa' | 'analytics' | 'resources' | 'settings';
 
 type LessonQuestion = {
   id: string;
@@ -43,6 +53,7 @@ type Submission = {
   answered_writing_tasks: number;
   mock_tests?: { title: string; description?: string };
   profiles?: { full_name: string; email: string };
+  feedback?: Feedback | null;
 };
 
 type ReviewAnswer = {
@@ -71,6 +82,7 @@ type TaskFeedback = {
 };
 
 type Feedback = {
+  updated_at?: string;
   band_score?: string | number;
   task_feedback?: Record<string, TaskFeedback>;
   task_achievement_score?: string | number;
@@ -123,6 +135,59 @@ const fmtScore = (score: any) => {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : 'N/A';
 };
 
+const firstName = (name?: string | null) => {
+  const value = String(name || '').trim();
+  return value ? value.split(/\s+/)[0] : 'Teacher';
+};
+
+const initials = (name?: string | null) => {
+  const parts = String(name || 'Teacher').trim().split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] || 'T') + (parts[1]?.[0] || '');
+};
+
+const relativeTime = (date?: string | null) => {
+  if (!date) return 'Recently';
+  const parsed = new Date(date).getTime();
+  if (Number.isNaN(parsed)) return 'Recently';
+  const diffMinutes = Math.max(1, Math.round((Date.now() - parsed) / 60000));
+  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+};
+
+const greetingForNow = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+};
+
+const writingBandValue = (submission: Submission) => {
+  const raw = submission.feedback?.band_score ?? submission.score;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+};
+
+const taskLabel = (submission: Submission) => {
+  const count = submission.answered_writing_tasks || submission.writing_task_count || 1;
+  return count > 1 ? `Task ${count}` : 'Task 1';
+};
+
+const submissionMatches = (submission: Submission, query: string) => {
+  const value = query.trim().toLowerCase();
+  if (!value) return true;
+  return [
+    submission.profiles?.full_name,
+    submission.profiles?.email,
+    submission.mock_tests?.title,
+    submission.mock_tests?.description,
+    submission.review_status,
+    taskLabel(submission)
+  ].some(item => String(item || '').toLowerCase().includes(value));
+};
+
 const TeacherNav = ({ active, onSelect }: { active: TeacherView; onSelect: (view: TeacherView) => void }) => {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
@@ -137,15 +202,20 @@ const TeacherNav = ({ active, onSelect }: { active: TeacherView; onSelect: (view
   };
 
   const items = [
-    { key: 'dashboard' as const, label: 'Dashboard', icon: BarChart3 },
+    { key: 'dashboard' as const, label: 'Dashboard', icon: Home },
     { key: 'reviews' as const, label: 'Writing Reviews', icon: PenLine },
     { key: 'students' as const, label: 'Students', icon: Users },
-    { key: 'qa' as const, label: 'Video Q&A', icon: MessageCircle }
+    { key: 'qa' as const, label: 'Video Q&A', icon: MessageCircle },
+    { key: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+    { key: 'resources' as const, label: 'Resources', icon: BookOpen },
+    { key: 'settings' as const, label: 'Settings', icon: Settings }
   ];
 
   return (
-    <aside className="hidden w-[300px] shrink-0 flex-col bg-[#294b77] text-white lg:flex">
-      <div className="h-10" />
+    <aside className="hidden w-[300px] shrink-0 flex-col text-white lg:flex" style={{ background: '#172338' }}>
+      <div className="px-7 pb-8 pt-8">
+        <JawaafLogo className="h-auto w-[170px]" isWhite />
+      </div>
 
       <nav className="grid flex-1 content-start gap-2 px-5">
         {items.map(item => {
@@ -156,7 +226,7 @@ const TeacherNav = ({ active, onSelect }: { active: TeacherView; onSelect: (view
               type="button"
               onClick={() => handleSelect(item.key)}
               className={`flex items-center gap-4 rounded-xl px-5 py-3.5 text-left text-[15px] font-bold transition-colors ${
-                active === item.key ? 'bg-white/15 text-white shadow-lg shadow-black/10' : 'text-white/75 hover:bg-[#EE6055] hover:text-white'
+                active === item.key ? 'bg-[#294b77] text-white shadow-lg shadow-[#294b77]/20' : 'text-white/60 hover:bg-[#ef5f55] hover:text-white'
               }`}
             >
               <Icon className="h-5 w-5" /> {item.label}
@@ -166,7 +236,7 @@ const TeacherNav = ({ active, onSelect }: { active: TeacherView; onSelect: (view
       </nav>
 
       <div className="p-5">
-        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-5 py-3.5 text-left text-[15px] font-bold text-white/75 hover:bg-[#EE6055] hover:text-white">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-5 py-3.5 text-left text-[15px] font-bold text-white/60 hover:bg-[#ef5f55] hover:text-white">
           <LogOut className="h-5 w-5" /> Logout
         </button>
       </div>
@@ -194,6 +264,7 @@ export default function TeacherDashboardPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [activeSubmissionTab, setActiveSubmissionTab] = useState<'practice' | 'mock'>('practice');
+  const [dashboardSearch, setDashboardSearch] = useState('');
 
   const setTeacherView = (view: TeacherView) => {
     setActiveView(view);
@@ -201,6 +272,7 @@ export default function TeacherDashboardPage() {
     if (view === 'reviews') navigate('/teacher/reviews', { replace: true });
     if (view === 'students') navigate('/teacher/students', { replace: true });
     if (view === 'qa') navigate('/teacher/qa', { replace: true });
+    if (['analytics', 'resources', 'settings'].includes(view)) navigate('/teacher', { replace: true });
   };
 
   const loadDashboard = async () => {
@@ -354,6 +426,15 @@ export default function TeacherDashboardPage() {
     }
   };
 
+  const openSubmissionReview = (submissionId: string) => {
+    const target = submissions.find(item => item.id === submissionId);
+    if (target?.attempt_mode) {
+      setActiveSubmissionTab(target.attempt_mode);
+    }
+    setSelectedSubmissionId(submissionId);
+    setTeacherView('reviews');
+  };
+
   const renderTaskFeedbackForm = (answer: ReviewAnswer, index: number) => {
     const taskKey = answer.question_id || answer.id;
     const taskFeedback = feedbackForm.task_feedback?.[taskKey] || {};
@@ -401,60 +482,139 @@ export default function TeacherDashboardPage() {
   };
 
   const renderHero = () => (
-    <section className="mb-7 overflow-hidden rounded-3xl bg-[#294b77] text-white shadow-xl shadow-[#294b77]/10">
-      <div className="grid gap-6 p-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-        <div>
-          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/70">Teacher Dashboard</p>
-          <h1 className="mt-3 text-[32px] font-black tracking-tight">Welcome back, {profile?.full_name || 'Teacher'}</h1>
-          <p className="mt-2 max-w-2xl text-[15px] font-semibold leading-7 text-white/75">
-            Review writing, monitor students, and answer video lesson questions from one clean workspace.
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white/10 p-5 ring-1 ring-white/15">
-          <p className="text-[13px] font-black uppercase tracking-wider text-white/60">Today Focus</p>
-          <div className="mt-4 grid gap-3">
-            <button onClick={() => setTeacherView('reviews')} className="flex items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-left transition-colors hover:bg-[#EE6055]">
-              <span className="font-bold">Writing pending</span>
-              <span className="font-black">{pendingReviews}</span>
-            </button>
-            <button onClick={() => setTeacherView('qa')} className="flex items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-left transition-colors hover:bg-[#EE6055]">
-              <span className="font-bold">Video Q&amp;A pending</span>
-              <span className="font-black">{unansweredQuestions}</span>
-            </button>
-          </div>
-        </div>
+    <header className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div>
+        <h1 className="text-[28px] font-black leading-tight tracking-normal text-[#07183D] sm:text-[32px]">
+          {greetingForNow()}, {firstName(profile?.full_name)}! <span aria-hidden="true">👋</span>
+        </h1>
+        <p className="mt-1.5 text-[15px] font-semibold text-[#314264]">Here's your overview for today.</p>
       </div>
-    </section>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="flex h-12 w-full items-center gap-3 rounded-2xl border border-[#E4EAF3] bg-white px-5 shadow-[0_12px_35px_rgba(15,35,70,0.06)] sm:w-[350px]">
+          <span className="sr-only">Search student or writing</span>
+          <input
+            type="search"
+            placeholder="Search student or writing..."
+            value={dashboardSearch}
+            onChange={event => setDashboardSearch(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-[#07183D] outline-none placeholder:text-[#95A0B8]"
+          />
+          <Search className="h-5 w-5 text-[#294b77]" />
+        </label>
+        <button type="button" className="relative grid h-11 w-11 place-items-center rounded-full text-[#294b77] hover:bg-[#EFF4FB]" aria-label="Notifications">
+          <Bell className="h-5 w-5" />
+          <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#ef5f55] px-1 text-[10px] font-black text-white">
+            {pendingReviews + unansweredQuestions}
+          </span>
+        </button>
+        <button type="button" className="flex min-w-[235px] items-center gap-3 rounded-2xl px-2 py-1 text-left hover:bg-white">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#0D2D67] text-[15px] font-black text-white">
+            {initials(profile?.full_name)}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-black text-[#07183D]">{profile?.full_name || 'Teacher'}</span>
+            <span className="block text-[12px] font-semibold text-[#6E7B95]">Teacher</span>
+          </span>
+          <ChevronDown className="h-5 w-5 text-[#6E7B95]" />
+        </button>
+      </div>
+    </header>
   );
 
   const renderOverview = () => {
-    const workCards = [
-      { title: 'Writing Reviews', value: pendingReviews, subtitle: 'pending submissions', view: 'reviews' as const, icon: PenLine, tone: 'bg-[#EFF4FB] text-[#294b77]' },
-      { title: 'Students', value: students.length, subtitle: 'approved learners', view: 'students' as const, icon: Users, tone: 'bg-emerald-50 text-emerald-700' },
-      { title: 'Video Q&A', value: unansweredQuestions, subtitle: 'questions need reply', view: 'qa' as const, icon: MessageCircle, tone: 'bg-amber-50 text-amber-700' }
+    const searchableSubmissions = submissions.filter(item => submissionMatches(item, dashboardSearch));
+    const reviewedSubmissions = searchableSubmissions.filter(item => item.review_status === 'reviewed');
+    const scoredReviewedSubmissions = reviewedSubmissions.filter(item => writingBandValue(item) !== null);
+    const reviewedToday = reviewedSubmissions.filter(item => {
+      const reviewedAt = item.feedback?.updated_at || item.submitted_at;
+      if (!reviewedAt) return false;
+      return new Date(reviewedAt).toDateString() === new Date().toDateString();
+    }).length;
+    const latestReviewedRows = reviewedSubmissions.slice(0, 5);
+    const pendingSubmissionsForView = searchableSubmissions.filter(item => item.review_status === 'teacher_review_pending');
+    const pendingRows = pendingSubmissionsForView.slice(0, 5);
+    const activityRows = [
+      ...reviewedSubmissions.slice(0, 2).map(item => ({
+        icon: ClipboardCheck,
+        tone: 'bg-emerald-50 text-emerald-600',
+        title: `You reviewed a writing by ${item.profiles?.full_name || 'Student'}.`,
+        detail: `Band ${writingBandValue(item)?.toFixed(1) || 'N/A'}`,
+        time: relativeTime(item.feedback?.updated_at || item.submitted_at)
+      })),
+      ...students.slice(0, 1).map(student => ({
+        icon: Users,
+        tone: 'bg-indigo-50 text-indigo-600',
+        title: `You approved new student ${student.full_name || 'Student'}`,
+        detail: '',
+        time: relativeTime(student.created_at)
+      })),
+      ...questions.slice(0, 1).map(question => ({
+        icon: MessageCircle,
+        tone: 'bg-blue-50 text-blue-600',
+        title: question.answer_text
+          ? `Answered a video question (${question.lesson?.title || 'Lesson'})`
+          : `New video question (${question.lesson?.title || 'Lesson'})`,
+        detail: '',
+        time: relativeTime(question.created_at)
+      }))
+    ].slice(0, 4);
+    const totalReviewed = reviewedSubmissions.length;
+    const bandBuckets = [
+      { label: 'Band 9', value: scoredReviewedSubmissions.filter(item => Number(writingBandValue(item)) >= 9).length, color: 'bg-violet-500', hex: '#8B5CF6' },
+      { label: 'Band 8', value: scoredReviewedSubmissions.filter(item => Number(writingBandValue(item)) >= 8 && Number(writingBandValue(item)) < 9).length, color: 'bg-blue-400', hex: '#60A5FA' },
+      { label: 'Band 7', value: scoredReviewedSubmissions.filter(item => Number(writingBandValue(item)) >= 7 && Number(writingBandValue(item)) < 8).length, color: 'bg-emerald-400', hex: '#6ED0B2' },
+      { label: 'Band 6', value: scoredReviewedSubmissions.filter(item => Number(writingBandValue(item)) >= 6 && Number(writingBandValue(item)) < 7).length, color: 'bg-amber-300', hex: '#FFD166' },
+      { label: 'Band 5 and below', value: scoredReviewedSubmissions.filter(item => Number(writingBandValue(item)) > 0 && Number(writingBandValue(item)) < 6).length, color: 'bg-orange-400', hex: '#FF7A4F' },
+      { label: 'Unscored', value: reviewedSubmissions.length - scoredReviewedSubmissions.length, color: 'bg-slate-300', hex: '#CBD5E1' }
     ];
 
     return (
       <>
         {renderHero()}
-        <section className="mb-7 grid gap-5 md:grid-cols-3">
-          {workCards.map(card => {
-            const Icon = card.icon;
-            return (
-              <button key={card.title} onClick={() => setTeacherView(card.view)} className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#EE6055] hover:shadow-lg">
-                <div className={`mb-5 grid h-12 w-12 place-items-center rounded-2xl ${card.tone}`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <p className="text-[12px] font-black uppercase tracking-wider text-slate-400">{card.title}</p>
-                <div className="mt-2 flex items-end gap-2">
-                  <span className="text-[34px] font-black">{card.value}</span>
-                  <span className="pb-2 text-[13px] font-bold text-slate-500">{card.subtitle}</span>
-                </div>
-              </button>
-            );
-          })}
+        <section className="mb-4 grid gap-4 xl:grid-cols-3">
+          <OverviewMetric icon={ClipboardCheck} label="Reviewed Today" value={reviewedToday} caption="Keep going! You're doing great." tone="green" />
+          <OverviewMetric icon={ListChecks} label="Total Reviewed" value={totalReviewed} caption="All time" tone="blue" />
+          <OverviewMetric icon={Clock} label="Pending Review" value={pendingSubmissionsForView.length} caption="Waiting for your feedback" tone="coral" />
         </section>
-        {renderQaSection(true)}
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <DashboardTable
+            title="Latest Reviewed"
+            subtitle="Your most recent reviewed scripts"
+            icon={CheckCircle2}
+            tone="bg-emerald-50 text-emerald-600"
+            columns={['Student Name', 'Task Type', 'Band Score', 'Reviewed']}
+            rows={latestReviewedRows.map(item => ({
+              name: item.profiles?.full_name || 'Student',
+              task: taskLabel(item),
+              score: writingBandValue(item)?.toFixed(1) || 'N/A',
+              time: relativeTime(item.feedback?.updated_at || item.submitted_at),
+              attemptId: item.id
+            }))}
+            actionLabel="View all reviewed"
+            onAction={() => setTeacherView('reviews')}
+            variant="reviewed"
+          />
+          <DashboardTable
+            title="Pending Reviews"
+            subtitle="Scripts waiting for your feedback"
+            icon={Clock}
+            tone="bg-[#FFF3F2] text-[#ef5f55]"
+            columns={['Student Name', 'Task Type', 'Submitted', 'Action']}
+            rows={pendingRows.map(item => ({
+              name: item.profiles?.full_name || 'Student',
+              task: taskLabel(item),
+              time: relativeTime(item.submitted_at),
+              attemptId: item.id
+            }))}
+            actionLabel="View all pending"
+            onAction={() => setTeacherView('reviews')}
+            onReview={openSubmissionReview}
+            variant="pending"
+          />
+          <BandDistribution total={totalReviewed} bands={bandBuckets} />
+          <RecentActivity rows={activityRows} onAction={() => setTeacherView('analytics')} />
+        </section>
       </>
     );
   };
@@ -780,14 +940,31 @@ export default function TeacherDashboardPage() {
     </section>
   );
 
+  const renderUtilitySection = (title: string, description: string, Icon: any) => (
+    <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="flex items-start gap-4">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#EFF4FB] text-[#294b77]">
+          <Icon className="h-7 w-7" />
+        </div>
+        <div>
+          <h1 className="text-[28px] font-black text-[#07183D]">{title}</h1>
+          <p className="mt-2 max-w-2xl text-[14px] font-semibold leading-6 text-slate-500">{description}</p>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <TeacherNav active={activeView} onSelect={setTeacherView} />
-      <main className="min-w-0 flex-1 p-5 lg:p-8">
+      <main className="min-w-0 flex-1 p-5 lg:p-7 xl:p-8">
         {activeView === 'dashboard' && renderOverview()}
         {activeView === 'reviews' && renderReviewsSection()}
         {activeView === 'students' && renderStudentsSection()}
         {activeView === 'qa' && renderQaSection()}
+        {activeView === 'analytics' && renderUtilitySection('Analytics', 'Teacher analytics will show review speed, writing bands, activity history, and student progress trends here.', BarChart3)}
+        {activeView === 'resources' && renderUtilitySection('Resources', 'Teacher resources for writing rubrics, response templates, and lesson support material will appear here.', LibraryBig)}
+        {activeView === 'settings' && renderUtilitySection('Settings', 'Teacher profile, notification preferences, and workspace controls will appear here.', Settings)}
       </main>
     </div>
   );
@@ -799,6 +976,184 @@ const BandCard = ({ icon, label, value, tone }: any) => (
     <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</p>
     <p className="mt-1 text-3xl font-black text-[#05162E]">{fmtScore(value)}</p>
   </div>
+);
+
+const OverviewMetric = ({ icon: Icon, label, value, caption, tone }: any) => {
+  const toneMap: Record<string, { icon: string; value: string; line: string }> = {
+    green: { icon: 'bg-emerald-50 text-emerald-600', value: 'text-emerald-600', line: '#7DCDBA' },
+    blue: { icon: 'bg-blue-50 text-[#294b77]', value: 'text-[#07183D]', line: '#8EB8FF' },
+    coral: { icon: 'bg-[#FFF3F2] text-[#ef5f55]', value: 'text-[#ef5f55]', line: '#FFB49F' }
+  };
+  const selected = toneMap[tone] || toneMap.blue;
+
+  return (
+    <div className="grid min-h-[118px] grid-cols-[68px_minmax(0,1fr)_88px] items-center gap-4 rounded-2xl border border-[#E2E8F1] bg-white px-6 py-4 shadow-[0_12px_35px_rgba(15,35,70,0.06)]">
+      <div className={`grid h-14 w-14 place-items-center rounded-full ${selected.icon}`}>
+        <Icon className="h-7 w-7" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[15px] font-black text-[#07183D]">{label}</p>
+        <p className={`mt-1.5 text-[34px] font-black leading-none ${selected.value}`}>{value}</p>
+        <p className="mt-2 text-[12px] font-semibold text-[#52617F]">{caption}</p>
+      </div>
+      <svg viewBox="0 0 104 54" className="h-[44px] w-[88px] self-end" aria-hidden="true">
+        <path d="M2 45 C18 45 16 18 30 18 C42 18 42 49 55 49 C69 49 68 14 80 14 C92 14 90 4 102 4" fill="none" stroke={selected.line} strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+};
+
+const avatarTones = [
+  'bg-emerald-50 text-emerald-700',
+  'bg-violet-50 text-violet-700',
+  'bg-orange-50 text-orange-700',
+  'bg-blue-50 text-blue-700',
+  'bg-amber-50 text-amber-700'
+];
+
+const DashboardTable = ({ title, subtitle, icon: Icon, tone, columns, rows, actionLabel, onAction, onReview, variant }: any) => (
+  <section className="overflow-hidden rounded-2xl border border-[#E2E8F1] bg-white shadow-[0_12px_35px_rgba(15,35,70,0.06)]">
+    <div className="flex items-start gap-3 px-6 pb-3.5 pt-5">
+      <div className={`grid h-8 w-8 place-items-center rounded-full ${tone}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <h2 className="text-[17px] font-black text-[#07183D]">{title}</h2>
+        <p className="mt-0.5 text-[12px] font-semibold text-[#52617F]">{subtitle}</p>
+      </div>
+    </div>
+    <div className="px-5">
+      <div className={`grid ${variant === 'pending' ? 'grid-cols-[minmax(0,1.15fr)_105px_115px_132px]' : 'grid-cols-[minmax(0,1.15fr)_105px_105px_112px]'} rounded-t-xl bg-[#F7F9FC] px-4 py-3 text-[11px] font-black text-[#8995AF]`}>
+        {columns.map((column: string) => <span key={column}>{column}</span>)}
+      </div>
+      <div className="divide-y divide-[#E8EDF5]">
+        {rows.length === 0 ? (
+          <div className="grid min-h-[210px] place-items-center px-5 py-6 text-center">
+            <div>
+              <FileText className="mx-auto h-9 w-9 text-slate-300" />
+              <p className="mt-2 text-[14px] font-black text-[#10234C]">No records yet</p>
+              <p className="mt-1 text-[12px] font-semibold text-[#7D8AA3]">New writing activity will appear here.</p>
+            </div>
+          </div>
+        ) : rows.map((row: any, index: number) => (
+          <div key={`${row.name}-${index}`} className={`grid ${variant === 'pending' ? 'grid-cols-[minmax(0,1.15fr)_105px_115px_132px]' : 'grid-cols-[minmax(0,1.15fr)_105px_105px_112px]'} items-center px-4 py-2.5 text-[13px] font-bold text-[#10234C]`}>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-black ${avatarTones[index % avatarTones.length]}`}>
+                {initials(row.name).slice(0, 1)}
+              </span>
+              <span className="truncate">{row.name}</span>
+            </div>
+            <span>{row.task}</span>
+            {variant === 'pending' ? (
+              <>
+                <span className="text-[#52617F]">{row.time}</span>
+                <span className="flex items-center justify-between gap-3">
+                  <button type="button" onClick={() => onReview?.(row.attemptId)} className="rounded-lg bg-[#294b77] px-4 py-1.5 text-[12px] font-black text-white shadow-[0_6px_14px_rgba(41,75,119,0.22)] hover:bg-[#ef5f55]">
+                    Review
+                  </button>
+                  <MoreVertical className="h-4 w-4 text-[#294b77]" />
+                </span>
+              </>
+            ) : (
+              <>
+                <span>
+                  <span className={`rounded-lg px-2.5 py-1 text-[13px] font-black ${Number(row.score) >= 7 ? 'bg-emerald-50 text-emerald-700' : Number(row.score) >= 6.5 ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {row.score}
+                  </span>
+                </span>
+                <span className="text-[#52617F]">{row.time}</span>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="px-6 py-3.5 text-center">
+      <button type="button" onClick={onAction} className="inline-flex items-center gap-2 text-[13px] font-black text-[#294b77] hover:text-[#ef5f55]">
+        {actionLabel} <span className="text-[22px] leading-none">→</span>
+      </button>
+    </div>
+  </section>
+);
+
+const BandDistribution = ({ total, bands }: { total: number; bands: Array<{ label: string; value: number; color: string; hex: string }> }) => {
+  let cursor = 0;
+  const gradientStops = total > 0
+    ? bands.map(item => {
+      const start = cursor;
+      const size = (item.value / total) * 360;
+      cursor += size;
+      return `${item.hex} ${start}deg ${cursor}deg`;
+    }).join(',')
+    : '#E8EDF5 0deg 360deg';
+
+  return (
+    <section className="rounded-2xl border border-[#E2E8F1] bg-white p-6 shadow-[0_12px_35px_rgba(15,35,70,0.06)]">
+      <h2 className="text-[17px] font-black text-[#07183D]">Band Distribution <span className="text-[12px] font-bold text-[#52617F]">(All Time)</span></h2>
+      <div className="mt-5 grid gap-5 md:grid-cols-[175px_minmax(0,1fr)] md:items-center">
+        <div className="relative mx-auto h-[160px] w-[160px] rounded-full" style={{ background: `conic-gradient(${gradientStops})` }}>
+          <div className="absolute inset-8 grid place-items-center rounded-full bg-white text-center">
+            <span className="block text-[28px] font-black text-[#07183D]">{total}</span>
+            <span className="block text-[12px] font-semibold text-[#8A96AE]">Total</span>
+          </div>
+        </div>
+        <div className="grid gap-3">
+          {bands.map(({ label, value, color }) => (
+            <div key={label} className="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-3 text-[14px] font-bold text-[#10234C]">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className={`h-3 w-3 shrink-0 rounded-full ${color}`} />
+                <span className="truncate">{label}</span>
+              </span>
+              <span className="text-right">{value} ({total > 0 ? Math.round((Number(value) / total) * 100) : 0}%)</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const RecentActivity = ({ rows, onAction }: any) => (
+  <section className="rounded-2xl border border-[#E2E8F1] bg-white p-6 shadow-[0_12px_35px_rgba(15,35,70,0.06)]">
+    <div className="flex items-center gap-3">
+      <div className="grid h-8 w-8 place-items-center rounded-full bg-violet-50 text-violet-600">
+        <ListChecks className="h-4 w-4" />
+      </div>
+      <h2 className="text-[17px] font-black text-[#07183D]">Recent Activity</h2>
+    </div>
+    <div className="mt-4 divide-y divide-[#E8EDF5]">
+      {rows.length === 0 ? (
+        <div className="grid min-h-[155px] place-items-center text-center">
+          <div>
+            <ListChecks className="mx-auto h-9 w-9 text-slate-300" />
+            <p className="mt-2 text-[14px] font-black text-[#10234C]">No recent activity yet</p>
+            <p className="mt-1 text-[12px] font-semibold text-[#7D8AA3]">Teacher actions will appear here.</p>
+          </div>
+        </div>
+      ) : rows.map((row: any, index: number) => {
+        const Icon = row.icon;
+        return (
+          <div key={`${row.title}-${index}`} className="grid grid-cols-[32px_minmax(0,1fr)_86px] items-center gap-3 py-3">
+            <span className={`grid h-8 w-8 place-items-center rounded-full ${row.tone}`}>
+              <Icon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[13px] font-semibold text-[#52617F]">
+                {row.title}
+              </span>
+              {row.detail && <span className="mt-0.5 block text-[12px] font-black text-[#10234C]">{row.detail}</span>}
+            </span>
+            <span className="text-right text-[12px] font-semibold text-[#7D8AA3]">{row.time}</span>
+          </div>
+        );
+      })}
+    </div>
+    <div className="pt-3 text-center">
+      <button type="button" onClick={onAction} className="inline-flex items-center gap-2 text-[13px] font-black text-[#294b77] hover:text-[#ef5f55]">
+        View all activity <span className="text-[22px] leading-none">→</span>
+      </button>
+    </div>
+  </section>
 );
 
 const HistoryList = ({ title, rows }: any) => (

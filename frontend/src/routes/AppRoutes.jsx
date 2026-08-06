@@ -16,12 +16,14 @@ const loadExamInterface = () => import('../pages/ExamInterface');
 const loadResultPage = () => import('../pages/ResultPage');
 const loadWritingTask1FeedbackPage = () => import('../pages/feedback/writing-task-1');
 const loadWritingTask2FeedbackPage = () => import('../pages/feedback/writing-task-2');
+const loadTFNGMasteryPage = () => import('../pages/mastery/TFNGMasteryPage');
 import RecordedCoursesTransition from '../components/RecordedCoursesTransition';
 
 const loadAdminDashboardPage = () => import('../pages/admin/AdminDashboardPage');
 const loadAdminTestsPage = () => import('../pages/admin/AdminTestsPage');
 const loadAdminCoursesPage = () => import('../pages/admin/AdminCoursesPage');
 const loadAdminTodayGoalsPage = () => import('../pages/admin/AdminTodayGoalsPage');
+const loadAdminReadingMasteryPage = () => import('../pages/admin/AdminReadingMasteryPage');
 const loadAdminTestDetailsPage = () => import('../pages/admin/AdminTestDetailsPage');
 const loadAdminAccessPage = () => import('../pages/admin/AdminAccessPage');
 const loadAdminSubmissionsPage = () => import('../pages/admin/AdminSubmissionsPage');
@@ -41,10 +43,12 @@ const ExamInterface = lazy(loadExamInterface);
 const ResultPage = lazy(loadResultPage);
 const WritingTask1FeedbackPage = lazy(loadWritingTask1FeedbackPage);
 const WritingTask2FeedbackPage = lazy(loadWritingTask2FeedbackPage);
+const TFNGMasteryPage = lazy(loadTFNGMasteryPage);
 const AdminDashboardPage = lazy(loadAdminDashboardPage);
 const AdminTestsPage = lazy(loadAdminTestsPage);
 const AdminCoursesPage = lazy(loadAdminCoursesPage);
 const AdminTodayGoalsPage = lazy(loadAdminTodayGoalsPage);
+const AdminReadingMasteryPage = lazy(loadAdminReadingMasteryPage);
 const AdminTestDetailsPage = lazy(loadAdminTestDetailsPage);
 const AdminAccessPage = lazy(loadAdminAccessPage);
 const AdminSubmissionsPage = lazy(loadAdminSubmissionsPage);
@@ -151,6 +155,46 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/mastery/tfng"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <TFNGMasteryPage mode="entry" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mastery/tfng/design/:attemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <TFNGMasteryPage mode="design" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mastery/tfng/practice/:attemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <TFNGMasteryPage mode="practice" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mastery/tfng/feedback/:passageAttemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <TFNGMasteryPage mode="feedback" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mastery/tfng/performance/:attemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <TFNGMasteryPage mode="performance" />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Admin CMS Routes */}
       <Route 
@@ -176,6 +220,14 @@ export default function AppRoutes() {
             <AdminTodayGoalsPage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/admin/reading-mastery"
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminReadingMasteryPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/admin/tests" 

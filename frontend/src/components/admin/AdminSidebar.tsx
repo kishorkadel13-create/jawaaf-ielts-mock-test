@@ -9,13 +9,14 @@ import {
   BarChart3, 
   LogOut,
   GraduationCap,
+  Zap,
   X
 } from 'lucide-react';
 import JawaafLogo from '../JawaafLogo';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 
-type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'courses' | 'goals' | 'students' | 'approvals' | 'reports';
+type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'reading-mastery' | 'courses' | 'goals' | 'students' | 'approvals' | 'reports';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -106,6 +107,9 @@ export default function AdminSidebar({ activeTab, onAddTeacherClick, isOpen = fa
         </Link>
         <Link to="/admin/tests?mode=practice" onClick={onClose} className={getLinkClass('practice-tests')}>
           <Target className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Practice Tests</span>
+        </Link>
+        <Link to="/admin/reading-mastery" onClick={onClose} className={getLinkClass('reading-mastery')}>
+          <Zap className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Reading Mastery</span>
         </Link>
         <Link to="/admin/courses" onClick={onClose} className={getLinkClass('courses')}>
           <GraduationCap className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Recorded Courses</span>

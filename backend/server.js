@@ -61,6 +61,7 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import accessRoutes from './src/routes/accessRoutes.js';
 import attemptRoutes from './src/routes/attemptRoutes.js';
 import courseRoutes from './src/routes/courseRoutes.js';
+import tfngMasteryRoutes from './src/routes/tfngMasteryRoutes.js';
 
 // Base Status Route
 app.get('/api/status', (req, res) => {
@@ -78,6 +79,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/access', accessRoutes);
 app.use('/api/attempts', attemptRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/mastery/tfng', tfngMasteryRoutes);
 
 // Centralized Error Handling Middleware
 app.use((err, req, res, next) => {
