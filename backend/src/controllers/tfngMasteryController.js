@@ -924,6 +924,7 @@ export const deleteTfngEvolution = async (req, res) => {
 const pickPassagePayload = (body, userId) => ({
   title: body.title,
   passage_html: body.passage_html,
+  quick_strategy_check: body.quick_strategy_check || null,
   source_label: body.source_label || null,
   difficulty: body.difficulty || null,
   estimated_minutes: body.estimated_minutes || null,
@@ -933,7 +934,7 @@ const pickPassagePayload = (body, userId) => ({
 });
 
 const pickPartialPassagePayload = (body) => {
-  const fields = ['title', 'passage_html', 'source_label', 'difficulty', 'estimated_minutes', 'is_published'];
+  const fields = ['title', 'passage_html', 'quick_strategy_check', 'source_label', 'difficulty', 'estimated_minutes', 'is_published'];
   const payload = { updated_at: new Date().toISOString() };
   for (const field of fields) {
     if (Object.prototype.hasOwnProperty.call(body, field)) {

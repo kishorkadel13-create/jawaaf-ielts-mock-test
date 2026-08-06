@@ -34,6 +34,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [feedbackIndex, setFeedbackIndex] = useState(0);
+  const [showStrategyCheck, setShowStrategyCheck] = useState(false);
   const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
           const { data: feedbackData } = await api.get(`/mastery/tfng/passage-attempts/${passageAttemptId}/feedback`);
           setData(feedbackData);
           setFeedbackIndex(0);
+          setShowStrategyCheck(false);
           return;
         }
 
@@ -124,6 +126,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   const feedbackQuestions = Array.isArray(data?.questions) ? data.questions : [];
   const currentFeedbackQuestion = feedbackQuestions[feedbackIndex] || null;
   const isLastFeedbackQuestion = feedbackIndex >= feedbackQuestions.length - 1;
+  const quickStrategyCheck = String(data?.passage?.quick_strategy_check || '').trim();
   const hasPassedLevel = (data?.summary?.accuracy || 0) >= 60 || data?.summary?.decision === 'unlock_next';
 
   const formatTime = (seconds: number | null | undefined) => {
@@ -281,7 +284,22 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
             <div className="prose prose-slate mt-5 max-w-none" dangerouslySetInnerHTML={{ __html: data?.passage?.passage_html || '' }} />
           </article>
           <aside className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            {currentFeedbackQuestion ? (
+            {showStrategyCheck && quickStrategyCheck ? (
+              <>
+                <div className="mb-4 rounded-2xl bg-yellow-50 p-4">
+                  <span className="text-[13px] font-black text-yellow-700">💡 Quick Strategy Check</span>
+                </div>
+                <div className="rounded-2xl border border-yellow-200 bg-yellow-50/60 p-5">
+                  <div
+                    className="text-[14px] font-bold leading-7 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                    dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(quickStrategyCheck) }}
+                  />
+                </div>
+                <button onClick={continueFromFeedback} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#294b77] text-[14px] font-black text-white">
+                  Continue <ArrowRight className="h-4 w-4" />
+                </button>
+              </>
+            ) : currentFeedbackQuestion ? (
               <>
                 <div className="mb-4 flex items-center justify-between rounded-2xl bg-[#EFF4FB] p-4">
                   <span className="text-[13px] font-black text-[#294b77]">Question {feedbackIndex + 1}/{feedbackQuestions.length}</span>
@@ -305,8 +323,8 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
                   </div>
                 </div>
                 {isLastFeedbackQuestion ? (
-                  <button onClick={continueFromFeedback} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#294b77] text-[14px] font-black text-white">
-                    Continue <ArrowRight className="h-4 w-4" />
+                  <button onClick={quickStrategyCheck ? () => setShowStrategyCheck(true) : continueFromFeedback} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#294b77] text-[14px] font-black text-white">
+                    {quickStrategyCheck ? 'Quick Strategy Check' : 'Continue'} <ArrowRight className="h-4 w-4" />
                   </button>
                 ) : (
                   <button onClick={() => setFeedbackIndex(current => current + 1)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#ef5f55] text-[14px] font-black text-white">

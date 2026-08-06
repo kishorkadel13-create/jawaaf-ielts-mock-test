@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS tfng_mastery_passages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
     passage_html TEXT NOT NULL,
+    quick_strategy_check TEXT,
     source_label TEXT,
     difficulty TEXT,
     estimated_minutes INTEGER,
@@ -45,6 +46,9 @@ CREATE TABLE IF NOT EXISTS tfng_mastery_passages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE tfng_mastery_passages
+ADD COLUMN IF NOT EXISTS quick_strategy_check TEXT;
 
 ALTER TABLE tfng_mastery_passages ENABLE ROW LEVEL SECURITY;
 

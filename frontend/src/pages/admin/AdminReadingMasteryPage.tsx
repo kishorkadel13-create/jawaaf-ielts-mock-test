@@ -32,6 +32,7 @@ interface TfngPassage {
   id: string;
   title: string;
   passage_html: string;
+  quick_strategy_check?: string | null;
   is_published: boolean;
   questions?: TfngQuestion[];
 }
@@ -77,7 +78,8 @@ const initialLevelForm = {
 
 const initialPassageForm = {
   title: '',
-  passage_html: ''
+  passage_html: '',
+  quick_strategy_check: ''
 };
 
 const initialQuestionForm = {
@@ -105,6 +107,7 @@ export default function AdminReadingMasteryPage() {
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
   const feedbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const strategyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const selectedLevel = useMemo(
     () => levels.find(level => level.id === selectedLevelId) || null,
@@ -276,6 +279,7 @@ export default function AdminReadingMasteryPage() {
       const payload = {
         title: passageForm.title,
         passage_html: passageForm.passage_html,
+        quick_strategy_check: passageForm.quick_strategy_check,
         source_label: null,
         difficulty: null,
         estimated_minutes: null,
@@ -412,7 +416,8 @@ export default function AdminReadingMasteryPage() {
     setEditingPassageId(passage.id);
     setPassageForm({
       title: passage.title,
-      passage_html: passage.passage_html
+      passage_html: passage.passage_html,
+      quick_strategy_check: passage.quick_strategy_check || ''
     });
     setQuestionForm(prev => ({ ...prev, passage_id: passage.id }));
     setNotice('Passage edit mode खुल्यो. Update Passage थिचेपछि content save हुन्छ.');
@@ -487,6 +492,25 @@ export default function AdminReadingMasteryPage() {
     const nextFeedback = `${currentFeedback.slice(0, start)}${wrapped}${currentFeedback.slice(end)}`;
 
     setQuestionForm(prev => ({ ...prev, feedback: nextFeedback }));
+    window.requestAnimationFrame(() => {
+      textarea?.focus();
+      const cursorStart = start + tag.length + 2;
+      const cursorEnd = cursorStart + (selected || fallbackText).length;
+      textarea?.setSelectionRange(cursorStart, cursorEnd);
+    });
+  };
+
+  const applyStrategyMarkup = (tag: 'strong' | 'mark') => {
+    const textarea = strategyTextareaRef.current;
+    const currentStrategy = passageForm.quick_strategy_check;
+    const start = textarea?.selectionStart ?? currentStrategy.length;
+    const end = textarea?.selectionEnd ?? currentStrategy.length;
+    const selected = currentStrategy.slice(start, end);
+    const fallbackText = tag === 'strong' ? 'bold text' : 'highlighted text';
+    const wrapped = `<${tag}>${selected || fallbackText}</${tag}>`;
+    const nextStrategy = `${currentStrategy.slice(0, start)}${wrapped}${currentStrategy.slice(end)}`;
+
+    setPassageForm(prev => ({ ...prev, quick_strategy_check: nextStrategy }));
     window.requestAnimationFrame(() => {
       textarea?.focus();
       const cursorStart = start + tag.length + 2;
@@ -610,6 +634,29 @@ export default function AdminReadingMasteryPage() {
                     <label className="grid gap-2">
                       <span className={labelClass}>Passage Content</span>
                       <textarea required value={passageForm.passage_html} onChange={event => setPassageForm({ ...passageForm, passage_html: event.target.value })} className={`${inputClass} min-h-[240px] font-medium leading-7`} />
+                    </label>
+                    <label className="grid gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className={labelClass}>💡 Quick Strategy Check</span>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => applyStrategyMarkup('strong')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black text-[#294b77] hover:bg-[#294b77]/10">
+                            <Bold className="h-4 w-4" /> Bold
+                          </button>
+                          <button type="button" onClick={() => applyStrategyMarkup('mark')} className="inline-flex items-center gap-1 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] font-black text-yellow-700 hover:bg-yellow-100">
+                            <Highlighter className="h-4 w-4" /> Highlight
+                          </button>
+                        </div>
+                      </div>
+                      <textarea ref={strategyTextareaRef} value={passageForm.quick_strategy_check} onChange={event => setPassageForm({ ...passageForm, quick_strategy_check: event.target.value })} placeholder="One quick strategy check shown after all question feedback for this passage..." className={`${inputClass} min-h-[120px]`} />
+                      {passageForm.quick_strategy_check.trim() && (
+                        <div className="rounded-xl border border-yellow-200 bg-yellow-50/60 p-4">
+                          <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-yellow-700">Student Preview</p>
+                          <div
+                            className="text-[13px] font-bold leading-6 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                            dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(passageForm.quick_strategy_check) }}
+                          />
+                        </div>
+                      )}
                     </label>
                     <div className="flex flex-wrap justify-end gap-3">
                       {editingPassageId && (
