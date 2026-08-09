@@ -27,6 +27,110 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toDateKey = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+};
+
+const getCurrentDayStreak = (dates) => {
+  const activeDates = new Set(dates.map(toDateKey).filter(Boolean));
+  let checkDate = new Date();
+  const todayKey = toDateKey(checkDate);
+  if (!activeDates.has(todayKey)) {
+    checkDate.setUTCDate(checkDate.getUTCDate() - 1);
+  }
+
+  let streak = 0;
+  while (true) {
+    const key = toDateKey(checkDate);
+    if (!activeDates.has(key)) break;
+    streak += 1;
+    checkDate.setUTCDate(checkDate.getUTCDate() - 1);
+  }
+  return streak;
+};
+
+const getStudentTfngAttempts = async (userId) => {
+  const { data, error } = await supabaseAdmin
+    .from('tfng_mastery_evolution_attempts')
+    .select('*, evolution:tfng_mastery_evolutions(id, evolution_number, name)')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+const buildStudentDesignStats = async ({ userId, evolutions, attempts = [] }) => {
+  const attemptIds = attempts.map(item => item.id).filter(Boolean);
+  let passageAttempts = [];
+
+  if (attemptIds.length > 0) {
+    const { data, error } = await supabaseAdmin
+      .from('tfng_mastery_passage_attempts')
+      .select('*, passage:tfng_mastery_passages(id, title)')
+      .in('evolution_attempt_id', attemptIds)
+      .in('status', ['submitted', 'expired'])
+      .order('submitted_at', { ascending: false, nullsFirst: false })
+      .limit(20);
+    if (error) throw error;
+    passageAttempts = data || [];
+  }
+
+  const attemptsByEvolution = attempts.reduce((acc, attempt) => {
+    acc[attempt.evolution_id] = acc[attempt.evolution_id] || [];
+    acc[attempt.evolution_id].push(attempt);
+    return acc;
+  }, {});
+
+  let canUnlockNext = true;
+  const journey = evolutions.map(evolution => {
+    const evolutionAttempts = attemptsByEvolution[evolution.id] || [];
+    const completedAttempt = evolutionAttempts.find(item => item.status === 'completed') || null;
+    const activeAttempt = evolutionAttempts.find(item => ['design', 'in_progress', 'performance', 'failed_locked'].includes(item.status)) || null;
+    const studentStatus = completedAttempt
+      ? 'completed'
+      : activeAttempt
+      ? activeAttempt.status === 'failed_locked' ? 'contact_instructor' : 'active'
+      : canUnlockNext ? 'available' : 'locked';
+
+    if (!completedAttempt) canUnlockNext = false;
+
+    return {
+      id: evolution.id,
+      evolution_number: evolution.evolution_number,
+      name: evolution.name,
+      order_no: evolution.order_no,
+      current_hooty_artwork: evolution.current_hooty_artwork || null,
+      student_status: studentStatus,
+      accuracy: activeAttempt?.accuracy ?? completedAttempt?.accuracy ?? 0,
+      xp_earned: activeAttempt?.xp_earned ?? completedAttempt?.xp_earned ?? 0
+    };
+  });
+
+  const recentActivity = passageAttempts.slice(0, 3).map(item => ({
+    id: item.id,
+    title: item.passage?.title || 'TFNG Practice',
+    score: `${toNumber(item.score)}/${Math.max(1, toNumber(item.total_questions, 1))}`,
+    accuracy: toNumber(item.total_questions) > 0
+      ? Math.round((toNumber(item.correct_answers) / toNumber(item.total_questions)) * 100)
+      : 0,
+    status: item.status,
+    submitted_at: item.submitted_at,
+    is_complete: item.status === 'submitted'
+  }));
+
+  const completedCount = journey.filter(item => item.student_status === 'completed').length;
+
+  return {
+    journey,
+    day_streak: getCurrentDayStreak(passageAttempts.map(item => item.submitted_at)),
+    recent_activity: recentActivity,
+    completed_evolutions: completedCount,
+    total_evolutions: evolutions.length
+  };
+};
+
 const isMissingSetNoColumn = (error) => {
   const message = String(error?.message || error?.details || '');
   return message.includes('set_no') && (
@@ -375,9 +479,19 @@ export const getTfngDesignPage = async (req, res) => {
     }
     const evolutions = await getPlayablePublishedEvolutions();
     const currentIndex = evolutions.findIndex(item => item.id === attempt.evolution_id);
+    const studentAttempts = await getStudentTfngAttempts(req.user.id);
+    const studentProgress = await buildStudentDesignStats({
+      userId: req.user.id,
+      evolutions,
+      attempts: studentAttempts
+    });
     res.status(200).json({
       ...(await buildAttemptPayload(attempt)),
-      next_evolution: currentIndex >= 0 ? evolutions[currentIndex + 1] || null : null
+      next_evolution: currentIndex >= 0 ? evolutions[currentIndex + 1] || null : null,
+      student_progress: studentProgress,
+      day_streak: studentProgress.day_streak,
+      recent_activity: studentProgress.recent_activity,
+      evolutions
     });
   } catch (err) {
     console.error('getTfngDesignPage Error:', err);
