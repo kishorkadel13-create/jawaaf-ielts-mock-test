@@ -31,6 +31,32 @@ const evolutionAssets = {
   journey: '/images/TGNG%20Evolution1/Hooty%27s%20journey.png'
 };
 
+const tfngFeedbackAssets = {
+  mascotHero: '/images/TFNG%20feedback/moscot1-clean.png',
+  mascotHelp: '/images/TFNG%20feedback/moscot2-clean.png',
+  leaf: '/images/TFNG%20feedback/leaf-clean.png',
+  light: '/images/TFNG%20feedback/light-clean.png',
+  book: '/images/TFNG%20feedback/book-clean.png',
+  completed: '/images/TFNG%20feedback/question%20completed-clean.png',
+  attempted: '/images/TFNG%20feedback/question%20attempted-clean.png',
+  tick: '/images/TFNG%20feedback/tick-clean.png',
+  wrong: '/images/TFNG%20feedback/wrong-clean.png',
+  target: '/images/TFNG%20feedback/target-clean.png'
+};
+
+const tfngPassFeedbackAssets = {
+  mascot: '/images/TFNG%20Pass%20Feedback/moscot-clean.png',
+  passed: '/images/TFNG%20Pass%20Feedback/pass-clean.png',
+  cup: '/images/TFNG%20Pass%20Feedback/cup-clean.png',
+  leaf: '/images/TFNG%20Pass%20Feedback/lead-clean.png',
+  book: '/images/TFNG%20Pass%20Feedback/book-clean.png',
+  completed: '/images/TFNG%20Pass%20Feedback/question%20completed-clean.png',
+  attempted: '/images/TFNG%20Pass%20Feedback/question%20attempted-clean.png',
+  tick: '/images/TFNG%20Pass%20Feedback/tick-clean.png',
+  wrong: '/images/TFNG%20Pass%20Feedback/wrong-clean.png',
+  target: '/images/TFNG%20Pass%20Feedback/target-clean.png'
+};
+
 const escapeHtml = (value: string) => value
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -106,6 +132,10 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
           setData(performanceData);
         }
       } catch (err: any) {
+        if (mode === 'practice' && attemptId && err.error === 'PerformanceRequired') {
+          navigate(`/mastery/tfng/performance/${attemptId}`, { replace: true });
+          return;
+        }
         if (mode !== 'entry' && err.status === 404) {
           navigate('/mastery/tfng', { replace: true });
           return;
@@ -157,6 +187,13 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
     return `${minutes}:${String(remainder).padStart(2, '0')}`;
   };
 
+  const formatLongTime = (seconds: number | null | undefined) => {
+    const safeSeconds = Math.max(0, Number(seconds || 0));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainder = safeSeconds % 60;
+    return `${minutes}m ${String(remainder).padStart(2, '0')}s`;
+  };
+
   const continueFromDesign = async () => {
     if (!attemptId) return;
     await api.post(`/mastery/tfng/attempts/${attemptId}/continue`);
@@ -198,6 +235,14 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
     if (nextData.next_page === 'design') navigate(`/mastery/tfng/design/${nextData.attempt_id}`);
     if (nextData.next_page === 'contact_instructor') window.location.href = nextData.instructor_support_url || '/teacher';
     if (nextData.next_page === 'complete_mastery') navigate('/tests?mode=practice');
+  };
+
+  const contactInstructor = async () => {
+    if (attemptId) {
+      await api.post(`/mastery/tfng/attempts/${attemptId}/continue`).catch(() => null);
+    }
+    alert('Your TFNG progress report has been sent to your instructor. They will unlock the next evolution after guiding you.');
+    navigate('/tests?mode=practice');
   };
 
   if (loading) {
@@ -349,36 +394,15 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   }
 
   return (
-    <MasteryShell title="Overall Performance">
-      <section className="w-full max-w-3xl rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-xl">
-        <GraduationCap className="mx-auto h-16 w-16 text-[#294b77]" />
-        <h1 className="mt-4 text-[34px] font-black text-[#05162E]">Evolution {data?.summary?.evolution_number} Summary</h1>
-        <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
-          {[
-            ['Passages Completed', `${data?.summary?.passages_completed}/${data?.summary?.total_passages}`],
-            ['Questions Attempted', data?.summary?.questions_attempted],
-            ['Correct', data?.summary?.correct_answers],
-            ['Wrong', data?.summary?.wrong_answers],
-            ['Unanswered', data?.summary?.unanswered_questions],
-            ['Accuracy', `${data?.summary?.accuracy}%`]
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-[#F8FAFC] p-4">
-              <p className="text-[11px] font-black uppercase text-slate-400">{label}</p>
-              <p className="mt-1 text-[24px] font-black text-[#05162E]">{value}</p>
-            </div>
-          ))}
-        </div>
-        <div className={`mt-6 rounded-2xl p-5 text-[15px] font-bold leading-6 ${hasPassedLevel ? 'bg-emerald-50 text-emerald-700' : 'bg-[#FFF3F2] text-[#B43B35]'}`}>
-          {hasPassedLevel
-            ? `Great work! Your accuracy is ${data?.summary?.accuracy}%, so the next level is unlocked.`
-            : `Your accuracy is ${data?.summary?.accuracy}%, below the required 60%. You cannot go to the next level yet, so this level will repeat.`}
-        </div>
-        <p className="mt-3 rounded-2xl bg-[#EFF4FB] p-5 text-[15px] font-bold leading-6 text-[#294b77]">{data?.summary?.hooty_comment}</p>
-        <button onClick={continueFromPerformance} className="mt-6 inline-flex min-h-12 items-center gap-3 rounded-xl bg-[#ef5f55] px-6 text-[15px] font-black text-white">
-          {hasPassedLevel ? 'Unlock Next Level' : 'Repeat This Level'} <ArrowRight className="h-5 w-5" />
-        </button>
-      </section>
-    </MasteryShell>
+    <TfngOverallPerformanceDesign
+      data={data}
+      studentName={studentName}
+      hasPassedLevel={hasPassedLevel}
+      timeSpent={formatLongTime(data?.summary?.time_used_seconds)}
+      onBack={() => navigate('/mastery/tfng')}
+      onContinue={continueFromPerformance}
+      onContactInstructor={contactInstructor}
+    />
   );
 }
 
@@ -553,6 +577,472 @@ const EvolutionAdventureDesign = ({
     </main>
   );
 };
+
+export const TfngOverallPerformanceDesign = ({
+  data,
+  studentName,
+  hasPassedLevel,
+  timeSpent,
+  onBack,
+  onContinue,
+  onContactInstructor,
+  backLabel = 'Back to Adventure',
+  instructorMode = false
+}: {
+  data: any;
+  studentName: string;
+  hasPassedLevel: boolean;
+  timeSpent: string;
+  onBack: () => void;
+  onContinue: () => void;
+  onContactInstructor: () => void;
+  backLabel?: string;
+  instructorMode?: boolean;
+}) => {
+  const summary = data?.summary || {};
+  const firstName = studentName.split(' ')[0] || 'Ram';
+  const initial = firstName.charAt(0).toUpperCase() || 'R';
+  const accuracy = Math.max(0, Math.min(100, Number(summary.accuracy || 0)));
+  const dayStreak = Math.max(0, Number(data?.day_streak || 0));
+  const attemptNo = Number(data?.attempt?.attempt_no || 1);
+  const showInstructorCta = Boolean(summary.requires_instructor) || (!hasPassedLevel && attemptNo > 1);
+  const requiredAccuracy = Number(data?.evolution?.first_attempt_required_accuracy || 60);
+  const passageBreakdown = Array.isArray(summary.passage_breakdown) && summary.passage_breakdown.length > 0
+    ? summary.passage_breakdown
+    : Array.from({ length: Math.max(1, Number(summary.total_passages || 4)) }).map((_, index) => ({
+      id: `fallback-${index}`,
+      passage_order: index + 1,
+      title: `Passage ${index + 1}`,
+      score: 0,
+      correct_answers: 0,
+      total_questions: Math.max(1, Math.round(Number(summary.total_questions || 0) / Math.max(1, Number(summary.total_passages || 1))))
+    }));
+
+  const statCards = [
+    {
+      label: 'Passages Completed',
+      value: `${summary.passages_completed || 0} / ${summary.total_passages || 0}`,
+      image: tfngFeedbackAssets.completed,
+      valueClass: 'text-[#3010A8]'
+    },
+    {
+      label: 'Questions Attempted',
+      value: `${summary.questions_attempted || 0} / ${summary.total_questions || 0}`,
+      image: tfngFeedbackAssets.attempted,
+      valueClass: 'text-[#1367FF]'
+    },
+    {
+      label: 'Correct Answers',
+      value: summary.correct_answers || 0,
+      image: tfngFeedbackAssets.tick,
+      valueClass: 'text-[#119B45]'
+    },
+    {
+      label: 'Wrong Answers',
+      value: summary.wrong_answers || 0,
+      image: tfngFeedbackAssets.wrong,
+      valueClass: 'text-[#E21D1D]'
+    },
+    {
+      label: 'Unanswered',
+      value: summary.unanswered_questions || 0,
+      image: tfngFeedbackAssets.target,
+      valueClass: 'text-[#EE7A10]'
+    }
+  ];
+
+  if (hasPassedLevel) {
+    const evolutionLabel = `Evolution ${summary.evolution_number || data?.evolution?.evolution_number || 1}`;
+    const xpEarned = Number(summary.xp_earned || data?.attempt?.xp_earned || 200);
+    const passStatCards = [
+      {
+        label: 'Passages Completed',
+        value: `${summary.passages_completed || 0} / ${summary.total_passages || 0}`,
+        image: tfngPassFeedbackAssets.completed,
+        valueClass: 'text-[#5E22D8]'
+      },
+      {
+        label: 'Questions Attempted',
+        value: `${summary.questions_attempted || 0} / ${summary.total_questions || 0}`,
+        image: tfngPassFeedbackAssets.attempted,
+        valueClass: 'text-[#0875E8]'
+      },
+      {
+        label: 'Correct Answers',
+        value: summary.correct_answers || 0,
+        image: tfngPassFeedbackAssets.tick,
+        valueClass: 'text-[#0E8E3E]'
+      },
+      {
+        label: 'Wrong Answers',
+        value: summary.wrong_answers || 0,
+        image: tfngPassFeedbackAssets.wrong,
+        valueClass: 'text-[#E21D1D]'
+      },
+      {
+        label: 'Unanswered',
+        value: summary.unanswered_questions || 0,
+        image: tfngPassFeedbackAssets.target,
+        valueClass: 'text-[#F1740B]'
+      }
+    ];
+
+    return (
+      <main
+        className="min-h-screen overflow-x-hidden bg-[#FFF9EE] bg-no-repeat text-[#071A3D]"
+        style={{
+          fontFamily: "'Inter', 'Segoe UI', sans-serif",
+          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.96), rgba(255,248,234,0.9) 42%, rgba(255,241,210,0.78) 100%)',
+          backgroundPosition: 'center',
+          backgroundSize: 'cover'
+        }}
+      >
+        <div className="relative mx-auto min-h-screen w-full max-w-[1440px] overflow-hidden px-4 pb-8 sm:px-7">
+          <img src={tfngPassFeedbackAssets.leaf} alt="" className="pointer-events-none absolute bottom-0 left-0 hidden h-[98px] opacity-35 xl:block" />
+          <img src={tfngPassFeedbackAssets.leaf} alt="" className="pointer-events-none absolute bottom-0 right-0 hidden h-[98px] scale-x-[-1] opacity-35 xl:block" />
+
+          <header className="relative z-20 mx-auto flex min-h-[78px] max-w-[1360px] items-center justify-between gap-4 py-4">
+            <button onClick={onBack} className="inline-flex h-[56px] items-center justify-center gap-3 rounded-xl border border-[#F3DDAF] bg-white/84 px-5 text-[14px] font-black text-[#4A230B] shadow-[0_10px_26px_rgba(124,68,9,0.06)] hover:bg-white sm:min-w-[205px]">
+              <ArrowLeft className="h-5 w-5" /> {backLabel}
+            </button>
+            <JawaafLogo className="hidden h-[56px] w-[188px] lg:block" />
+            <div className="hidden h-[56px] min-w-[360px] items-center justify-center rounded-xl border border-[#F3DDAF] bg-[#FFF7E7] px-8 text-[21px] font-black uppercase text-[#5C2B0B] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] md:flex">
+              Overall Performance
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden h-[54px] min-w-[122px] items-center justify-center gap-3 rounded-xl border border-[#F3DDAF] bg-white/88 px-4 shadow-[0_8px_20px_rgba(124,68,9,0.05)] sm:flex">
+                <Flame className="h-6 w-6 fill-[#FF8B1F] text-[#FF8B1F]" />
+                <div className="leading-none">
+                  <p className="text-[20px] font-black text-[#071A3D]">{dayStreak}</p>
+                  <p className="mt-1 text-[10px] font-black text-[#64748B]">Day Streak</p>
+                </div>
+              </div>
+              <div className="hidden h-[54px] min-w-[132px] items-center justify-center gap-3 rounded-xl border border-[#F3DDAF] bg-white/88 px-4 shadow-[0_8px_20px_rgba(124,68,9,0.05)] sm:flex">
+                <Clock className="h-6 w-6 text-[#071A3D]" />
+                <div className="leading-none">
+                  <p className="text-[10px] font-black text-[#071A3D]">Time Spent</p>
+                  <p className="mt-1 text-[17px] font-black text-[#071A3D]">{timeSpent}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="grid h-[46px] w-[46px] place-items-center rounded-full bg-[#071A3D] text-[18px] font-black text-white">{initial}</span>
+                <span className="hidden text-[15px] font-black text-[#071A3D] sm:inline">{firstName}</span>
+                <ChevronDown className="hidden h-4 w-4 sm:block" />
+              </div>
+            </div>
+          </header>
+
+          <section className="relative z-10 mx-auto max-w-[1328px] overflow-hidden rounded-[18px] border border-[#F4DFB6] bg-[linear-gradient(135deg,#FFF9EB_0%,#FFFFFF_43%,#FFF1C8_100%)] px-6 py-7 shadow-[0_18px_40px_rgba(147,90,15,0.08)] sm:px-10 lg:grid lg:min-h-[455px] lg:grid-cols-[410px_minmax(0,1fr)_280px] lg:items-center lg:gap-6">
+            {['left-[44px] top-[70px]', 'left-[84px] top-[162px]', 'left-[128px] top-[278px]', 'left-[260px] top-[98px]', 'left-[318px] top-[218px]', 'left-[410px] top-[320px]', 'left-[470px] top-[82px]', 'right-[84px] top-[80px]', 'right-[36px] top-[174px]'].map(position => (
+              <span key={position} className={`pointer-events-none absolute ${position} hidden text-[34px] text-[#FFB22B] opacity-75 lg:block`}>✦</span>
+            ))}
+            <div className="relative mx-auto h-[320px] max-w-[380px] lg:mx-0 lg:h-[390px]">
+              <div className="absolute bottom-0 left-10 right-10 h-10 rounded-full bg-[#C98415]/16 blur-xl" />
+              <img src={tfngPassFeedbackAssets.mascot} alt="" className="relative h-full w-full object-contain object-bottom drop-shadow-[0_18px_26px_rgba(104,58,13,0.17)]" />
+            </div>
+
+            <div className="text-center">
+              <h1 className="text-[34px] font-black uppercase leading-tight text-[#071A3D] sm:text-[44px]">
+                Well done, {firstName}! <span className="text-[34px]">🎉</span>
+              </h1>
+              <p className="mt-8 text-[20px] font-semibold text-[#071A3D]">You’ve successfully completed</p>
+              <p className="mt-4 text-[34px] font-black uppercase leading-none text-[#F28A00]">{evolutionLabel}</p>
+              <p className="mx-auto mt-6 max-w-[520px] text-[18px] font-semibold leading-[32px] text-[#071A3D]">
+                Great job! You’re one step closer to becoming the Emperor Owl. Keep it up! <span className="text-[#FF9B00]">♥</span>
+              </p>
+            </div>
+
+            <div className="mx-auto mt-8 grid place-items-center lg:mt-0">
+              <img src={tfngPassFeedbackAssets.passed} alt="" className="h-[236px] w-[250px] object-contain drop-shadow-[0_26px_22px_rgba(124,68,9,0.12)]" />
+            </div>
+          </section>
+
+          <section className="relative z-10 mx-auto mt-5 max-w-[1328px] rounded-[18px] border border-[#F4DFB6] bg-white/78 p-5 shadow-[0_16px_34px_rgba(124,68,9,0.08)] backdrop-blur sm:p-7">
+            <PassSectionTitle title="Your Performance Summary" />
+            <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+              {passStatCards.map(card => (
+                <div key={card.label} className="grid min-h-[170px] place-items-center rounded-[14px] border border-[#F2DFBA] bg-[linear-gradient(135deg,#FFFFFF_0%,#FFF9ED_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                  <img src={card.image} alt="" className="h-[58px] w-[58px] object-contain drop-shadow-[0_8px_14px_rgba(146,87,9,0.12)]" />
+                  <p className="mt-2 text-[14px] font-black text-[#071A3D]">{card.label}</p>
+                  <p className={`mt-3 text-[31px] font-black leading-none ${card.valueClass}`}>{card.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-6 rounded-[18px] border border-[#DFE9CE] bg-[linear-gradient(135deg,#F7FFF2_0%,#FFFDF6_100%)] px-7 py-5 shadow-[0_12px_28px_rgba(34,124,61,0.07)] md:grid-cols-[240px_minmax(0,1fr)_280px] md:items-center md:px-14">
+              <div className="mx-auto grid h-[178px] w-[178px] place-items-center rounded-full" style={{ background: `conic-gradient(#3CAA55 ${accuracy * 3.6}deg, #E6EAD8 0deg)` }}>
+                <div className="grid h-[138px] w-[138px] place-items-center rounded-full bg-white">
+                  <div className="text-center">
+                    <p className="text-[38px] font-black leading-none text-[#0E7B35]">{Math.round(accuracy)}%</p>
+                    <p className="mt-2 text-[12px] font-black text-[#071A3D]">Overall Accuracy</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center md:text-left">
+                <h2 className="text-[24px] font-black leading-tight text-[#087C2C]">Excellent work!</h2>
+                <p className="mt-4 max-w-[500px] text-[18px] font-semibold leading-[30px] text-[#071A3D]">
+                  You’ve achieved a great score and unlocked the next challenge. <span className="text-[#FFB11B]">★</span>
+                </p>
+              </div>
+              <div className="mx-auto flex h-[116px] w-full max-w-[250px] items-center justify-center gap-4 rounded-[18px] border border-[#E0CDFE] bg-[linear-gradient(135deg,#FBF8FF_0%,#FFF7F2_100%)] px-5 shadow-[0_12px_24px_rgba(87,39,177,0.07)]">
+                <span className="grid h-[62px] w-[62px] place-items-center rounded-full bg-[#6D35DD] text-[18px] font-black text-white shadow-[0_8px_14px_rgba(87,39,177,0.22)]">XP</span>
+                <div>
+                  <p className="text-[26px] font-black text-[#5D20CE]">+{xpEarned} XP</p>
+                  <p className="mt-1 text-[15px] font-bold text-[#071A3D]">Earned</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <PassSectionTitle title="Passage Breakdown" />
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {passageBreakdown.map((passage: any, index: number) => {
+                  const total = Math.max(1, Number(passage.total_questions || 4));
+                  const score = Math.max(0, Number(passage.score ?? passage.correct_answers ?? 0));
+                  const starCount = Math.min(4, Math.max(1, total));
+                  const filledStars = Math.min(starCount, Math.round((score / total) * starCount));
+                  return (
+                    <div key={passage.id || index} className="rounded-[12px] border border-[#F2DFBA] bg-[linear-gradient(135deg,#FFFFFF_0%,#FFF9ED_100%)] px-5 py-4 shadow-[0_8px_18px_rgba(124,68,9,0.04)]">
+                      <div className="flex items-center justify-center gap-4">
+                        <span className="grid h-[42px] w-[42px] place-items-center rounded-xl bg-[#EEE7FF]">
+                          <img src={tfngPassFeedbackAssets.completed} alt="" className="h-8 w-8 object-contain" />
+                        </span>
+                        <p className="text-[15px] font-black text-[#071A3D]">{passage.title || `Passage ${passage.passage_order || index + 1}`}</p>
+                      </div>
+                      <p className="mt-3 text-center text-[26px] font-black text-[#0E7B35]">{score} / {total}</p>
+                      <div className="mt-3 flex items-center justify-center gap-3">
+                        {Array.from({ length: starCount }).map((_, starIndex) => (
+                          <Star key={starIndex} className={`h-5 w-5 ${starIndex < filledStars ? 'fill-[#F9AD1B] text-[#F9AD1B]' : 'fill-[#D2D2D2] text-[#D2D2D2]'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="relative mt-6 overflow-hidden rounded-[18px] border border-[#F2DFBA] bg-[linear-gradient(135deg,#FFF9EE_0%,#FFFFFF_58%,#FFF0C7_100%)] px-6 py-4 md:flex md:min-h-[148px] md:items-center md:gap-7">
+              <div className="grid h-[126px] w-[160px] shrink-0 place-items-center">
+                <img src={tfngPassFeedbackAssets.cup} alt="" className="h-[112px] w-[112px] object-contain drop-shadow-[0_12px_18px_rgba(124,68,9,0.15)]" />
+              </div>
+              <div className="min-w-0 flex-1 text-center md:text-left">
+                <h2 className="text-[25px] font-black text-[#071A3D]">You’ve unlocked the next evolution!</h2>
+                <p className="mt-3 text-[16px] font-semibold leading-[26px] text-[#071A3D]">
+                  Continue your journey and face new challenges.
+                </p>
+              </div>
+              <button
+                onClick={onContinue}
+                className="mt-5 inline-flex h-[74px] w-full items-center justify-center gap-4 rounded-[18px] bg-[linear-gradient(135deg,#FFD336_0%,#FFB411_100%)] px-7 text-[18px] font-black text-[#251500] shadow-[0_14px_26px_rgba(210,137,4,0.22)] hover:brightness-105 md:mt-0 md:w-[420px]"
+              >
+                Continue to Next Evolution
+                <ArrowRight className="h-7 w-7" />
+              </button>
+            </div>
+          </section>
+
+          <footer className="relative z-10 mx-auto mt-6 flex max-w-[820px] items-center justify-center gap-5 text-center text-[16px] font-bold text-[#5C6171]">
+            <img src={tfngPassFeedbackAssets.leaf} alt="" className="h-12 w-12 rotate-[28deg] opacity-45" />
+            <span>Every challenge makes Hooty wiser. You are doing amazing! <span className="text-[#8A67FF]">♥</span></span>
+            <img src={tfngPassFeedbackAssets.leaf} alt="" className="h-12 w-12 -rotate-[148deg] opacity-45" />
+          </footer>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      className="min-h-screen overflow-x-hidden bg-[#F7FBFF] bg-no-repeat text-[#071A3D]"
+      style={{
+        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+        backgroundImage: `url('${assets.readingPractice.background}')`,
+        backgroundPosition: 'bottom center',
+        backgroundSize: '100% auto'
+      }}
+    >
+      <div className="relative mx-auto min-h-screen w-full max-w-[1440px] overflow-hidden bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.94),rgba(245,250,255,0.72)_38%,rgba(235,244,255,0.54)_100%)] px-4 pb-8 sm:px-7">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[360px] bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(210,230,255,0.78)_58%,rgba(181,214,250,0.95)_100%)] [clip-path:polygon(0_73%,7%_67%,16%_75%,26%_62%,38%_75%,51%_66%,63%_78%,75%_62%,88%_74%,100%_61%,100%_100%,0_100%)]" />
+        <img src={tfngFeedbackAssets.leaf} alt="" className="pointer-events-none absolute bottom-6 left-[27%] hidden h-[62px] rotate-[70deg] opacity-55 xl:block" />
+        <img src={tfngFeedbackAssets.leaf} alt="" className="pointer-events-none absolute bottom-5 right-[26%] hidden h-[62px] -rotate-[112deg] opacity-55 xl:block" />
+
+        <header className="relative z-20 mx-auto flex min-h-[78px] max-w-[1360px] items-center justify-between gap-4 py-4">
+          <button onClick={onBack} className="inline-flex h-[56px] items-center justify-center gap-3 rounded-xl border border-[#D7E4F8] bg-white px-5 text-[14px] font-black text-[#071A3D] shadow-[0_10px_26px_rgba(8,25,58,0.06)] hover:bg-[#F8FBFF] sm:min-w-[205px]">
+            <ArrowLeft className="h-5 w-5" /> {backLabel}
+          </button>
+          <JawaafLogo className="hidden h-[56px] w-[188px] lg:block" />
+          <div className="hidden h-[56px] min-w-[360px] items-center justify-center rounded-xl border border-[#C9DAF7] bg-[#EAF3FF] px-8 text-[21px] font-black uppercase text-[#071A3D] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] md:flex">
+            Overall Performance
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden h-[54px] min-w-[122px] items-center justify-center gap-3 rounded-xl border border-[#DFE8F7] bg-white px-4 shadow-[0_8px_20px_rgba(8,25,58,0.05)] sm:flex">
+              <Flame className="h-6 w-6 fill-[#FF8B1F] text-[#FF8B1F]" />
+              <div className="leading-none">
+                <p className="text-[20px] font-black text-[#071A3D]">{dayStreak}</p>
+                <p className="mt-1 text-[10px] font-black text-[#64748B]">Day Streak</p>
+              </div>
+            </div>
+            <div className="hidden h-[54px] min-w-[132px] items-center justify-center gap-3 rounded-xl border border-[#DFE8F7] bg-white px-4 shadow-[0_8px_20px_rgba(8,25,58,0.05)] sm:flex">
+              <Clock className="h-6 w-6 text-[#071A3D]" />
+              <div className="leading-none">
+                <p className="text-[10px] font-black text-[#071A3D]">Time Spent</p>
+                <p className="mt-1 text-[17px] font-black text-[#071A3D]">{timeSpent}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="grid h-[46px] w-[46px] place-items-center rounded-full bg-[#071A3D] text-[18px] font-black text-white">{initial}</span>
+              <span className="hidden text-[15px] font-black text-[#071A3D] sm:inline">{firstName}</span>
+              <ChevronDown className="hidden h-4 w-4 sm:block" />
+            </div>
+          </div>
+        </header>
+
+        <section className="relative z-10 mx-auto max-w-[1328px] rounded-[18px] border border-[#CFE0F7] bg-[linear-gradient(135deg,#EEF6FF_0%,#F8FBFF_48%,#E9F3FF_100%)] px-6 py-7 shadow-[0_18px_40px_rgba(31,74,132,0.08)] sm:px-10 lg:grid lg:min-h-[455px] lg:grid-cols-[360px_minmax(0,1fr)_275px] lg:items-center lg:gap-8">
+          <div className="pointer-events-none absolute left-8 top-14 text-[42px] text-[#9FB9FA]">✦</div>
+          <div className="pointer-events-none absolute left-20 top-24 text-[34px] text-[#9FB9FA]">✦</div>
+          <div className="pointer-events-none absolute right-7 top-14 text-[38px] text-[#9FB9FA]">✦</div>
+          <div className="pointer-events-none absolute right-10 top-24 text-[34px] text-[#9FB9FA]">✦</div>
+          <img src={tfngFeedbackAssets.leaf} alt="" className="pointer-events-none absolute bottom-8 right-12 hidden h-[95px] opacity-50 lg:block" />
+
+          <div className="relative mx-auto h-[320px] max-w-[350px] lg:mx-0 lg:h-[390px]">
+            <div className="absolute bottom-0 left-8 right-8 h-10 rounded-full bg-[#071A3D]/10 blur-xl" />
+            <img src={tfngFeedbackAssets.mascotHero} alt="" className="relative h-full w-full object-contain object-bottom drop-shadow-[0_18px_26px_rgba(89,55,16,0.14)]" />
+          </div>
+
+          <div className="text-center">
+            <h1 className="text-[36px] font-black leading-tight text-[#10166C] sm:text-[46px]">
+              {hasPassedLevel ? 'Great work' : 'Good effort'}, {firstName}! <span className="text-[#8A67FF]">♥</span>
+            </h1>
+            <p className="mx-auto mt-7 max-w-[620px] text-[18px] font-bold leading-[34px] text-[#071A3D]">
+              {hasPassedLevel
+                ? 'You mastered this evolution and unlocked the next step in your TFNG journey.'
+                : 'You’re on the right track, but you need a little more guidance before moving to the next evolution.'}
+            </p>
+            <div className="mx-auto mt-8 flex max-w-[500px] items-center gap-5 rounded-[26px] border border-[#B9C9FF] bg-white/55 px-6 py-5 text-left shadow-[0_16px_30px_rgba(60,91,255,0.08)] backdrop-blur">
+              <img src={tfngFeedbackAssets.light} alt="" className="h-[74px] w-[74px] shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(60,91,255,0.14)]" />
+              <p className="text-[16px] font-bold leading-[29px] text-[#071A3D]">
+                Every expert was once a beginner.<br />With the right support, you’ll get there!
+              </p>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-8 grid h-[244px] w-[244px] place-items-center rounded-full lg:mt-0" style={{ background: `conic-gradient(#3F74F6 ${accuracy * 3.6}deg, #D9E7FB 0deg)` }}>
+            <div className="grid h-[200px] w-[200px] place-items-center rounded-full bg-[#F7FBFF] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)]">
+              <div className="text-center">
+                <p className="text-[48px] font-black leading-none text-[#2D63F3]">{Math.round(accuracy)}%</p>
+                <p className="mt-3 text-[15px] font-black text-[#071A3D]">Overall Accuracy</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="relative z-10 mx-auto mt-5 max-w-[1328px] rounded-[18px] border border-[#D3E2F7] bg-white/78 p-5 shadow-[0_16px_34px_rgba(8,25,58,0.08)] backdrop-blur sm:p-7">
+          <SectionTitle title="Your Performance Summary" />
+          <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+            {statCards.map(card => (
+              <div key={card.label} className="grid min-h-[170px] place-items-center rounded-[14px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F5F9FF_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+                <img src={card.image} alt="" className="h-[58px] w-[58px] object-contain drop-shadow-[0_8px_14px_rgba(30,58,110,0.11)]" />
+                <p className="mt-2 text-[14px] font-black text-[#071A3D]">{card.label}</p>
+                <p className={`mt-3 text-[31px] font-black leading-none ${card.valueClass}`}>{card.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-col items-center gap-6 rounded-[18px] border border-[#BBD1FB] bg-[linear-gradient(135deg,#DCEBFF_0%,#F7FBFF_100%)] px-7 py-5 shadow-[0_12px_28px_rgba(45,99,243,0.08)] md:flex-row md:px-16">
+            <span className="grid h-[138px] w-[138px] shrink-0 place-items-center rounded-full bg-[#CFE0FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <img src={tfngFeedbackAssets.book} alt="" className="h-[92px] w-[92px] object-contain drop-shadow-[0_10px_14px_rgba(60,91,255,0.15)]" />
+            </span>
+            <div className="text-center md:text-left">
+              <h2 className="text-[25px] font-black leading-tight text-[#10166C]">
+                {hasPassedLevel ? 'You unlocked the next evolution!' : 'Let’s make your foundation stronger!'}
+              </h2>
+              <p className="mt-4 max-w-[800px] text-[17px] font-semibold leading-[28px] text-[#071A3D]">
+                {hasPassedLevel
+                  ? 'You’ve shown strong TFNG control and completed the challenge. Keep the momentum going into the next level.'
+                  : `You’ve shown great effort and completed the challenge. To move to the next evolution, aim for a score of ${requiredAccuracy}% or higher.`} <span className="text-[#8A67FF]">♥</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <SectionTitle title="Passage Breakdown" />
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {passageBreakdown.map((passage: any, index: number) => {
+                const total = Math.max(1, Number(passage.total_questions || 4));
+                const score = Math.max(0, Number(passage.score ?? passage.correct_answers ?? 0));
+                const starCount = Math.min(4, Math.max(1, total));
+                return (
+                  <div key={passage.id || index} className="rounded-[12px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F7FAFF_100%)] px-5 py-4 shadow-[0_8px_18px_rgba(8,25,58,0.04)]">
+                    <div className="flex items-center justify-center gap-4">
+                      <span className="grid h-[42px] w-[42px] place-items-center rounded-xl bg-[#EEE7FF]">
+                        <img src={tfngFeedbackAssets.completed} alt="" className="h-8 w-8 object-contain" />
+                      </span>
+                      <p className="text-[15px] font-black text-[#071A3D]">{passage.title || `Passage ${passage.passage_order || index + 1}`}</p>
+                    </div>
+                    <p className={`mt-3 text-center text-[26px] font-black ${score / total >= 0.6 ? 'text-[#EF8C12]' : 'text-[#E21D1D]'}`}>
+                      {score} / {total}
+                    </p>
+                    <div className="mt-3 flex items-center justify-center gap-3">
+                      {Array.from({ length: starCount }).map((_, starIndex) => (
+                        <Star key={starIndex} className={`h-5 w-5 ${starIndex < Math.round(score) ? 'fill-[#F9AD1B] text-[#F9AD1B]' : 'fill-[#D2D2D2] text-[#D2D2D2]'}`} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="relative mt-6 overflow-hidden rounded-[18px] border border-[#C7DBFB] bg-[linear-gradient(135deg,#DCEBFF_0%,#F6FAFF_100%)] px-6 py-4 md:flex md:min-h-[148px] md:items-center md:gap-7">
+            <div className="relative h-[122px] w-[196px] shrink-0 overflow-hidden">
+              <img src={tfngFeedbackAssets.mascotHelp} alt="" className="absolute bottom-[-18px] left-0 h-[158px] w-[158px] object-contain drop-shadow-[0_12px_20px_rgba(8,25,58,0.12)]" />
+            </div>
+            <div className="min-w-0 flex-1 text-center md:text-left">
+              <h2 className="text-[25px] font-black text-[#10166C]">{showInstructorCta ? 'Need a helping hand?' : hasPassedLevel ? 'Ready for the next challenge?' : 'Keep practicing with Hooty!'}</h2>
+              <p className="mt-3 text-[16px] font-semibold leading-[26px] text-[#071A3D]">
+                {showInstructorCta
+                  ? 'Connect with your instructor for personalized tips and guidance. They’ll help you overcome the tricky parts and reach the next level.'
+                  : hasPassedLevel
+                  ? 'Continue while the strategy is fresh and keep building your mastery.'
+                  : 'Repeat this level once more and strengthen the tricky parts before moving ahead.'} <span className="text-[#8A67FF]">♥</span>
+              </p>
+            </div>
+            <button
+              onClick={showInstructorCta ? onContactInstructor : onContinue}
+              className={`mt-5 inline-flex h-[74px] w-full items-center justify-center gap-4 rounded-[18px] px-7 text-[18px] font-black text-white shadow-[0_14px_26px_rgba(20,47,133,0.25)] md:mt-0 md:w-[360px] ${showInstructorCta ? 'bg-[#18388F] hover:bg-[#122B72]' : hasPassedLevel ? 'bg-[#1F66FF] hover:bg-[#1558EA]' : 'bg-[#EF5F55] hover:bg-[#DF5048]'}`}
+            >
+              <GraduationCap className="h-8 w-8" />
+              {showInstructorCta ? instructorMode ? 'Unlock Next Evolution' : 'Contact Your Instructor' : hasPassedLevel ? 'Unlock Next Level' : 'Repeat This Level'}
+              <ArrowRight className="h-7 w-7" />
+            </button>
+          </div>
+        </section>
+
+        <footer className="relative z-10 mx-auto mt-6 flex max-w-[720px] items-center justify-center gap-5 text-center text-[16px] font-bold text-[#10166C]">
+          <span className="hidden h-px flex-1 bg-[#BBD1FB] sm:block" />
+          <img src={tfngFeedbackAssets.leaf} alt="" className="h-10 w-10 rotate-[72deg] opacity-55" />
+          <span>Keep learning. Keep improving. You’ve got this! <span className="text-[#8A67FF]">♥</span></span>
+          <img src={tfngFeedbackAssets.leaf} alt="" className="h-10 w-10 -rotate-[112deg] opacity-55" />
+          <span className="hidden h-px flex-1 bg-[#BBD1FB] sm:block" />
+        </footer>
+      </div>
+    </main>
+  );
+};
+
+const SectionTitle = ({ title }: { title: string }) => (
+  <div className="flex items-center gap-3">
+    <BookOpen className="h-6 w-6 text-[#294B77]" />
+    <h2 className="text-[22px] font-black uppercase text-[#10166C]">{title}</h2>
+  </div>
+);
+
+const PassSectionTitle = ({ title }: { title: string }) => (
+  <div className="flex items-center gap-3">
+    <BookOpen className="h-6 w-6 text-[#8B3613]" />
+    <h2 className="text-[22px] font-black uppercase text-[#6B2D14]">{title}</h2>
+  </div>
+);
 
 const InfoPanel = ({
   icon,

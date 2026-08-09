@@ -30,8 +30,9 @@ import {
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import JawaafLogo from '../../components/JawaafLogo';
+import { TfngOverallPerformanceDesign } from '../mastery/TFNGMasteryPage';
 
-type TeacherView = 'dashboard' | 'reviews' | 'students' | 'qa' | 'analytics' | 'resources' | 'settings';
+type TeacherView = 'dashboard' | 'reviews' | 'students' | 'tfng' | 'qa' | 'analytics' | 'resources' | 'settings';
 
 type LessonQuestion = {
   id: string;
@@ -54,6 +55,37 @@ type Submission = {
   mock_tests?: { title: string; description?: string };
   profiles?: { full_name: string; email: string };
   feedback?: Feedback | null;
+};
+
+type TfngInstructorReport = {
+  id: string;
+  user_id: string;
+  student?: { full_name?: string; email?: string } | null;
+  evolution?: { evolution_number?: number; name?: string } | null;
+  attempt_no: number;
+  status: string;
+  decision: string;
+  accuracy: number;
+  total_questions: number;
+  questions_attempted: number;
+  correct_answers: number;
+  wrong_answers: number;
+  unanswered_questions: number;
+  time_used_seconds: number;
+  completed_at?: string;
+  updated_at?: string;
+  passages?: Array<{
+    id: string;
+    passage_order: number;
+    title: string;
+    score: number;
+    total_questions: number;
+    correct_answers: number;
+    wrong_answers: number;
+    unanswered_questions: number;
+    status: string;
+    submitted_at?: string;
+  }>;
 };
 
 type ReviewAnswer = {
@@ -120,6 +152,7 @@ const writingDescriptorRows: Array<[keyof TaskFeedback, keyof TaskFeedback, stri
 const viewFromPath = (pathname: string, hash: string): TeacherView => {
   if (pathname.includes('/teacher/reviews')) return 'reviews';
   if (pathname.includes('/teacher/students')) return 'students';
+  if (pathname.includes('/teacher/tfng-support')) return 'tfng';
   if (hash === '#video-qa') return 'qa';
   return 'dashboard';
 };
@@ -155,6 +188,13 @@ const relativeTime = (date?: string | null) => {
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   const diffDays = Math.round(diffHours / 24);
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+};
+
+const formatTfngReportTime = (seconds?: number | null) => {
+  const safeSeconds = Math.max(0, Number(seconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes}m ${String(remainder).padStart(2, '0')}s`;
 };
 
 const greetingForNow = () => {
@@ -205,6 +245,7 @@ const TeacherNav = ({ active, onSelect }: { active: TeacherView; onSelect: (view
     { key: 'dashboard' as const, label: 'Dashboard', icon: Home },
     { key: 'reviews' as const, label: 'Writing Reviews', icon: PenLine },
     { key: 'students' as const, label: 'Students', icon: Users },
+    { key: 'tfng' as const, label: 'TFNG Instruction Support', icon: Target },
     { key: 'qa' as const, label: 'Video Q&A', icon: MessageCircle },
     { key: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
     { key: 'resources' as const, label: 'Resources', icon: BookOpen },
@@ -255,8 +296,11 @@ export default function TeacherDashboardPage() {
   const [studentDetail, setStudentDetail] = useState<any>(null);
   const [studentDetailLoading, setStudentDetailLoading] = useState(false);
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
+  const [tfngReports, setTfngReports] = useState<TfngInstructorReport[]>([]);
+  const [selectedTfngReportId, setSelectedTfngReportId] = useState('');
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [savingReplyId, setSavingReplyId] = useState('');
+  const [unlockingTfngId, setUnlockingTfngId] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [reviewAnswers, setReviewAnswers] = useState<ReviewAnswer[]>([]);
@@ -271,6 +315,7 @@ export default function TeacherDashboardPage() {
     if (view === 'dashboard') navigate('/teacher', { replace: true });
     if (view === 'reviews') navigate('/teacher/reviews', { replace: true });
     if (view === 'students') navigate('/teacher/students', { replace: true });
+    if (view === 'tfng') navigate('/teacher/tfng-support', { replace: true });
     if (view === 'qa') navigate('/teacher/qa', { replace: true });
     if (['analytics', 'resources', 'settings'].includes(view)) navigate('/teacher', { replace: true });
   };
@@ -278,19 +323,27 @@ export default function TeacherDashboardPage() {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const [{ data: inboxData }, { data: studentData }, { data: questionData }] = await Promise.all([
+      const [{ data: inboxData }, { data: studentData }, { data: questionData }, { data: tfngData }] = await Promise.all([
         api.get('/attempts/admin/inbox').catch(() => ({ data: [] })),
         api.get('/attempts/teacher/students').catch(() => ({ data: [] })),
-        api.get('/admin/lesson-questions').catch(() => ({ data: [] }))
+        api.get('/admin/lesson-questions').catch(() => ({ data: [] })),
+        api.get('/mastery/tfng/instructor/reports').catch(() => ({ data: [] }))
       ]);
 
       const inboxList = Array.isArray(inboxData) ? inboxData : [];
       const studentList = Array.isArray(studentData) ? studentData : [];
       const questionList = Array.isArray(questionData) ? questionData : [];
+      const tfngReportList = Array.isArray(tfngData) ? tfngData : [];
 
       setSubmissions(inboxList);
       setStudents(studentList);
       setQuestions(questionList);
+      setTfngReports(tfngReportList);
+      setSelectedTfngReportId(current => (
+        current && tfngReportList.some((report: TfngInstructorReport) => report.id === current)
+          ? current
+          : ''
+      ));
       setReplyDrafts(questionList.reduce((acc: Record<string, string>, question: LessonQuestion) => {
         acc[question.id] = question.answer_text || '';
         return acc;
@@ -317,6 +370,19 @@ export default function TeacherDashboardPage() {
   const unansweredQuestions = questions.filter(question => !question.answer_text).length;
   const recentQuestions = useMemo(() => questions.slice(0, 8), [questions]);
   const activePendingCount = visibleSubmissions.filter(item => item.review_status === 'teacher_review_pending').length;
+
+  const unlockTfngNextLevel = async (attemptId: string) => {
+    try {
+      setUnlockingTfngId(attemptId);
+      await api.post(`/mastery/tfng/instructor/attempts/${attemptId}/unlock-next`);
+      await loadDashboard();
+      alert('Next TFNG level unlocked for this student.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to unlock the next TFNG level.');
+    } finally {
+      setUnlockingTfngId('');
+    }
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -433,6 +499,123 @@ export default function TeacherDashboardPage() {
     }
     setSelectedSubmissionId(submissionId);
     setTeacherView('reviews');
+  };
+
+  const renderTfngSupportSection = () => {
+    const selectedReport = tfngReports.find(report => report.id === selectedTfngReportId) || null;
+
+    if (selectedReport) {
+      const studentName = selectedReport.student?.full_name || 'Student';
+      const teacherPerformanceData = {
+        attempt: {
+          id: selectedReport.id,
+          attempt_no: selectedReport.attempt_no,
+          status: selectedReport.status,
+          decision: selectedReport.decision
+        },
+        evolution: {
+          ...(selectedReport.evolution || {}),
+          first_attempt_required_accuracy: 60
+        },
+        day_streak: 0,
+        summary: {
+          evolution_number: selectedReport.evolution?.evolution_number || 1,
+          total_passages: selectedReport.passages?.length || 0,
+          passages_completed: selectedReport.passages?.length || 0,
+          total_questions: selectedReport.total_questions,
+          questions_attempted: selectedReport.questions_attempted,
+          correct_answers: selectedReport.correct_answers,
+          wrong_answers: selectedReport.wrong_answers,
+          unanswered_questions: selectedReport.unanswered_questions,
+          accuracy: selectedReport.accuracy,
+          time_used_seconds: selectedReport.time_used_seconds,
+          decision: selectedReport.decision,
+          requires_instructor: true,
+          passage_breakdown: (selectedReport.passages || []).map(passage => ({
+            id: passage.id,
+            passage_order: passage.passage_order,
+            title: passage.title,
+            score: passage.score,
+            total_questions: passage.total_questions,
+            correct_answers: passage.correct_answers,
+            wrong_answers: passage.wrong_answers,
+            unanswered_questions: passage.unanswered_questions
+          }))
+        }
+      };
+
+      return (
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <TfngOverallPerformanceDesign
+            data={teacherPerformanceData}
+            studentName={studentName}
+            hasPassedLevel={false}
+            timeSpent={formatTfngReportTime(selectedReport.time_used_seconds)}
+            onBack={() => setSelectedTfngReportId('')}
+            onContinue={() => unlockTfngNextLevel(selectedReport.id)}
+            onContactInstructor={() => unlockTfngNextLevel(selectedReport.id)}
+            backLabel="Back to TFNG support list"
+            instructorMode
+          />
+        </div>
+      );
+    }
+
+    return (
+      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-[24px] font-black text-[#07183D]">
+              <Target className="h-6 w-6 text-[#294b77]" /> TFNG Instructor Support
+            </h2>
+            <p className="mt-1 text-[13px] font-semibold text-slate-500">Students waiting for guidance after failing their retry set.</p>
+          </div>
+          <span className="w-fit rounded-full border border-[#294b77]/10 bg-[#EFF4FB] px-4 py-2 text-[12px] font-black text-[#294b77]">
+            {tfngReports.length} waiting
+          </span>
+        </div>
+
+        {tfngReports.length === 0 ? (
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-[#F8FAFD] p-6 text-center text-[14px] font-bold text-slate-500">
+            No TFNG students are waiting for instructor unlock right now.
+          </div>
+        ) : (
+          <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+            <div className="hidden grid-cols-[minmax(0,1.3fr)_150px_110px_120px_130px] bg-[#F7F9FC] px-4 py-3 text-[11px] font-black uppercase text-[#8995AF] md:grid">
+              <span>Student</span>
+              <span>Level</span>
+              <span>Accuracy</span>
+              <span>Status</span>
+              <span className="text-right">Action</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {tfngReports.map(report => {
+              const studentName = report.student?.full_name || 'Student';
+              const evolutionLabel = report.evolution?.name || `Evolution ${report.evolution?.evolution_number || ''}`.trim();
+              return (
+                  <div key={report.id} className="grid gap-3 px-4 py-4 text-[14px] font-bold text-[#07183D] md:grid-cols-[minmax(0,1.3fr)_150px_110px_120px_130px] md:items-center">
+                    <div>
+                        <p className="text-[15px] font-black">{studentName}</p>
+                      <p className="mt-0.5 text-[12px] font-semibold text-slate-500">{report.student?.email || 'No email'} • {relativeTime(report.completed_at || report.updated_at)}</p>
+                    </div>
+                    <p className="truncate">{evolutionLabel}</p>
+                    <p className="text-[#ef5f55]">{Math.round(Number(report.accuracy || 0))}%</p>
+                    <span className="w-fit rounded-full bg-[#FFF3F2] px-3 py-1 text-[12px] font-black text-[#ef5f55]">Set {report.attempt_no} failed</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTfngReportId(report.id)}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-[#294b77] px-4 text-[13px] font-black text-white shadow-sm hover:bg-[#1E3A6E] md:justify-self-end"
+                    >
+                      View Result
+                    </button>
+                  </div>
+              );
+            })}
+            </div>
+          </div>
+        )}
+      </section>
+    );
   };
 
   const renderTaskFeedbackForm = (answer: ReviewAnswer, index: number) => {
@@ -961,6 +1144,7 @@ export default function TeacherDashboardPage() {
         {activeView === 'dashboard' && renderOverview()}
         {activeView === 'reviews' && renderReviewsSection()}
         {activeView === 'students' && renderStudentsSection()}
+        {activeView === 'tfng' && renderTfngSupportSection()}
         {activeView === 'qa' && renderQaSection()}
         {activeView === 'analytics' && renderUtilitySection('Analytics', 'Teacher analytics will show review speed, writing bands, activity history, and student progress trends here.', BarChart3)}
         {activeView === 'resources' && renderUtilitySection('Resources', 'Teacher resources for writing rubrics, response templates, and lesson support material will appear here.', LibraryBig)}

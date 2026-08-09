@@ -13,6 +13,7 @@ import {
   getTfngCurrentPractice,
   getTfngDesignPage,
   getTfngFeedback,
+  listTfngInstructorReports,
   getTfngMasteryOverview,
   getTfngPerformance,
   listTfngMasteryAdmin,
@@ -21,6 +22,7 @@ import {
   saveTfngPassageAnswers,
   startOrResumeTfngMastery,
   submitTfngPassage,
+  unlockTfngNextLevelByInstructor,
   updateTfngEvolution,
   updateTfngPassage,
   updateTfngQuestion
@@ -46,6 +48,9 @@ router.delete('/admin/passages/:passageId', deleteTfngPassage);
 router.post('/admin/passages/:passageId/questions', createTfngQuestion);
 router.put('/admin/questions/:questionId', updateTfngQuestion);
 router.delete('/admin/questions/:questionId', deleteTfngQuestion);
+
+router.get('/instructor/reports', listTfngInstructorReports);
+router.post('/instructor/attempts/:attemptId/unlock-next', unlockTfngNextLevelByInstructor);
 
 router.get('/attempts/:attemptId/design', getTfngDesignPage);
 router.get('/attempts/:attemptId/practice', getTfngCurrentPractice);

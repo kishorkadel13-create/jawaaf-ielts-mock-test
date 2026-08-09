@@ -297,6 +297,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/teacher/tfng-support"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/teacher/courses"
         element={
           <ProtectedRoute roles={['teacher']}>
