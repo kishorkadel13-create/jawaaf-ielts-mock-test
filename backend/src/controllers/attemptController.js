@@ -297,6 +297,19 @@ export const submitAttempt = async (req, res) => {
 // 4. Retrieve student past attempts history
 export const getAttemptHistory = async (req, res) => {
   try {
+    const summaryOnly = req.query.summary === '1' || req.query.summary === 'true';
+    if (summaryOnly) {
+      const { data, error } = await supabaseAdmin
+        .from('user_attempts')
+        .select('id, mock_test_id, status, submitted_at')
+        .eq('user_id', req.user.id)
+        .eq('status', 'completed')
+        .order('submitted_at', { ascending: false, nullsFirst: false });
+
+      if (error) throw error;
+      return res.status(200).json(data || []);
+    }
+
     const { data: attempts, error } = await supabaseAdmin
       .from('user_attempts')
       .select(`

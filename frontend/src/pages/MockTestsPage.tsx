@@ -67,6 +67,36 @@ const READING_QUESTION_TYPES = [
 type ReadingQuestionTypeKey = typeof READING_QUESTION_TYPES[number]['key'];
 type ReadingCategoryKey = 'complete' | 'passage-1' | 'passage-2' | 'passage-3';
 
+const TEST_LIBRARY_CACHE_KEY = 'jawaaf:test-library-summary:v1';
+const TEST_LIBRARY_CACHE_TTL = 5 * 60 * 1000;
+
+const readTestLibraryCache = (): { tests: MockTest[]; completedIds: string[] } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = window.sessionStorage.getItem(TEST_LIBRARY_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    if (!parsed?.savedAt || Date.now() - parsed.savedAt > TEST_LIBRARY_CACHE_TTL) return null;
+    return {
+      tests: Array.isArray(parsed.tests) ? parsed.tests : [],
+      completedIds: Array.isArray(parsed.completedIds) ? parsed.completedIds : []
+    };
+  } catch (e) {
+    return null;
+  }
+};
+
+const writeTestLibraryCache = (tests: MockTest[], completedIds: string[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(TEST_LIBRARY_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      tests,
+      completedIds
+    }));
+  } catch (e) {}
+};
+
 const READING_CATEGORY_META: Record<ReadingCategoryKey, { label: string; shortLabel: string }> = {
   complete: { label: 'Complete Reading Test', shortLabel: 'Complete Test' },
   'passage-1': { label: 'Passage 1', shortLabel: 'Passage 1' },
@@ -154,8 +184,9 @@ const getReadingTypeKeys = (values: string[] = [], fallbackText = ''): ReadingQu
 export default function MockTestsPage() {
   const { profile } = useAuthStore();
   const [searchParams] = useSearchParams();
-  const [tests, setTests] = useState<MockTest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedLibrary = useMemo(() => readTestLibraryCache(), []);
+  const [tests, setTests] = useState<MockTest[]>(cachedLibrary?.tests || []);
+  const [loading, setLoading] = useState(!cachedLibrary);
   const [startingTestId, setStartingTestId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'mock' | 'practice'>(searchParams.get('mode') === 'practice' ? 'practice' : 'mock');
   const [practiceType, setPracticeType] = useState<'reading' | 'listening' | 'writing' | null>(null);
@@ -167,24 +198,26 @@ export default function MockTestsPage() {
   const navigate = useNavigate();
   const [readingPracticeListType, setReadingPracticeListType] = useState<ReadingCategoryKey | null>(null);
 
-  const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set());
+  const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set(cachedLibrary?.completedIds || []));
 
   useEffect(() => {
     const fetchTestsAndAttempts = async () => {
       try {
-        setLoading(true);
+        if (!cachedLibrary) setLoading(true);
         const [testsRes, attemptsRes] = await Promise.all([
-          api.get('/tests'),
-          api.get('/attempts/history').catch(() => ({ data: [] }))
+          api.get('/tests', { params: { summary: 1 } }),
+          api.get('/attempts/history', { params: { summary: 1 } }).catch(() => ({ data: [] }))
         ]);
         
         setTests(testsRes.data);
+        const completedIds = (attemptsRes.data || [])
+          .map((a: any) => a.mock_test_id)
+          .filter(Boolean);
         const attemptIds = new Set(
-          (attemptsRes.data || [])
-            .map((a: any) => a.mock_test_id)
-            .filter(Boolean)
+          completedIds
         );
         setCompletedTestIds(attemptIds as Set<string>);
+        writeTestLibraryCache(testsRes.data || [], completedIds);
         
         setLoading(false);
       } catch (err) {

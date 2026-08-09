@@ -196,36 +196,79 @@ const getPassageQuestions = async (passageId) => {
   return data || [];
 };
 
+const getQuestionsByPassageIds = async (passageIds) => {
+  const uniquePassageIds = [...new Set((passageIds || []).filter(Boolean))];
+  if (uniquePassageIds.length === 0) return {};
+
+  const { data, error } = await supabaseAdmin
+    .from('tfng_mastery_questions')
+    .select('*')
+    .in('passage_id', uniquePassageIds)
+    .order('order_no', { ascending: true });
+  if (error) throw error;
+
+  return (data || []).reduce((acc, question) => {
+    acc[question.passage_id] = acc[question.passage_id] || [];
+    acc[question.passage_id].push(question);
+    return acc;
+  }, {});
+};
+
 const getPlayableEvolutionPassageLinks = async (evolutionId, setNo = 1) => {
   let links = await getEvolutionPassageLinks(evolutionId, setNo);
   if (links.length === 0 && setNo !== 1) {
     links = await getEvolutionPassageLinks(evolutionId, 1);
   }
-  const playableLinks = [];
+  const publishedLinks = links.filter(link => link.passage?.is_published !== false);
+  const questionsByPassageId = await getQuestionsByPassageIds(publishedLinks.map(link => link.passage_id));
 
-  for (const link of links) {
-    if (link.passage?.is_published === false) continue;
-    const questions = await getPassageQuestions(link.passage_id);
-    if (questions.length > 0) {
-      playableLinks.push({ ...link, questions });
-    }
-  }
-
-  return playableLinks;
+  return publishedLinks
+    .map(link => ({ ...link, questions: questionsByPassageId[link.passage_id] || [] }))
+    .filter(link => link.questions.length > 0);
 };
 
 const getPlayablePublishedEvolutions = async () => {
   const evolutions = await getPublishedEvolutions();
-  const playable = [];
+  if (evolutions.length === 0) return [];
 
-  for (const evolution of evolutions) {
-    const links = await getPlayableEvolutionPassageLinks(evolution.id, 1);
-    if (links.length > 0) {
-      playable.push({ ...evolution, playable_passages_count: links.length });
-    }
+  const evolutionIds = evolutions.map(evolution => evolution.id);
+  let links = [];
+  const { data, error } = await supabaseAdmin
+    .from('tfng_mastery_evolution_passages')
+    .select('id, evolution_id, passage_id, set_no, order_no, passage:tfng_mastery_passages(id, title, is_published)')
+    .in('evolution_id', evolutionIds)
+    .eq('set_no', 1)
+    .order('order_no', { ascending: true });
+
+  if (error && isMissingSetNoColumn(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+      .from('tfng_mastery_evolution_passages')
+      .select('id, evolution_id, passage_id, order_no, passage:tfng_mastery_passages(id, title, is_published)')
+      .in('evolution_id', evolutionIds)
+      .order('order_no', { ascending: true });
+    if (fallbackError) throw fallbackError;
+    links = (fallbackData || []).map(item => ({ ...item, set_no: 1 }));
+  } else {
+    if (error) throw error;
+    links = data || [];
   }
 
-  return playable;
+  const publishedLinks = links.filter(link => link.passage?.is_published !== false);
+  const questionsByPassageId = await getQuestionsByPassageIds(publishedLinks.map(link => link.passage_id));
+  const playableCountByEvolution = publishedLinks.reduce((acc, link) => {
+    const questionCount = (questionsByPassageId[link.passage_id] || []).length;
+    if (questionCount > 0) {
+      acc[link.evolution_id] = (acc[link.evolution_id] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  return evolutions
+    .filter(evolution => playableCountByEvolution[evolution.id] > 0)
+    .map(evolution => ({
+      ...evolution,
+      playable_passages_count: playableCountByEvolution[evolution.id]
+    }));
 };
 
 const getAttemptWithEvolution = async (attemptId, userId) => {
@@ -312,8 +355,8 @@ const buildHootyComment = (decision, stats) => {
   return 'You worked hard. Please contact your instructor so they can guide your next practice step.';
 };
 
-const buildAttemptPayload = async (attempt) => {
-  const links = await getPlayableEvolutionPassageLinks(attempt.evolution_id, attempt.attempt_no || 1);
+const buildAttemptPayload = async (attempt, preloadedLinks = null) => {
+  const links = preloadedLinks || await getPlayableEvolutionPassageLinks(attempt.evolution_id, attempt.attempt_no || 1);
   const nextLink = links.find(link => link.order_no === attempt.current_passage_order) || links[0] || null;
   return {
     attempt,
@@ -417,9 +460,22 @@ export const getTfngMasteryOverview = async (req, res) => {
 export const startOrResumeTfngMastery = async (req, res) => {
   try {
     if (!ensureStudentAccess(req, res)) return;
+    const entryOnly = req.body?.entry_only === true;
 
     const activeAttempt = await getActiveAttempt(req.user.id);
     if (activeAttempt) {
+      if (entryOnly) {
+        return res.status(200).json({
+          attempt_id: activeAttempt.id,
+          attempt: {
+            id: activeAttempt.id,
+            status: activeAttempt.status
+          },
+          next_page: activeAttempt.status === 'performance' || activeAttempt.status === 'failed_locked'
+            ? 'performance'
+            : 'design'
+        });
+      }
       const activeLinks = await getPlayableEvolutionPassageLinks(activeAttempt.evolution_id, activeAttempt.attempt_no || 1);
       if (activeLinks.length === 0) {
         return res.status(409).json({
@@ -427,7 +483,7 @@ export const startOrResumeTfngMastery = async (req, res) => {
           message: 'This TFNG level needs at least one published passage with saved questions before students can start.'
         });
       }
-      return res.status(200).json(await buildAttemptPayload(activeAttempt));
+      return res.status(200).json(await buildAttemptPayload(activeAttempt, activeLinks));
     }
 
     const evolutions = await getPlayablePublishedEvolutions();
@@ -455,6 +511,17 @@ export const startOrResumeTfngMastery = async (req, res) => {
       });
     }
     const attempt = await createEvolutionAttempt({ userId: req.user.id, evolution: nextEvolution });
+
+    if (entryOnly) {
+      return res.status(201).json({
+        attempt_id: attempt.id,
+        attempt: {
+          id: attempt.id,
+          status: attempt.status
+        },
+        next_page: 'design'
+      });
+    }
 
     res.status(201).json(await buildAttemptPayload(attempt));
   } catch (err) {
@@ -486,7 +553,7 @@ export const getTfngDesignPage = async (req, res) => {
       attempts: studentAttempts
     });
     res.status(200).json({
-      ...(await buildAttemptPayload(attempt)),
+      ...(await buildAttemptPayload(attempt, playableLinks)),
       next_evolution: currentIndex >= 0 ? evolutions[currentIndex + 1] || null : null,
       student_progress: studentProgress,
       day_streak: studentProgress.day_streak,

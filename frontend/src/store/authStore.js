@@ -19,10 +19,16 @@ export const useAuthStore = create((set, get) => ({
   token: null,
   isAuthenticated: false,
   isLoading: true,
+  hasInitialized: false,
   error: null,
 
   // Initialize session and set auth states
-  initializeAuth: async () => {
+  initializeAuth: async (force = false) => {
+    const current = get();
+    if (!force && current.hasInitialized) {
+      return;
+    }
+
     try {
       set({ isLoading: true, error: null });
       
@@ -53,7 +59,8 @@ export const useAuthStore = create((set, get) => ({
             profile: normalizeProfileAccess(fallbackProfile),
             token: access_token,
             isAuthenticated: true,
-            isLoading: false
+            isLoading: false,
+            hasInitialized: true
           });
           return;
         }
@@ -63,14 +70,15 @@ export const useAuthStore = create((set, get) => ({
           profile: normalizeProfileAccess(profile),
           token: access_token,
           isAuthenticated: true,
-          isLoading: false
+          isLoading: false,
+          hasInitialized: true
         });
       } else {
-        set({ user: null, profile: null, token: null, isAuthenticated: false, isLoading: false });
+        set({ user: null, profile: null, token: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
       }
     } catch (err) {
       console.error('initializeAuth Exception:', err);
-      set({ error: err.message, isLoading: false });
+      set({ error: err.message, isLoading: false, hasInitialized: true });
     }
   },
 
@@ -99,7 +107,8 @@ export const useAuthStore = create((set, get) => ({
         profile: normalizeProfileAccess(profile),
         token: session.access_token,
         isAuthenticated: true,
-        isLoading: false
+        isLoading: false,
+        hasInitialized: true
       });
       return { success: true, profile };
     } catch (err) {
@@ -149,11 +158,12 @@ export const useAuthStore = create((set, get) => ({
           profile: normalizeProfileAccess(profile || { id: user.id, email: user.email, role: 'student', has_full_access: false, premium_access_expires_at: null }),
           token: session.access_token,
           isAuthenticated: true,
-          isLoading: false
+          isLoading: false,
+          hasInitialized: true
         });
         return { success: true, emailConfirmed: true };
       } else {
-        set({ isLoading: false });
+        set({ isLoading: false, hasInitialized: true });
         return { success: true, emailConfirmed: false };
       }
     } catch (err) {
@@ -174,6 +184,7 @@ export const useAuthStore = create((set, get) => ({
         token: null,
         isAuthenticated: false,
         isLoading: false,
+        hasInitialized: true,
         error: null
       });
     } catch (err) {

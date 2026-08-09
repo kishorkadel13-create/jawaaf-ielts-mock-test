@@ -64,7 +64,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
         setError('');
 
         if (mode === 'entry') {
-          const { data: startData } = await api.post('/mastery/tfng/start');
+          const { data: startData } = await api.post('/mastery/tfng/start', { entry_only: true });
           if (startData?.next_page === 'complete_mastery') {
             setData(startData);
             return;

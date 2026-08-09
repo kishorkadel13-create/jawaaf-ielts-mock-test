@@ -5,6 +5,7 @@ export const getTests = async (req, res) => {
   try {
     const isStudent = req.user.role === 'student';
     const hasFullAccess = req.user.has_full_access;
+    const summaryOnly = req.query.summary === '1' || req.query.summary === 'true';
 
     let query = supabaseAdmin.from('mock_tests').select('*').order('created_at', { ascending: true });
 
@@ -88,7 +89,7 @@ export const getTests = async (req, res) => {
               questions: groupQuestions.map(question => ({
                 id: question.id,
                 question_number: question.question_number,
-                question_text: question.question_text,
+                ...(summaryOnly ? {} : { question_text: question.question_text }),
                 question_type: question.question_type,
                 extra_data_json: question.extra_data_json
               }))

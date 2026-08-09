@@ -60,6 +60,7 @@ export const prefetchStudentRoutes = () => {
   loadCoursesPage();
   loadMockTestsPage();
   loadHistoryPage();
+  loadTFNGMasteryPage();
 };
 
 export const prefetchAdminRoutes = () => {
