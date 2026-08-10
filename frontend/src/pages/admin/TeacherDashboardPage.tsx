@@ -76,6 +76,8 @@ type TfngInstructorReport = {
   updated_at?: string;
   passages?: Array<{
     id: string;
+    attempt_no?: number;
+    set_no?: number;
     passage_order: number;
     title: string;
     score: number;
@@ -374,9 +376,11 @@ export default function TeacherDashboardPage() {
   const unlockTfngNextLevel = async (attemptId: string) => {
     try {
       setUnlockingTfngId(attemptId);
-      await api.post(`/mastery/tfng/instructor/attempts/${attemptId}/unlock-next`);
+      const { data } = await api.post(`/mastery/tfng/instructor/attempts/${attemptId}/unlock-next`);
       await loadDashboard();
-      alert('Next TFNG level unlocked for this student.');
+      alert(data?.next_page === 'coming_soon'
+        ? 'Student unlocked. The next TFNG level will show as coming soon until passages are published.'
+        : 'Next TFNG level unlocked for this student.');
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to unlock the next TFNG level.');
     } finally {
@@ -506,6 +510,47 @@ export default function TeacherDashboardPage() {
 
     if (selectedReport) {
       const studentName = selectedReport.student?.full_name || 'Student';
+      const passageRows = selectedReport.passages || [];
+      const passagesBySet = passageRows.reduce<Record<number, typeof passageRows>>((acc, passage) => {
+        const setNo = Number(passage.set_no || passage.attempt_no || 1);
+        acc[setNo] = acc[setNo] || [];
+        acc[setNo].push(passage);
+        return acc;
+      }, {});
+      const attemptSummaries = Object.entries(passagesBySet)
+        .sort(([setA], [setB]) => Number(setA) - Number(setB))
+        .map(([setNo, passages]) => {
+          const totalQuestions = passages.reduce((total, passage) => total + Number(passage.total_questions || 0), 0);
+          const correctAnswers = passages.reduce((total, passage) => total + Number(passage.correct_answers || passage.score || 0), 0);
+          const wrongAnswers = passages.reduce((total, passage) => total + Number(passage.wrong_answers || 0), 0);
+          const unansweredQuestions = passages.reduce((total, passage) => total + Number(passage.unanswered_questions || 0), 0);
+          const questionsAttempted = correctAnswers + wrongAnswers;
+
+          return {
+            set_no: Number(setNo),
+            attempt_no: Number(setNo),
+            total_passages: passages.length,
+            passages_completed: passages.length,
+            total_questions: totalQuestions,
+            questions_attempted: questionsAttempted,
+            correct_answers: correctAnswers,
+            wrong_answers: wrongAnswers,
+            unanswered_questions: unansweredQuestions,
+            accuracy: totalQuestions > 0 ? Number(((correctAnswers / totalQuestions) * 100).toFixed(2)) : 0,
+            passage_breakdown: passages.map(passage => ({
+              id: passage.id,
+              attempt_no: passage.attempt_no,
+              set_no: passage.set_no,
+              passage_order: passage.passage_order,
+              title: passage.title,
+              score: passage.score,
+              total_questions: passage.total_questions,
+              correct_answers: passage.correct_answers,
+              wrong_answers: passage.wrong_answers,
+              unanswered_questions: passage.unanswered_questions
+            }))
+          };
+        });
       const teacherPerformanceData = {
         attempt: {
           id: selectedReport.id,
@@ -531,8 +576,11 @@ export default function TeacherDashboardPage() {
           time_used_seconds: selectedReport.time_used_seconds,
           decision: selectedReport.decision,
           requires_instructor: true,
-          passage_breakdown: (selectedReport.passages || []).map(passage => ({
+          attempt_summaries: attemptSummaries,
+          passage_breakdown: passageRows.map(passage => ({
             id: passage.id,
+            attempt_no: passage.attempt_no,
+            set_no: passage.set_no,
             passage_order: passage.passage_order,
             title: passage.title,
             score: passage.score,

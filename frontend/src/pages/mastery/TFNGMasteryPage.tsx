@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Clock, Flame, Flag, GraduationCap, LoaderCircle, ShieldCheck, Star, Target, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Clock, Flame, Flag, GraduationCap, Highlighter, LoaderCircle, RotateCcw, Send, ShieldCheck, Star, Target, Trophy } from 'lucide-react';
 import { api } from '../../services/api';
 import { assets } from '../../config/assets';
 import { useAuthStore } from '../../store/authStore';
 import JawaafLogo from '../../components/JawaafLogo';
+import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../utils/textHighlighter';
 
 type PageMode = 'entry' | 'design' | 'practice' | 'feedback' | 'performance';
 
@@ -81,6 +82,11 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [feedbackIndex, setFeedbackIndex] = useState(0);
   const [showStrategyCheck, setShowStrategyCheck] = useState(false);
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
+  const passageRef = useRef<HTMLDivElement>(null);
+  const highlightTargetRef = useRef<HighlightTarget | null>(null);
+  const [highlightCoords, setHighlightCoords] = useState<{ top: number; left: number } | null>(null);
+  const [highlightedPassageHtml, setHighlightedPassageHtml] = useState('');
   const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
@@ -91,7 +97,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
 
         if (mode === 'entry') {
           const { data: startData } = await api.post('/mastery/tfng/start', { entry_only: true });
-          if (startData?.next_page === 'complete_mastery') {
+          if (startData?.next_page === 'complete_mastery' || startData?.next_page === 'coming_soon') {
             setData(startData);
             return;
           }
@@ -114,7 +120,11 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
           const { data: practiceData } = await api.get(`/mastery/tfng/attempts/${attemptId}/practice`);
           setData(practiceData);
           setAnswers({});
+          setFlaggedQuestions({});
           setTimeRemaining(practiceData?.timer_seconds || 180);
+          setHighlightedPassageHtml('');
+          setHighlightCoords(null);
+          highlightTargetRef.current = null;
           autoSubmittedRef.current = false;
           return;
         }
@@ -174,11 +184,26 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
   }, [data, mode]);
 
   const feedbackQuestions = Array.isArray(data?.questions) ? data.questions : [];
+  const practiceQuestions = Array.isArray(data?.questions) ? data.questions : [];
   const currentFeedbackQuestion = feedbackQuestions[feedbackIndex] || null;
   const isLastFeedbackQuestion = feedbackIndex >= feedbackQuestions.length - 1;
   const quickStrategyCheck = String(data?.passage?.quick_strategy_check || '').trim();
   const hasPassedLevel = (data?.summary?.accuracy || 0) >= 60 || data?.summary?.decision === 'unlock_next';
   const studentName = String(profile?.full_name || profile?.email?.split('@')[0] || 'Sagun').trim();
+  const firstName = studentName.split(' ')[0] || 'Sagun';
+  const studentInitial = firstName.charAt(0).toUpperCase() || 'S';
+  const currentPassageOrder = Math.max(1, Number(data?.progress?.current_passage_order || data?.passage_attempt?.passage_order || 1));
+  const totalPassages = Math.max(1, Number(data?.progress?.total_passages || data?.attempt?.total_passages || data?.passage_attempt?.evolution_attempt?.total_passages || 1));
+  const answeredCount = Object.keys(answers).filter(questionId => Boolean(answers[questionId])).length;
+  const flaggedCount = Object.values(flaggedQuestions).filter(Boolean).length;
+  const unansweredCount = Math.max(0, practiceQuestions.length - answeredCount);
+  const dayStreak = Math.max(0, Number(data?.day_streak ?? data?.student_progress?.day_streak ?? 7));
+  const evolutionName = data?.attempt?.evolution?.name || data?.evolution?.name || data?.passage_attempt?.evolution_attempt?.evolution?.name || 'Egg Hooty';
+  const evolutionNo = data?.attempt?.evolution?.evolution_number || data?.evolution?.evolution_number || data?.passage_attempt?.evolution_attempt?.evolution?.evolution_number || 1;
+  const nextEvolutionName = data?.next_evolution?.name || 'Baby Hooty';
+  const evolutionProgress = Math.min(100, Math.max(0, Math.round(((currentPassageOrder - 1) / totalPassages) * 100)));
+  const totalQuestionSlots = practiceQuestions.length;
+  const questionInstruction = data?.passage?.instruction || 'Do the following statements agree with the information given in Reading Passage?';
 
   const formatTime = (seconds: number | null | undefined) => {
     const safeSeconds = Math.max(0, Number(seconds || 0));
@@ -233,7 +258,9 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
     const { data: nextData } = await api.post(`/mastery/tfng/attempts/${attemptId}/continue`);
     if (nextData.next_page === 'practice') navigate(`/mastery/tfng/practice/${nextData.attempt_id}`);
     if (nextData.next_page === 'design') navigate(`/mastery/tfng/design/${nextData.attempt_id}`);
+    if (nextData.next_page === 'performance') navigate(`/mastery/tfng/performance/${nextData.attempt_id}`);
     if (nextData.next_page === 'contact_instructor') window.location.href = nextData.instructor_support_url || '/teacher';
+    if (nextData.next_page === 'coming_soon') setData(nextData);
     if (nextData.next_page === 'complete_mastery') navigate('/tests?mode=practice');
   };
 
@@ -243,6 +270,81 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
     }
     alert('Your TFNG progress report has been sent to your instructor. They will unlock the next evolution after guiding you.');
     navigate('/tests?mode=practice');
+  };
+
+  const handlePassageSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    const selectedText = selection.toString().trim();
+    const anchorNode = selection.anchorNode;
+    const focusNode = selection.focusNode;
+
+    if (
+      selectedText &&
+      anchorNode &&
+      focusNode &&
+      passageRef.current?.contains(anchorNode) &&
+      passageRef.current?.contains(focusNode)
+    ) {
+      const range = selection.getRangeAt(0);
+      const passageEl = range.commonAncestorContainer.parentElement?.closest<HTMLElement>('[data-passage-id]');
+      const target = passageEl ? getHighlightTarget(range, passageEl) : null;
+
+      if (!target) {
+        highlightTargetRef.current = null;
+        setHighlightCoords(null);
+        return;
+      }
+
+      const rect = range.getBoundingClientRect();
+      highlightTargetRef.current = target;
+      setHighlightCoords({
+        top: Math.max(78, rect.top - 46),
+        left: Math.min(window.innerWidth - 150, Math.max(16, rect.left + rect.width / 2 - 75))
+      });
+      return;
+    }
+
+    highlightTargetRef.current = null;
+    setHighlightCoords(null);
+  };
+
+  const schedulePassageSelectionCheck = () => {
+    window.setTimeout(handlePassageSelection, 0);
+  };
+
+  const applyPassageHighlight = (event?: React.MouseEvent | React.PointerEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    const target = highlightTargetRef.current;
+    if (!target) return;
+
+    const passageEl = passageRef.current?.querySelector<HTMLElement>(`[data-passage-id="${target.passageId}"]`);
+
+    try {
+      if (passageEl && applyHighlightTarget(target, passageEl)) {
+        setHighlightedPassageHtml(passageEl.innerHTML);
+      }
+      window.getSelection()?.removeAllRanges();
+    } catch (err) {
+      console.warn('TFNG passage highlight could not be applied.', err);
+    }
+
+    highlightTargetRef.current = null;
+    setHighlightCoords(null);
+  };
+
+  const clearPassageHighlights = () => {
+    setHighlightedPassageHtml('');
+    highlightTargetRef.current = null;
+    setHighlightCoords(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const toggleQuestionFlag = (questionId: string) => {
+    setFlaggedQuestions(current => ({ ...current, [questionId]: !current[questionId] }));
   };
 
   if (loading) {
@@ -271,6 +373,28 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
     );
   }
 
+  if (data?.next_page === 'coming_soon') {
+    return (
+      <MasteryShell title="Coming Soon">
+        <div className="max-w-2xl rounded-3xl border border-[#F2D99F] bg-white p-8 text-center shadow-[0_18px_40px_rgba(86,58,12,0.08)]">
+          <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-[#FFF8EA]">
+            <BookOpen className="h-12 w-12 text-[#D88914]" />
+          </div>
+          <h1 className="mt-6 text-[30px] font-black text-[#071A3D]">Next level coming soon</h1>
+          <p className="mt-3 text-[16px] font-bold leading-7 text-[#294B77]">
+            {data.message || 'This TFNG evolution is unlocked, but its passages are not ready yet.'}
+          </p>
+          <p className="mt-2 text-[14px] font-semibold text-slate-500">
+            {data.evolution?.name ? `${data.evolution.name} will appear here once passages and questions are published.` : 'Once passages and questions are published, this level will open automatically.'}
+          </p>
+          <Link to="/tests?mode=practice" className="mt-7 inline-flex min-h-12 items-center justify-center gap-3 rounded-xl bg-[#294b77] px-6 text-[14px] font-black text-white hover:bg-[#1E3A6E]">
+            <ArrowLeft className="h-4 w-4" /> Back to Reading Practice
+          </Link>
+        </div>
+      </MasteryShell>
+    );
+  }
+
   if (mode === 'design') {
     return (
       <EvolutionAdventureDesign
@@ -284,112 +408,455 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
 
   if (mode === 'practice') {
     return (
-      <MasteryShell title={pageTitle}>
-        <section className="grid h-[calc(100vh-150px)] w-full max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_430px]">
-          <article className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-[24px] font-black text-[#05162E]">{data?.passage?.title}</h2>
-            <div className="prose prose-slate mt-5 max-w-none" dangerouslySetInnerHTML={{ __html: data?.passage?.passage_html || '' }} />
-          </article>
-          <aside className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-5 flex items-center justify-between rounded-2xl bg-[#EFF4FB] p-4">
-              <span className={`inline-flex items-center gap-2 text-[14px] font-black ${Number(timeRemaining || 0) <= 30 ? 'text-[#ef5f55]' : 'text-[#294b77]'}`}>
-                <Clock className="h-4 w-4" /> {formatTime(timeRemaining ?? data?.timer_seconds ?? 180)}
-              </span>
-              <span className="text-[12px] font-black text-slate-500">Passage {data?.progress?.current_passage_order}/{data?.progress?.total_passages}</span>
+      <main className="min-h-screen overflow-x-hidden bg-[#FFFDF8] text-[#071A3D]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+        {highlightCoords && (
+          <div
+            className="fixed z-50 flex items-center gap-1 rounded-full border border-yellow-200 bg-white px-2 py-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.16)]"
+            style={{ top: highlightCoords.top, left: highlightCoords.left }}
+          >
+            <button
+              type="button"
+              onPointerDown={applyPassageHighlight}
+              onMouseDown={applyPassageHighlight}
+              className="inline-flex h-9 items-center gap-2 rounded-full bg-yellow-300 px-3 text-[12px] font-black text-[#05162E] hover:bg-yellow-200"
+            >
+              <Highlighter className="h-4 w-4" /> Highlight
+            </button>
+          </div>
+        )}
+        <div className="mx-auto flex min-h-screen w-full max-w-[1860px] flex-col bg-[radial-gradient(circle_at_50%_0%,rgba(255,220,150,0.18),transparent_32%),linear-gradient(180deg,#fffdf8_0%,#fffaf0_100%)] px-4 pt-5 sm:px-6 lg:px-8">
+          <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-5">
+              <button onClick={() => navigate('/tests?mode=practice')} className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-6 text-[15px] font-black text-[#6E3A11] shadow-[0_10px_24px_rgba(86,58,12,0.06)] transition hover:bg-[#FFF8E9]">
+                <ArrowLeft className="h-5 w-5" /> Back
+              </button>
+              <JawaafLogo className="hidden h-[58px] w-[190px] sm:block" />
             </div>
-            <div className="grid gap-4">
-              {(data?.questions || []).map((question: any) => (
-                <div key={question.id} className="rounded-2xl border border-slate-100 bg-[#F8FAFC] p-4">
-                  <p className="text-[13px] font-black text-[#05162E]">Q{question.question_number}. {question.question_text}</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+
+            <div className="order-3 mx-auto inline-flex h-14 items-center justify-center rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] px-7 text-[17px] font-black text-[#A55508] shadow-sm lg:order-none">
+              Reading Passage {currentPassageOrder} <span className="px-2 text-[#D78A14]">-</span> Practice
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden h-14 items-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-5 shadow-sm md:flex">
+                <Flame className="h-6 w-6 fill-[#FF8B1F] text-[#FF8B1F]" />
+                <div className="leading-none">
+                  <p className="text-[18px] font-black text-[#071A3D]">{dayStreak}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#7B6A57]">Day Streak</p>
+                </div>
+              </div>
+              <div className="flex h-14 items-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-5 shadow-sm">
+                <span className={`grid h-9 w-9 place-items-center rounded-full border ${Number(timeRemaining || 0) <= 30 ? 'border-[#ef5f55] text-[#ef5f55]' : 'border-[#071A3D] text-[#071A3D]'}`}>
+                  <Clock className="h-5 w-5" />
+                </span>
+                <div className="leading-none">
+                  <p className="text-[11px] font-bold text-[#7B6A57]">Time Left</p>
+                  <p className={`mt-1 text-[18px] font-black ${Number(timeRemaining || 0) <= 30 ? 'text-[#ef5f55]' : 'text-[#071A3D]'}`}>{formatTime(timeRemaining ?? data?.timer_seconds ?? 180)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#071A3D] text-[18px] font-black text-white">{studentInitial}</span>
+                <span className="hidden text-[16px] font-black text-[#3B2D24] sm:inline">{firstName}</span>
+                <ChevronDown className="hidden h-4 w-4 text-[#6E3A11] sm:block" />
+              </div>
+            </div>
+          </header>
+
+          <section className="grid flex-1 gap-5 pb-[142px] pt-4 lg:grid-cols-[308px_minmax(0,1fr)] xl:grid-cols-[308px_minmax(560px,1.18fr)_minmax(390px,0.82fr)] 2xl:grid-cols-[308px_minmax(680px,1.28fr)_minmax(420px,0.72fr)]">
+            <aside className="hidden rounded-[18px] border border-[#F2D99F] bg-white/92 p-6 shadow-[0_18px_40px_rgba(86,58,12,0.07)] lg:block">
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-[#F2D99F]" />
+                <span className="rounded-xl bg-[#FFF8EA] px-4 py-2 text-[13px] font-black uppercase tracking-[0.04em] text-[#2D2016]">Hooty's Journey</span>
+                <span className="grid h-5 w-5 place-items-center rounded-full border border-[#F2D99F] text-[12px] font-black text-[#D88914]">i</span>
+              </div>
+
+              <div className="mt-5 text-center">
+                <div className="mx-auto grid h-[210px] w-[220px] place-items-center rounded-full border border-[#F2D99F] bg-[#FFF8EA]">
+                  <img src={evolutionAssets.mentorMascot} alt="" className="h-[180px] w-[180px] object-contain drop-shadow-[0_14px_20px_rgba(86,58,12,0.13)]" />
+                </div>
+                <p className="mt-5 text-[11px] font-black uppercase tracking-[0.06em] text-[#B17816]">Current Evolution</p>
+                <h2 className="mt-2 text-[24px] font-black text-[#071A3D]">{evolutionName}</h2>
+                <span className="mt-2 inline-flex rounded-full bg-[#EAF1FF] px-3 py-1 text-[12px] font-black text-[#1F66FF]">Evolution {evolutionNo}</span>
+              </div>
+
+              <div className="mt-5 border-t border-[#F2D99F] pt-5">
+                <p className="text-[12px] font-black uppercase tracking-[0.04em] text-[#3B2D24]">Evolution Progress</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-4 flex-1 overflow-hidden rounded-full bg-[#FFF1CB]">
+                    <div className="h-full rounded-full bg-[#FFC638]" style={{ width: `${evolutionProgress}%` }} />
+                  </div>
+                  <span className="text-[13px] font-black text-[#071A3D]">{evolutionProgress}%</span>
+                </div>
+                <p className="mt-3 text-[12px] font-bold text-[#6E3A11]">Keep going! {nextEvolutionName} is waiting.</p>
+              </div>
+
+              <div className="mt-5 border-t border-[#F2D99F] pt-5">
+                <div className="relative rounded-[16px] border border-[#DCCAFB] bg-[#FCF8FF] p-4 text-center">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-lg bg-[#EFE4FF] px-4 py-1 text-[12px] font-black uppercase text-[#5D3FC7]">Next Evolution</span>
+                  <img src={evolutionAssets.mascotGuide} alt="" className="mx-auto mt-2 h-[116px] w-[132px] object-contain" />
+                  <p className="mt-1 text-[16px] font-black text-[#071A3D]">{nextEvolutionName}</p>
+                  <span className="mt-1 inline-flex rounded-full bg-[#EFE4FF] px-3 py-1 text-[11px] font-black text-[#5D3FC7]">Evolution {Number(evolutionNo) + 1}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] px-4 py-4 text-center text-[14px] font-bold leading-6 text-[#294B77]">
+                Every correct answer makes Hooty stronger!
+              </div>
+            </aside>
+
+            <article
+              ref={passageRef}
+              onMouseUp={handlePassageSelection}
+              onKeyUp={handlePassageSelection}
+              onTouchEnd={schedulePassageSelectionCheck}
+              className="min-h-[580px] overflow-hidden rounded-[18px] border border-[#F2D99F] bg-white shadow-[0_18px_40px_rgba(86,58,12,0.07)] xl:h-[calc(100vh-236px)]"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-[#F7E7C4] px-5 py-4 sm:px-8">
+                <span className="rounded-lg border border-[#F2D99F] bg-[#FFF8EA] px-3 py-2 text-[13px] font-black uppercase tracking-[0.04em] text-[#A55508]">Questions Group 1</span>
+                <button
+                  type="button"
+                  onClick={clearPassageHighlights}
+                  disabled={!highlightedPassageHtml}
+                  title="Clear highlights"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#F2D99F] bg-white text-[#A55508] hover:bg-[#FFF8EA] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="h-[calc(100%-76px)] overflow-y-auto px-5 py-5 sm:px-10 sm:py-7">
+                <h1 className="text-[26px] font-black leading-tight text-[#071A3D] sm:text-[30px]">{data?.passage?.title}</h1>
+                <div
+                  data-passage-id={data?.passage?.id || data?.passage_attempt?.id || 'tfng-passage'}
+                  className="ielts-passage mt-7 max-w-none select-text !font-['Inter','Segoe_UI',sans-serif] !text-[19px] !leading-[1.85] !text-[#18213B]"
+                  dangerouslySetInnerHTML={{ __html: highlightedPassageHtml || data?.passage?.passage_html || '' }}
+                />
+              </div>
+            </article>
+
+            <aside className="min-h-[580px] overflow-hidden rounded-[18px] border border-[#F2D99F] bg-white shadow-[0_18px_40px_rgba(86,58,12,0.07)] lg:col-span-2 xl:col-span-1 xl:h-[calc(100vh-236px)]">
+              <div className="h-full overflow-y-auto px-5 py-6 sm:px-6">
+                <div>
+                  <h2 className="text-[25px] font-black text-[#071A3D]">Questions 1-{practiceQuestions.length || totalQuestionSlots}</h2>
+                  <p className="mt-4 max-w-[560px] text-[15px] font-semibold leading-6 text-[#28314D]">{questionInstruction}</p>
+                  <div className="mt-6 max-w-full overflow-hidden rounded-2xl border border-[#F2D99F] bg-[#FFFDF8] px-4 py-3">
                     {answerOptions.map(option => (
-                      <button
-                        key={option}
-                        onClick={() => setAnswers(current => ({ ...current, [question.id]: option }))}
-                        className={`rounded-xl border px-2 py-2 text-[11px] font-black ${answers[question.id] === option ? 'border-[#294b77] bg-[#294b77] text-white' : 'border-slate-200 bg-white text-[#294b77]'}`}
-                      >
-                        {option}
-                      </button>
+                      <div key={option} className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3 py-2">
+                        <span className={`rounded-md border px-2 py-1 text-center text-[11px] font-black ${
+                          option === 'TRUE'
+                            ? 'border-[#BDE7C6] bg-[#F0FFF3] text-[#138A44]'
+                            : option === 'FALSE'
+                            ? 'border-[#FFC9BF] bg-[#FFF4F1] text-[#D83A2E]'
+                            : 'border-[#C9DDFF] bg-[#F3F7FF] text-[#1458C8]'
+                        }`}>{option}</span>
+                        <span className="min-w-0 whitespace-normal text-[12px] font-semibold leading-5 text-[#28314D]">
+                          {option === 'TRUE' && 'if the statement agrees with the information'}
+                          {option === 'FALSE' && 'if the statement contradicts the information'}
+                          {option === 'NOT GIVEN' && 'if there is no information on this'}
+                        </span>
+                      </div>
                     ))}
                   </div>
-                  <button type="button" className="mt-3 inline-flex items-center gap-2 text-[11px] font-black text-slate-400">
-                    <Flag className="h-3.5 w-3.5" /> Flag
-                  </button>
                 </div>
-              ))}
+
+                <div className="mt-7 grid gap-5">
+                  {practiceQuestions.map((question: any, index: number) => {
+                    const selectedAnswer = answers[question.id];
+                    const isFlagged = Boolean(flaggedQuestions[question.id]);
+                    const isAnswered = Boolean(selectedAnswer);
+                    return (
+                      <div key={question.id} className={`rounded-2xl border p-4 shadow-sm transition ${isAnswered ? 'border-[#9FE0B2] bg-[#FBFFFC] shadow-[0_8px_18px_rgba(19,138,68,0.08)]' : 'border-[#F2D99F] bg-white'}`}>
+                        <div className="flex items-start gap-4">
+                          <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-black text-white ${isAnswered ? 'bg-[#10B981]' : 'bg-[#FFC638]'}`}>{question.question_number || index + 1}</span>
+                          <p className="min-w-0 flex-1 text-[15px] font-bold leading-6 text-[#18213B]">{question.question_text}</p>
+                          <button
+                            type="button"
+                            onClick={() => toggleQuestionFlag(question.id)}
+                            title={isFlagged ? 'Remove flag' : 'Flag question'}
+                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition ${isFlagged ? 'bg-[#FFF1CB] text-[#D88914]' : 'text-[#D88914] hover:bg-[#FFF8EA]'}`}
+                          >
+                            <Flag className={`h-5 w-5 ${isFlagged ? 'fill-[#FFC638]' : ''}`} />
+                          </button>
+                        </div>
+                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                          {answerOptions.map(option => (
+                            <button
+                              key={option}
+                              onClick={() => setAnswers(current => ({ ...current, [question.id]: option }))}
+                              className={`min-h-[52px] rounded-xl border-2 px-3 text-[13px] font-black transition ${
+                                selectedAnswer === option
+                                  ? option === 'TRUE'
+                                    ? 'border-[#0B7B34] bg-[#138A44] text-white shadow-[0_10px_20px_rgba(19,138,68,0.24)]'
+                                    : option === 'FALSE'
+                                    ? 'border-[#B92E25] bg-[#D83A2E] text-white shadow-[0_10px_20px_rgba(216,58,46,0.24)]'
+                                    : 'border-[#124EAF] bg-[#1458C8] text-white shadow-[0_10px_20px_rgba(20,88,200,0.24)]'
+                                  : option === 'TRUE'
+                                  ? 'border-[#CFEBD5] bg-[#FBFFFC] text-[#138A44] hover:bg-[#F2FFF5]'
+                                  : option === 'FALSE'
+                                  ? 'border-[#FFD1C8] bg-[#FFFCFB] text-[#D83A2E] hover:bg-[#FFF4F1]'
+                                  : 'border-[#D0DDF8] bg-[#FCFDFF] text-[#1458C8] hover:bg-[#F3F7FF]'
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+          </section>
+
+          <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-[#F2D99F] bg-[#FFFDF8]/96 px-4 py-4 shadow-[0_-12px_30px_rgba(86,58,12,0.08)] backdrop-blur">
+            <div className="mx-auto grid max-w-[1860px] gap-4 lg:grid-cols-[minmax(0,1fr)_310px_minmax(220px,280px)] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {practiceQuestions.map((question: any, index: number) => {
+                    const isAnswered = Boolean(answers[question.id]);
+                    const isFlagged = Boolean(flaggedQuestions[question.id]);
+                    return (
+                      <button
+                        key={question.id}
+                        type="button"
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border text-[14px] font-black ${
+                          isFlagged
+                            ? 'border-[#FFB4AC] bg-[#FFF1F0] text-[#D83A2E]'
+                            : isAnswered
+                            ? 'border-[#BDE7C6] bg-[#F0FFF3] text-[#138A44]'
+                            : 'border-[#DCE3EA] bg-[#F1F5F9] text-[#526079]'
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-5 text-[13px] font-bold text-[#526079]">
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#10B981]" /> Answered {answeredCount}</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#FF5C55]" /> Flagged {flaggedCount}</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#DCE3EA]" /> Unanswered {unansweredCount}</span>
+                </div>
+              </div>
+
+              <div className="hidden h-[72px] items-center justify-center gap-5 rounded-2xl border border-[#F2D99F] bg-white/78 shadow-sm lg:flex">
+                <Star className="h-8 w-8 fill-[#FFC638] text-[#FFC638]" />
+                <div className="text-center">
+                  <p className="text-[13px] font-bold text-[#6E3A11]">Correct streak</p>
+                  <p className="mt-1 text-[22px] font-black text-[#3B2D24]">{Number(data?.correct_streak || 0)}</p>
+                </div>
+                <Flame className="h-7 w-7 fill-[#FFC638] text-[#FFC638]" />
+              </div>
+
+              <button onClick={() => submitPractice(false)} disabled={submitting} className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-[#FFC638] px-5 text-[18px] font-black uppercase tracking-[0.02em] text-[#3B2D24] shadow-[0_12px_24px_rgba(245,158,36,0.26)] transition hover:bg-[#F5B923] disabled:opacity-60">
+                <Send className="h-6 w-6" /> {submitting ? 'Submitting...' : 'Submit Test'}
+              </button>
             </div>
-            <button onClick={() => submitPractice(false)} disabled={submitting} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#ef5f55] text-[14px] font-black text-white disabled:opacity-60">
-              {submitting ? 'Submitting...' : 'Submit Passage'} <ArrowRight className="h-4 w-4" />
-            </button>
-          </aside>
-        </section>
-      </MasteryShell>
+          </footer>
+        </div>
+      </main>
     );
   }
 
   if (mode === 'feedback') {
     return (
-      <MasteryShell title="Feedback">
-        <section className="grid h-[calc(100vh-150px)] w-full max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_470px]">
-          <article className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-[24px] font-black text-[#05162E]">{data?.passage?.title}</h2>
-            <div className="prose prose-slate mt-5 max-w-none" dangerouslySetInnerHTML={{ __html: data?.passage?.passage_html || '' }} />
-          </article>
-          <aside className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            {showStrategyCheck && quickStrategyCheck ? (
-              <>
-                <div className="mb-4 rounded-2xl bg-yellow-50 p-4">
-                  <span className="text-[13px] font-black text-yellow-700">💡 Quick Strategy Check</span>
+      <main className="min-h-screen overflow-x-hidden bg-[#FFFDF8] text-[#071A3D]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+        <div className="mx-auto flex min-h-screen w-full max-w-[1860px] flex-col bg-[radial-gradient(circle_at_50%_0%,rgba(255,220,150,0.18),transparent_32%),linear-gradient(180deg,#fffdf8_0%,#fffaf0_100%)] px-4 pt-5 sm:px-6 lg:px-8">
+          <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-5">
+              <button onClick={() => navigate('/tests?mode=practice')} className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-6 text-[15px] font-black text-[#6E3A11] shadow-[0_10px_24px_rgba(86,58,12,0.06)] transition hover:bg-[#FFF8E9]">
+                <ArrowLeft className="h-5 w-5" /> Back
+              </button>
+              <JawaafLogo className="hidden h-[58px] w-[190px] sm:block" />
+            </div>
+
+            <div className="order-3 mx-auto inline-flex h-14 items-center justify-center rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] px-7 text-[17px] font-black text-[#A55508] shadow-sm lg:order-none">
+              Reading Passage {currentPassageOrder} <span className="px-2 text-[#D78A14]">-</span> Feedback
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden h-14 items-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-5 shadow-sm md:flex">
+                <Flame className="h-6 w-6 fill-[#FF8B1F] text-[#FF8B1F]" />
+                <div className="leading-none">
+                  <p className="text-[18px] font-black text-[#071A3D]">{dayStreak}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#7B6A57]">Day Streak</p>
                 </div>
-                <div className="rounded-2xl border border-yellow-200 bg-yellow-50/60 p-5">
-                  <div
-                    className="text-[14px] font-bold leading-7 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
-                    dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(quickStrategyCheck) }}
-                  />
+              </div>
+              <div className="flex h-14 items-center gap-3 rounded-2xl border border-[#F2D99F] bg-white px-5 shadow-sm">
+                <CheckCircle2 className="h-8 w-8 text-[#138A44]" />
+                <div className="leading-none">
+                  <p className="text-[11px] font-bold text-[#7B6A57]">Review</p>
+                  <p className="mt-1 text-[18px] font-black text-[#071A3D]">{feedbackIndex + 1}/{feedbackQuestions.length || 1}</p>
                 </div>
-                <button onClick={continueFromFeedback} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#294b77] text-[14px] font-black text-white">
-                  Continue <ArrowRight className="h-4 w-4" />
-                </button>
-              </>
-            ) : currentFeedbackQuestion ? (
-              <>
-                <div className="mb-4 flex items-center justify-between rounded-2xl bg-[#EFF4FB] p-4">
-                  <span className="text-[13px] font-black text-[#294b77]">Question {feedbackIndex + 1}/{feedbackQuestions.length}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${currentFeedbackQuestion.is_correct ? 'bg-emerald-50 text-emerald-700' : 'bg-[#FFF3F2] text-[#ef5f55]'}`}>
-                    {currentFeedbackQuestion.is_correct ? 'Correct' : currentFeedbackQuestion.student_answer ? 'Review' : 'Unanswered'}
-                  </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#071A3D] text-[18px] font-black text-white">{studentInitial}</span>
+                <span className="hidden text-[16px] font-black text-[#3B2D24] sm:inline">{firstName}</span>
+                <ChevronDown className="hidden h-4 w-4 text-[#6E3A11] sm:block" />
+              </div>
+            </div>
+          </header>
+
+          <section className="grid flex-1 gap-5 pb-[142px] pt-4 lg:grid-cols-[308px_minmax(0,1fr)] xl:grid-cols-[308px_minmax(560px,1.18fr)_minmax(390px,0.82fr)] 2xl:grid-cols-[308px_minmax(680px,1.28fr)_minmax(420px,0.72fr)]">
+            <aside className="hidden rounded-[18px] border border-[#F2D99F] bg-white/92 p-6 shadow-[0_18px_40px_rgba(86,58,12,0.07)] lg:block">
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-[#F2D99F]" />
+                <span className="rounded-xl bg-[#FFF8EA] px-4 py-2 text-[13px] font-black uppercase tracking-[0.04em] text-[#2D2016]">Hooty's Journey</span>
+                <span className="grid h-5 w-5 place-items-center rounded-full border border-[#F2D99F] text-[12px] font-black text-[#D88914]">i</span>
+              </div>
+              <div className="mt-5 text-center">
+                <div className="mx-auto grid h-[210px] w-[220px] place-items-center rounded-full border border-[#F2D99F] bg-[#FFF8EA]">
+                  <img src={evolutionAssets.mentorMascot} alt="" className="h-[180px] w-[180px] object-contain drop-shadow-[0_14px_20px_rgba(86,58,12,0.13)]" />
                 </div>
-                <div className="rounded-2xl border border-slate-100 bg-[#F8FAFC] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[15px] font-black leading-6 text-[#05162E]">Q{currentFeedbackQuestion.question_number}. {currentFeedbackQuestion.question_text}</p>
+                <p className="mt-5 text-[11px] font-black uppercase tracking-[0.06em] text-[#B17816]">Current Evolution</p>
+                <h2 className="mt-2 text-[24px] font-black text-[#071A3D]">{evolutionName}</h2>
+                <span className="mt-2 inline-flex rounded-full bg-[#EAF1FF] px-3 py-1 text-[12px] font-black text-[#1F66FF]">Evolution {evolutionNo}</span>
+              </div>
+              <div className="mt-5 border-t border-[#F2D99F] pt-5">
+                <p className="text-[12px] font-black uppercase tracking-[0.04em] text-[#3B2D24]">Evolution Progress</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-4 flex-1 overflow-hidden rounded-full bg-[#FFF1CB]">
+                    <div className="h-full rounded-full bg-[#FFC638]" style={{ width: `${evolutionProgress}%` }} />
                   </div>
-                  <div className="mt-3 grid gap-2 text-[12px] font-bold text-slate-600">
-                    <p>Your answer: <b>{currentFeedbackQuestion.student_answer || 'Unanswered'}</b></p>
-                    <p>Correct answer: <b>{currentFeedbackQuestion.correct_answer}</b></p>
-                    <p>Trap: <b>{currentFeedbackQuestion.trap_type || 'TFNG reasoning'}</b></p>
-                    <p>Locate: <b>{[currentFeedbackQuestion.locate_paragraph, currentFeedbackQuestion.locate_sentence].filter(Boolean).join(', ') || 'See highlighted text'}</b></p>
-                    <div
-                      className="rounded-xl bg-white p-3 leading-5 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
-                      dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(currentFeedbackQuestion.detailed_explanation || '') }}
-                    />
-                  </div>
+                  <span className="text-[13px] font-black text-[#071A3D]">{evolutionProgress}%</span>
                 </div>
-                {isLastFeedbackQuestion ? (
-                  <button onClick={quickStrategyCheck ? () => setShowStrategyCheck(true) : continueFromFeedback} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#294b77] text-[14px] font-black text-white">
-                    {quickStrategyCheck ? 'Quick Strategy Check' : 'Continue'} <ArrowRight className="h-4 w-4" />
-                  </button>
+                <p className="mt-3 text-[12px] font-bold text-[#6E3A11]">Review your feedback, then keep Hooty moving.</p>
+              </div>
+              <div className="mt-5 border-t border-[#F2D99F] pt-5">
+                <div className="relative rounded-[16px] border border-[#DCCAFB] bg-[#FCF8FF] p-4 text-center">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-lg bg-[#EFE4FF] px-4 py-1 text-[12px] font-black uppercase text-[#5D3FC7]">Next Evolution</span>
+                  <img src={evolutionAssets.mascotGuide} alt="" className="mx-auto mt-2 h-[116px] w-[132px] object-contain" />
+                  <p className="mt-1 text-[16px] font-black text-[#071A3D]">{nextEvolutionName}</p>
+                  <span className="mt-1 inline-flex rounded-full bg-[#EFE4FF] px-3 py-1 text-[11px] font-black text-[#5D3FC7]">Evolution {Number(evolutionNo) + 1}</span>
+                </div>
+              </div>
+              <div className="mt-6 rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] px-4 py-4 text-center text-[14px] font-bold leading-6 text-[#294B77]">
+                Every review makes the next answer sharper.
+              </div>
+            </aside>
+
+            <article className="min-h-[580px] overflow-hidden rounded-[18px] border border-[#F2D99F] bg-white shadow-[0_18px_40px_rgba(86,58,12,0.07)] xl:h-[calc(100vh-236px)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[#F7E7C4] px-5 py-4 sm:px-8">
+                <span className="rounded-lg border border-[#F2D99F] bg-[#FFF8EA] px-3 py-2 text-[13px] font-black uppercase tracking-[0.04em] text-[#A55508]">Reading Passage</span>
+                <span className="rounded-full bg-[#EAF1FF] px-3 py-1.5 text-[12px] font-black text-[#1F66FF]">Feedback Mode</span>
+              </div>
+              <div className="h-[calc(100%-76px)] overflow-y-auto px-5 py-5 sm:px-10 sm:py-7">
+                <h1 className="text-[26px] font-black leading-tight text-[#071A3D] sm:text-[30px]">{data?.passage?.title}</h1>
+                <div
+                  className="ielts-passage mt-7 max-w-none !font-['Inter','Segoe_UI',sans-serif] !text-[19px] !leading-[1.85] !text-[#18213B]"
+                  dangerouslySetInnerHTML={{ __html: data?.passage?.passage_html || '' }}
+                />
+              </div>
+            </article>
+
+            <aside className="min-h-[580px] overflow-hidden rounded-[18px] border border-[#F2D99F] bg-white shadow-[0_18px_40px_rgba(86,58,12,0.07)] lg:col-span-2 xl:col-span-1 xl:h-[calc(100vh-236px)]">
+              <div className="h-full overflow-y-auto px-5 py-6 sm:px-6">
+                {showStrategyCheck && quickStrategyCheck ? (
+                  <>
+                    <div className="rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] p-5">
+                      <span className="text-[13px] font-black uppercase tracking-[0.06em] text-[#A55508]">Quick Strategy Check</span>
+                      <h2 className="mt-2 text-[25px] font-black text-[#071A3D]">Before the next passage</h2>
+                    </div>
+                    <div className="mt-5 rounded-2xl border border-yellow-200 bg-yellow-50/60 p-5">
+                      <div
+                        className="text-[14px] font-bold leading-7 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                        dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(quickStrategyCheck) }}
+                      />
+                    </div>
+                  </>
+                ) : currentFeedbackQuestion ? (
+                  <>
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#F2D99F] bg-[#FFF8EA] p-4">
+                      <span className="text-[13px] font-black text-[#A55508]">Question {feedbackIndex + 1}/{feedbackQuestions.length}</span>
+                      <span className={`rounded-full px-3 py-1.5 text-[11px] font-black ${currentFeedbackQuestion.is_correct ? 'bg-emerald-50 text-emerald-700' : 'bg-[#FFF3F2] text-[#ef5f55]'}`}>
+                        {currentFeedbackQuestion.is_correct ? 'Correct' : currentFeedbackQuestion.student_answer ? 'Review' : 'Unanswered'}
+                      </span>
+                    </div>
+                    <div className="mt-5 rounded-2xl border border-[#F2D99F] bg-white p-5 shadow-sm">
+                      <p className="text-[16px] font-black leading-7 text-[#071A3D]">Q{currentFeedbackQuestion.question_number}. {currentFeedbackQuestion.question_text}</p>
+                      <div className="mt-5 grid gap-3 text-[13px] font-bold text-[#526079]">
+                        <p>Your answer: <b className="text-[#071A3D]">{currentFeedbackQuestion.student_answer || 'Unanswered'}</b></p>
+                        <p>Correct answer: <b className="text-[#138A44]">{currentFeedbackQuestion.correct_answer}</b></p>
+                        <p>Trap: <b className="text-[#071A3D]">{currentFeedbackQuestion.trap_type || 'TFNG reasoning'}</b></p>
+                        <p>Locate: <b className="text-[#071A3D]">{[currentFeedbackQuestion.locate_paragraph, currentFeedbackQuestion.locate_sentence].filter(Boolean).join(', ') || 'See highlighted text'}</b></p>
+                        <div
+                          className="rounded-xl bg-[#F8FAFC] p-4 leading-6 text-[#526079] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
+                          dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(currentFeedbackQuestion.detailed_explanation || '') }}
+                        />
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <button onClick={() => setFeedbackIndex(current => current + 1)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#ef5f55] text-[14px] font-black text-white">
-                    Next Feedback <ArrowRight className="h-4 w-4" />
-                  </button>
+                  <p className="rounded-2xl bg-[#F8FAFC] p-4 text-[14px] font-bold text-slate-500">Feedback is not available for this passage yet.</p>
                 )}
-              </>
-            ) : (
-              <p className="rounded-2xl bg-[#F8FAFC] p-4 text-[14px] font-bold text-slate-500">Feedback is not available for this passage yet.</p>
-            )}
-          </aside>
-        </section>
-      </MasteryShell>
+              </div>
+            </aside>
+          </section>
+
+          <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-[#F2D99F] bg-[#FFFDF8]/96 px-4 py-4 shadow-[0_-12px_30px_rgba(86,58,12,0.08)] backdrop-blur">
+            <div className="mx-auto grid max-w-[1860px] gap-4 lg:grid-cols-[minmax(0,1fr)_310px_minmax(220px,280px)] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {feedbackQuestions.map((question: any, index: number) => {
+                    const isActive = index === feedbackIndex && !showStrategyCheck;
+                    const isCorrect = Boolean(question.is_correct);
+                    const isUnanswered = !question.student_answer;
+                    return (
+                      <button
+                        key={question.id}
+                        type="button"
+                        onClick={() => {
+                          setShowStrategyCheck(false);
+                          setFeedbackIndex(index);
+                        }}
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border text-[14px] font-black ${
+                          isActive
+                            ? 'border-[#FFC638] bg-[#FFE18C] text-[#071A3D]'
+                            : isUnanswered
+                            ? 'border-[#DCE3EA] bg-[#F1F5F9] text-[#526079]'
+                            : isCorrect
+                            ? 'border-[#BDE7C6] bg-[#F0FFF3] text-[#138A44]'
+                            : 'border-[#FFB4AC] bg-[#FFF1F0] text-[#D83A2E]'
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-5 text-[13px] font-bold text-[#526079]">
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#10B981]" /> Correct {feedbackQuestions.filter((question: any) => question.is_correct).length}</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#FF5C55]" /> Review {feedbackQuestions.filter((question: any) => question.student_answer && !question.is_correct).length}</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#DCE3EA]" /> Unanswered {feedbackQuestions.filter((question: any) => !question.student_answer).length}</span>
+                </div>
+              </div>
+
+              <div className="hidden h-[72px] items-center justify-center gap-5 rounded-2xl border border-[#F2D99F] bg-white/78 shadow-sm lg:flex">
+                <Star className="h-8 w-8 fill-[#FFC638] text-[#FFC638]" />
+                <div className="text-center">
+                  <p className="text-[13px] font-bold text-[#6E3A11]">Feedback</p>
+                  <p className="mt-1 text-[22px] font-black text-[#3B2D24]">{feedbackIndex + 1}/{feedbackQuestions.length || 1}</p>
+                </div>
+                <Flame className="h-7 w-7 fill-[#FFC638] text-[#FFC638]" />
+              </div>
+
+              {showStrategyCheck && quickStrategyCheck ? (
+                <button onClick={continueFromFeedback} className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-[#FFC638] px-5 text-[18px] font-black uppercase tracking-[0.02em] text-[#3B2D24] shadow-[0_12px_24px_rgba(245,158,36,0.26)] transition hover:bg-[#F5B923]">
+                  Continue <ArrowRight className="h-6 w-6" />
+                </button>
+              ) : isLastFeedbackQuestion ? (
+                <button onClick={quickStrategyCheck ? () => setShowStrategyCheck(true) : continueFromFeedback} className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-[#FFC638] px-5 text-[18px] font-black uppercase tracking-[0.02em] text-[#3B2D24] shadow-[0_12px_24px_rgba(245,158,36,0.26)] transition hover:bg-[#F5B923]">
+                  {quickStrategyCheck ? 'Strategy Check' : 'Continue'} <ArrowRight className="h-6 w-6" />
+                </button>
+              ) : (
+                <button onClick={() => setFeedbackIndex(current => current + 1)} className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-[#FFC638] px-5 text-[18px] font-black uppercase tracking-[0.02em] text-[#3B2D24] shadow-[0_12px_24px_rgba(245,158,36,0.26)] transition hover:bg-[#F5B923]">
+                  Next Feedback <ArrowRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+          </footer>
+        </div>
+      </main>
     );
   }
 
@@ -607,49 +1074,113 @@ export const TfngOverallPerformanceDesign = ({
   const attemptNo = Number(data?.attempt?.attempt_no || 1);
   const showInstructorCta = Boolean(summary.requires_instructor) || (!hasPassedLevel && attemptNo > 1);
   const requiredAccuracy = Number(data?.evolution?.first_attempt_required_accuracy || 60);
-  const passageBreakdown = Array.isArray(summary.passage_breakdown) && summary.passage_breakdown.length > 0
-    ? summary.passage_breakdown
-    : Array.from({ length: Math.max(1, Number(summary.total_passages || 4)) }).map((_, index) => ({
+  const getPassageBreakdown = (targetSummary: any) => Array.isArray(targetSummary?.passage_breakdown) && targetSummary.passage_breakdown.length > 0
+    ? targetSummary.passage_breakdown
+    : Array.from({ length: Math.max(1, Number(targetSummary?.total_passages || 4)) }).map((_, index) => ({
       id: `fallback-${index}`,
       passage_order: index + 1,
       title: `Passage ${index + 1}`,
       score: 0,
       correct_answers: 0,
-      total_questions: Math.max(1, Math.round(Number(summary.total_questions || 0) / Math.max(1, Number(summary.total_passages || 1))))
+      total_questions: Math.max(1, Math.round(Number(targetSummary?.total_questions || 0) / Math.max(1, Number(targetSummary?.total_passages || 1))))
     }));
+  const passageBreakdown = getPassageBreakdown(summary);
 
-  const statCards = [
+  const getStatCards = (targetSummary: any) => [
     {
       label: 'Passages Completed',
-      value: `${summary.passages_completed || 0} / ${summary.total_passages || 0}`,
+      value: `${targetSummary?.passages_completed || 0} / ${targetSummary?.total_passages || 0}`,
       image: tfngFeedbackAssets.completed,
       valueClass: 'text-[#3010A8]'
     },
     {
       label: 'Questions Attempted',
-      value: `${summary.questions_attempted || 0} / ${summary.total_questions || 0}`,
+      value: `${targetSummary?.questions_attempted || 0} / ${targetSummary?.total_questions || 0}`,
       image: tfngFeedbackAssets.attempted,
       valueClass: 'text-[#1367FF]'
     },
     {
       label: 'Correct Answers',
-      value: summary.correct_answers || 0,
+      value: targetSummary?.correct_answers || 0,
       image: tfngFeedbackAssets.tick,
       valueClass: 'text-[#119B45]'
     },
     {
       label: 'Wrong Answers',
-      value: summary.wrong_answers || 0,
+      value: targetSummary?.wrong_answers || 0,
       image: tfngFeedbackAssets.wrong,
       valueClass: 'text-[#E21D1D]'
     },
     {
       label: 'Unanswered',
-      value: summary.unanswered_questions || 0,
+      value: targetSummary?.unanswered_questions || 0,
       image: tfngFeedbackAssets.target,
       valueClass: 'text-[#EE7A10]'
     }
   ];
+  const statCards = getStatCards(summary);
+  const attemptSummaries = Array.isArray(summary.attempt_summaries)
+    ? summary.attempt_summaries.filter((attemptSummary: any) => attemptSummary && typeof attemptSummary === 'object')
+    : [];
+  const showSetWiseSummary = instructorMode && attemptSummaries.length > 1;
+
+  const renderStatCards = (cards: typeof statCards) => (
+    <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+      {cards.map(card => (
+        <div key={card.label} className="grid min-h-[170px] place-items-center rounded-[14px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F5F9FF_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <img src={card.image} alt="" className="h-[58px] w-[58px] object-contain drop-shadow-[0_8px_14px_rgba(30,58,110,0.11)]" />
+          <p className="mt-2 text-[14px] font-black text-[#071A3D]">{card.label}</p>
+          <p className={`mt-3 text-[31px] font-black leading-none ${card.valueClass}`}>{card.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderFoundationBlock = () => (
+    <div className="mt-5 flex flex-col items-center gap-6 rounded-[18px] border border-[#BBD1FB] bg-[linear-gradient(135deg,#DCEBFF_0%,#F7FBFF_100%)] px-7 py-5 shadow-[0_12px_28px_rgba(45,99,243,0.08)] md:flex-row md:px-16">
+      <span className="grid h-[138px] w-[138px] shrink-0 place-items-center rounded-full bg-[#CFE0FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <img src={tfngFeedbackAssets.book} alt="" className="h-[92px] w-[92px] object-contain drop-shadow-[0_10px_14px_rgba(60,91,255,0.15)]" />
+      </span>
+      <div className="text-center md:text-left">
+        <h2 className="text-[25px] font-black leading-tight text-[#10166C]">
+          {hasPassedLevel ? 'You unlocked the next evolution!' : 'Let’s make your foundation stronger!'}
+        </h2>
+        <p className="mt-4 max-w-[800px] text-[17px] font-semibold leading-[28px] text-[#071A3D]">
+          {hasPassedLevel
+            ? 'You’ve shown strong TFNG control and completed the challenge. Keep the momentum going into the next level.'
+            : `You’ve shown great effort and completed the challenge. To move to the next evolution, aim for a score of ${requiredAccuracy}% or higher.`} <span className="text-[#8A67FF]">♥</span>
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderPassageBreakdown = (breakdown: any[]) => (
+    <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {breakdown.map((passage: any, index: number) => {
+        const total = Math.max(1, Number(passage.total_questions || 4));
+        const score = Math.max(0, Number(passage.score ?? passage.correct_answers ?? 0));
+        const starCount = Math.min(4, Math.max(1, total));
+        return (
+          <div key={passage.id || index} className="rounded-[12px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F7FAFF_100%)] px-5 py-4 shadow-[0_8px_18px_rgba(8,25,58,0.04)]">
+            <div className="flex items-center justify-center gap-4">
+              <span className="grid h-[42px] w-[42px] place-items-center rounded-xl bg-[#EEE7FF]">
+                <img src={tfngFeedbackAssets.completed} alt="" className="h-8 w-8 object-contain" />
+              </span>
+              <p className="text-[15px] font-black text-[#071A3D]">{passage.title || `Passage ${passage.passage_order || index + 1}`}</p>
+            </div>
+            <p className={`mt-3 text-center text-[26px] font-black ${score / total >= 0.6 ? 'text-[#EF8C12]' : 'text-[#E21D1D]'}`}>
+              {score} / {total}
+            </p>
+            <div className="mt-3 flex items-center justify-center gap-3">
+              {Array.from({ length: starCount }).map((_, starIndex) => (
+                <Star key={starIndex} className={`h-5 w-5 ${starIndex < Math.round(score) ? 'fill-[#F9AD1B] text-[#F9AD1B]' : 'fill-[#D2D2D2] text-[#D2D2D2]'}`} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   if (hasPassedLevel) {
     const evolutionLabel = `Evolution ${summary.evolution_number || data?.evolution?.evolution_number || 1}`;
@@ -937,61 +1468,34 @@ export const TfngOverallPerformanceDesign = ({
         </section>
 
         <section className="relative z-10 mx-auto mt-5 max-w-[1328px] rounded-[18px] border border-[#D3E2F7] bg-white/78 p-5 shadow-[0_16px_34px_rgba(8,25,58,0.08)] backdrop-blur sm:p-7">
-          <SectionTitle title="Your Performance Summary" />
-          <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-            {statCards.map(card => (
-              <div key={card.label} className="grid min-h-[170px] place-items-center rounded-[14px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F5F9FF_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-                <img src={card.image} alt="" className="h-[58px] w-[58px] object-contain drop-shadow-[0_8px_14px_rgba(30,58,110,0.11)]" />
-                <p className="mt-2 text-[14px] font-black text-[#071A3D]">{card.label}</p>
-                <p className={`mt-3 text-[31px] font-black leading-none ${card.valueClass}`}>{card.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 flex flex-col items-center gap-6 rounded-[18px] border border-[#BBD1FB] bg-[linear-gradient(135deg,#DCEBFF_0%,#F7FBFF_100%)] px-7 py-5 shadow-[0_12px_28px_rgba(45,99,243,0.08)] md:flex-row md:px-16">
-            <span className="grid h-[138px] w-[138px] shrink-0 place-items-center rounded-full bg-[#CFE0FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-              <img src={tfngFeedbackAssets.book} alt="" className="h-[92px] w-[92px] object-contain drop-shadow-[0_10px_14px_rgba(60,91,255,0.15)]" />
-            </span>
-            <div className="text-center md:text-left">
-              <h2 className="text-[25px] font-black leading-tight text-[#10166C]">
-                {hasPassedLevel ? 'You unlocked the next evolution!' : 'Let’s make your foundation stronger!'}
-              </h2>
-              <p className="mt-4 max-w-[800px] text-[17px] font-semibold leading-[28px] text-[#071A3D]">
-                {hasPassedLevel
-                  ? 'You’ve shown strong TFNG control and completed the challenge. Keep the momentum going into the next level.'
-                  : `You’ve shown great effort and completed the challenge. To move to the next evolution, aim for a score of ${requiredAccuracy}% or higher.`} <span className="text-[#8A67FF]">♥</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <SectionTitle title="Passage Breakdown" />
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {passageBreakdown.map((passage: any, index: number) => {
-                const total = Math.max(1, Number(passage.total_questions || 4));
-                const score = Math.max(0, Number(passage.score ?? passage.correct_answers ?? 0));
-                const starCount = Math.min(4, Math.max(1, total));
+          {showSetWiseSummary ? (
+            <div className="space-y-8">
+              {attemptSummaries.map((attemptSummary: any, index: number) => {
+                const setNo = Number(attemptSummary.set_no || attemptSummary.attempt_no || index + 1);
                 return (
-                  <div key={passage.id || index} className="rounded-[12px] border border-[#D0DEF4] bg-[linear-gradient(135deg,#FFFFFF_0%,#F7FAFF_100%)] px-5 py-4 shadow-[0_8px_18px_rgba(8,25,58,0.04)]">
-                    <div className="flex items-center justify-center gap-4">
-                      <span className="grid h-[42px] w-[42px] place-items-center rounded-xl bg-[#EEE7FF]">
-                        <img src={tfngFeedbackAssets.completed} alt="" className="h-8 w-8 object-contain" />
-                      </span>
-                      <p className="text-[15px] font-black text-[#071A3D]">{passage.title || `Passage ${passage.passage_order || index + 1}`}</p>
+                  <div key={`set-${setNo}`} className="rounded-[18px] border border-[#D3E2F7] bg-white/62 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:p-6">
+                    <SectionTitle title={`Your Performance Summary Set ${setNo}`} />
+                    {renderStatCards(getStatCards(attemptSummary))}
+                    <div className="mt-6">
+                      <SectionTitle title={`Passage Breakdown Set ${setNo}`} />
+                      {renderPassageBreakdown(getPassageBreakdown(attemptSummary))}
                     </div>
-                    <p className={`mt-3 text-center text-[26px] font-black ${score / total >= 0.6 ? 'text-[#EF8C12]' : 'text-[#E21D1D]'}`}>
-                      {score} / {total}
-                    </p>
-                    <div className="mt-3 flex items-center justify-center gap-3">
-                      {Array.from({ length: starCount }).map((_, starIndex) => (
-                        <Star key={starIndex} className={`h-5 w-5 ${starIndex < Math.round(score) ? 'fill-[#F9AD1B] text-[#F9AD1B]' : 'fill-[#D2D2D2] text-[#D2D2D2]'}`} />
-                      ))}
-                    </div>
+                    {index < attemptSummaries.length - 1 ? renderFoundationBlock() : null}
                   </div>
                 );
               })}
             </div>
-          </div>
+          ) : (
+            <>
+              <SectionTitle title="Your Performance Summary" />
+              {renderStatCards(statCards)}
+              {renderFoundationBlock()}
+              <div className="mt-6">
+                <SectionTitle title="Passage Breakdown" />
+                {renderPassageBreakdown(passageBreakdown)}
+              </div>
+            </>
+          )}
 
           <div className="relative mt-6 overflow-hidden rounded-[18px] border border-[#C7DBFB] bg-[linear-gradient(135deg,#DCEBFF_0%,#F6FAFF_100%)] px-6 py-4 md:flex md:min-h-[148px] md:items-center md:gap-7">
             <div className="relative h-[122px] w-[196px] shrink-0 overflow-hidden">

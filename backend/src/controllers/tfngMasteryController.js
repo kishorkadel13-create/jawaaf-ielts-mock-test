@@ -271,6 +271,25 @@ const getPlayablePublishedEvolutions = async () => {
     }));
 };
 
+const getNextPublishedEvolution = (evolutions, currentEvolutionId) => {
+  const currentIndex = evolutions.findIndex(item => item.id === currentEvolutionId);
+  return currentIndex >= 0 ? evolutions[currentIndex + 1] || null : null;
+};
+
+const buildComingSoonPayload = (evolution, completedAttemptId = null) => ({
+  next_page: 'coming_soon',
+  completed_attempt_id: completedAttemptId,
+  evolution,
+  message: evolution
+    ? `${evolution.name || 'The next TFNG level'} is unlocked, but its passages are coming soon.`
+    : 'The next TFNG level is unlocked, but its passages are coming soon.'
+});
+
+const ensureEvolutionIsPlayable = async (evolution, attemptNo = 1) => {
+  if (!evolution?.id) return [];
+  return getPlayableEvolutionPassageLinks(evolution.id, attemptNo);
+};
+
 const getAttemptWithEvolution = async (attemptId, userId) => {
   const { data, error } = await supabaseAdmin
     .from('tfng_mastery_evolution_attempts')
@@ -429,6 +448,32 @@ const createEvolutionAttempt = async ({ userId, evolution, attemptNo = 1 }) => {
   return data;
 };
 
+const getExistingEvolutionAttempt = async ({ userId, evolutionId, attemptNo, statuses = null }) => {
+  let query = supabaseAdmin
+    .from('tfng_mastery_evolution_attempts')
+    .select('*, evolution:tfng_mastery_evolutions(*)')
+    .eq('user_id', userId)
+    .eq('evolution_id', evolutionId)
+    .eq('attempt_no', attemptNo)
+    .order('started_at', { ascending: false })
+    .limit(1);
+
+  if (Array.isArray(statuses) && statuses.length > 0) {
+    query = query.in('status', statuses);
+  }
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data || null;
+};
+
+const continuePageForAttempt = (attempt) => {
+  if (attempt.status === 'design') return 'design';
+  if (attempt.status === 'in_progress') return 'practice';
+  if (attempt.status === 'performance' || attempt.status === 'failed_locked') return 'performance';
+  return 'design';
+};
+
 export const getTfngMasteryOverview = async (req, res) => {
   try {
     if (!ensureStudentAccess(req, res)) return;
@@ -488,7 +533,14 @@ export const startOrResumeTfngMastery = async (req, res) => {
 
     const activeAttempt = await getActiveAttempt(req.user.id);
     if (activeAttempt) {
+      const activeNeedsPlayableContent = ['design', 'in_progress'].includes(activeAttempt.status);
+      const activeLinks = activeNeedsPlayableContent
+        ? await ensureEvolutionIsPlayable(activeAttempt.evolution, activeAttempt.attempt_no || 1)
+        : [];
       if (entryOnly) {
+        if (activeNeedsPlayableContent && activeLinks.length === 0) {
+          return res.status(200).json(buildComingSoonPayload(activeAttempt.evolution, activeAttempt.id));
+        }
         return res.status(200).json({
           attempt_id: activeAttempt.id,
           attempt: {
@@ -500,21 +552,17 @@ export const startOrResumeTfngMastery = async (req, res) => {
             : 'design'
         });
       }
-      const activeLinks = await getPlayableEvolutionPassageLinks(activeAttempt.evolution_id, activeAttempt.attempt_no || 1);
-      if (activeLinks.length === 0) {
-        return res.status(409).json({
-          error: 'SetupIncomplete',
-          message: 'This TFNG level needs at least one published passage with saved questions before students can start.'
-        });
+      if (activeNeedsPlayableContent && activeLinks.length === 0) {
+        return res.status(200).json(buildComingSoonPayload(activeAttempt.evolution, activeAttempt.id));
       }
-      return res.status(200).json(await buildAttemptPayload(activeAttempt, activeLinks));
+      return res.status(200).json(await buildAttemptPayload(activeAttempt, activeNeedsPlayableContent ? activeLinks : null));
     }
 
-    const evolutions = await getPlayablePublishedEvolutions();
+    const evolutions = await getPublishedEvolutions();
     if (evolutions.length === 0) {
       return res.status(404).json({
         error: 'NoReadyEvolution',
-        message: 'No Reading Mastery level is ready yet. Please add a level, at least one passage, and questions from admin.'
+        message: 'No Reading Mastery level is published yet. Please publish a level from admin.'
       });
     }
 
@@ -534,6 +582,11 @@ export const startOrResumeTfngMastery = async (req, res) => {
         evolutions_completed: evolutions.length
       });
     }
+    const nextLinks = await ensureEvolutionIsPlayable(nextEvolution, 1);
+    if (nextLinks.length === 0) {
+      return res.status(200).json(buildComingSoonPayload(nextEvolution));
+    }
+
     const attempt = await createEvolutionAttempt({ userId: req.user.id, evolution: nextEvolution });
 
     if (entryOnly) {
@@ -885,9 +938,31 @@ export const getTfngPerformance = async (req, res) => {
       acc[link.order_no] = link.passage?.title || `Passage ${link.order_no}`;
       return acc;
     }, {});
+    const { data: unlockedAttempt, error: unlockedError } = await supabaseAdmin
+      .from('tfng_mastery_evolution_attempts')
+      .select('id, attempt_no, status, decision')
+      .eq('user_id', req.user.id)
+      .eq('evolution_id', attempt.evolution_id)
+      .eq('status', 'completed')
+      .eq('decision', 'unlock_next')
+      .order('attempt_no', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (unlockedError) throw unlockedError;
+    const hasInstructorUnlock = Boolean(
+      unlockedAttempt &&
+      toNumber(unlockedAttempt.attempt_no, 1) >= toNumber(attempt.attempt_no, 1)
+    );
+    const effectiveDecision = hasInstructorUnlock ? 'unlock_next' : attempt.decision;
+    const effectiveStatus = hasInstructorUnlock ? 'completed' : attempt.status;
     const dayStreak = await getStudentTfngDayStreak(req.user.id);
     res.status(200).json({
-      attempt,
+      attempt: {
+        ...attempt,
+        status: effectiveStatus,
+        decision: effectiveDecision,
+        unlocked_by_instructor: hasInstructorUnlock
+      },
       evolution: attempt.evolution,
       day_streak: dayStreak,
       summary: {
@@ -902,9 +977,12 @@ export const getTfngPerformance = async (req, res) => {
         accuracy: attempt.accuracy,
         time_used_seconds: attempt.time_used_seconds,
         xp_earned: attempt.xp_earned,
-        decision: attempt.decision,
-        requires_instructor: attempt.status === 'failed_locked' || attempt.decision === 'contact_instructor',
-        hooty_comment: buildHootyComment(attempt.decision, attempt),
+        decision: effectiveDecision,
+        unlocked_by_instructor: hasInstructorUnlock,
+        requires_instructor: !hasInstructorUnlock && (attempt.status === 'failed_locked' || attempt.decision === 'contact_instructor'),
+        hooty_comment: hasInstructorUnlock
+          ? 'Your instructor unlocked the next TFNG evolution. Keep going when the next level is ready.'
+          : buildHootyComment(attempt.decision, attempt),
         instructor_support_url: attempt.evolution.instructor_support_url || '/teacher',
         passage_breakdown: passageAttempts
           .filter(item => ['submitted', 'expired'].includes(item.status))
@@ -933,6 +1011,16 @@ export const continueTfngMastery = async (req, res) => {
   try {
     if (!ensureStudentAccess(req, res)) return;
     const attempt = await getAttemptWithEvolution(req.params.attemptId, req.user.id);
+    const instructorUnlockedAttempt = await getExistingEvolutionAttempt({
+      userId: req.user.id,
+      evolutionId: attempt.evolution_id,
+      attemptNo: Math.max(1, toNumber(attempt.attempt_no, 1) + 1),
+      statuses: ['completed']
+    });
+    const hasLaterInstructorUnlock = Boolean(
+      instructorUnlockedAttempt &&
+      instructorUnlockedAttempt.decision === 'unlock_next'
+    );
 
     if (attempt.status === 'design') {
       await supabaseAdmin.from('tfng_mastery_evolution_attempts').update({
@@ -953,15 +1041,33 @@ export const continueTfngMastery = async (req, res) => {
       });
     }
 
-    if (attempt.status !== 'performance') {
+    if (attempt.status === 'completed' && attempt.decision === 'unlock_next') {
+      // Continue below into the next-evolution resolution.
+    } else if (attempt.status !== 'performance') {
       return res.status(409).json({ error: 'InvalidState', message: 'This TFNG Mastery attempt cannot continue from its current state.' });
     }
 
-    if (attempt.decision === 'repeat_evolution') {
+    if (attempt.decision === 'repeat_evolution' && !hasLaterInstructorUnlock) {
+      const retryAttemptNo = attempt.attempt_no + 1;
+      const existingRetry = await getExistingEvolutionAttempt({
+        userId: req.user.id,
+        evolutionId: attempt.evolution_id,
+        attemptNo: retryAttemptNo,
+        statuses: ['design', 'in_progress', 'performance', 'failed_locked', 'completed']
+      });
+
+      if (existingRetry) {
+        return res.status(200).json({
+          next_page: continuePageForAttempt(existingRetry),
+          attempt_id: existingRetry.id,
+          attempt: existingRetry
+        });
+      }
+
       const retry = await createEvolutionAttempt({
         userId: req.user.id,
         evolution: attempt.evolution,
-        attemptNo: attempt.attempt_no + 1
+        attemptNo: retryAttemptNo
       });
       return res.status(200).json({ next_page: 'design', attempt_id: retry.id, attempt: retry });
     }
@@ -971,15 +1077,26 @@ export const continueTfngMastery = async (req, res) => {
       .update({ status: 'completed', updated_at: new Date().toISOString() })
       .eq('id', attempt.id);
 
-    const evolutions = await getPlayablePublishedEvolutions();
-    const currentIndex = evolutions.findIndex(item => item.id === attempt.evolution_id);
-    const nextEvolution = currentIndex >= 0 ? evolutions[currentIndex + 1] : null;
+    const evolutions = await getPublishedEvolutions();
+    const nextEvolution = getNextPublishedEvolution(evolutions, attempt.evolution_id);
     if (!nextEvolution) {
       return res.status(200).json({ next_page: 'complete_mastery', completed_attempt_id: attempt.id });
     }
 
-    const nextAttempt = await createEvolutionAttempt({ userId: req.user.id, evolution: nextEvolution });
-    res.status(200).json({ next_page: 'design', attempt_id: nextAttempt.id, attempt: nextAttempt });
+    const nextLinks = await ensureEvolutionIsPlayable(nextEvolution, 1);
+    if (nextLinks.length === 0) {
+      return res.status(200).json(buildComingSoonPayload(nextEvolution, attempt.id));
+    }
+
+    const existingNextAttempt = await getExistingEvolutionAttempt({
+      userId: req.user.id,
+      evolutionId: nextEvolution.id,
+      attemptNo: 1,
+      statuses: ['design', 'in_progress', 'performance', 'failed_locked']
+    });
+
+    const nextAttempt = existingNextAttempt || await createEvolutionAttempt({ userId: req.user.id, evolution: nextEvolution });
+    res.status(200).json({ next_page: continuePageForAttempt(nextAttempt), attempt_id: nextAttempt.id, attempt: nextAttempt });
   } catch (err) {
     console.error('continueTfngMastery Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: 'Failed to continue TFNG Mastery.' });
@@ -1001,15 +1118,50 @@ export const listTfngInstructorReports = async (req, res) => {
     if (error) throw error;
 
     const rows = attempts || [];
-    const attemptIds = rows.map(item => item.id).filter(Boolean);
     const userIds = [...new Set(rows.map(item => item.user_id).filter(Boolean))];
+    const evolutionIds = [...new Set(rows.map(item => item.evolution_id).filter(Boolean))];
+
+    let relatedAttempts = [];
+    if (userIds.length > 0 && evolutionIds.length > 0) {
+      const { data: relatedData, error: relatedError } = await supabaseAdmin
+        .from('tfng_mastery_evolution_attempts')
+        .select('id, user_id, evolution_id, attempt_no, status, decision, accuracy, total_questions, questions_attempted, correct_answers, wrong_answers, unanswered_questions, time_used_seconds, completed_at, updated_at')
+        .in('user_id', userIds)
+        .in('evolution_id', evolutionIds)
+        .order('attempt_no', { ascending: true });
+      if (relatedError) throw relatedError;
+      relatedAttempts = relatedData || [];
+    }
+
+    const relatedAttemptsByReport = rows.reduce((acc, report) => {
+      acc[report.id] = relatedAttempts.filter(item =>
+        item.user_id === report.user_id &&
+        item.evolution_id === report.evolution_id &&
+        toNumber(item.attempt_no, 1) <= toNumber(report.attempt_no, 1)
+      );
+      return acc;
+    }, {});
+
+    const relatedAttemptById = relatedAttempts.reduce((acc, attempt) => {
+      acc[attempt.id] = attempt;
+      return acc;
+    }, {});
+
+    const passageAttemptIds = [
+      ...new Set(
+        Object.values(relatedAttemptsByReport)
+          .flat()
+          .map(item => item.id)
+          .filter(Boolean)
+      )
+    ];
 
     let passageAttempts = [];
-    if (attemptIds.length > 0) {
+    if (passageAttemptIds.length > 0) {
       const { data: passageData, error: passageError } = await supabaseAdmin
         .from('tfng_mastery_passage_attempts')
         .select('*, passage:tfng_mastery_passages(id, title)')
-        .in('evolution_attempt_id', attemptIds)
+        .in('evolution_attempt_id', passageAttemptIds)
         .order('passage_order', { ascending: true });
       if (passageError) throw passageError;
       passageAttempts = passageData || [];
@@ -1031,8 +1183,11 @@ export const listTfngInstructorReports = async (req, res) => {
     }, {});
     const passagesByAttempt = passageAttempts.reduce((acc, passageAttempt) => {
       acc[passageAttempt.evolution_attempt_id] = acc[passageAttempt.evolution_attempt_id] || [];
+      const parentAttempt = relatedAttemptById[passageAttempt.evolution_attempt_id] || {};
       acc[passageAttempt.evolution_attempt_id].push({
         id: passageAttempt.id,
+        attempt_no: parentAttempt.attempt_no || null,
+        set_no: parentAttempt.attempt_no || null,
         passage_order: passageAttempt.passage_order,
         title: passageAttempt.passage?.title || `Passage ${passageAttempt.passage_order}`,
         score: toNumber(passageAttempt.score),
@@ -1046,25 +1201,50 @@ export const listTfngInstructorReports = async (req, res) => {
       return acc;
     }, {});
 
-    res.status(200).json(rows.map(attempt => ({
-      id: attempt.id,
-      user_id: attempt.user_id,
-      student: profileById[attempt.user_id] || null,
-      evolution: attempt.evolution,
-      attempt_no: attempt.attempt_no,
-      status: attempt.status,
-      decision: attempt.decision,
-      accuracy: toNumber(attempt.accuracy),
-      total_questions: toNumber(attempt.total_questions),
-      questions_attempted: toNumber(attempt.questions_attempted),
-      correct_answers: toNumber(attempt.correct_answers),
-      wrong_answers: toNumber(attempt.wrong_answers),
-      unanswered_questions: toNumber(attempt.unanswered_questions),
-      time_used_seconds: toNumber(attempt.time_used_seconds),
-      completed_at: attempt.completed_at,
-      updated_at: attempt.updated_at,
-      passages: passagesByAttempt[attempt.id] || []
-    })));
+    res.status(200).json(rows.map(attempt => {
+      const reportAttempts = relatedAttemptsByReport[attempt.id] || [attempt];
+      const reportPassages = reportAttempts.flatMap(reportAttempt => passagesByAttempt[reportAttempt.id] || []);
+      const totals = reportPassages.reduce((acc, passage) => {
+        acc.total_questions += toNumber(passage.total_questions);
+        acc.questions_attempted += toNumber(passage.correct_answers) + toNumber(passage.wrong_answers);
+        acc.correct_answers += toNumber(passage.correct_answers);
+        acc.wrong_answers += toNumber(passage.wrong_answers);
+        acc.unanswered_questions += toNumber(passage.unanswered_questions);
+        return acc;
+      }, {
+        total_questions: 0,
+        questions_attempted: 0,
+        correct_answers: 0,
+        wrong_answers: 0,
+        unanswered_questions: 0,
+        time_used_seconds: 0
+      });
+      const aggregateAccuracy = totals.total_questions > 0
+        ? Number(((totals.correct_answers / totals.total_questions) * 100).toFixed(2))
+        : toNumber(attempt.accuracy);
+      const aggregateTimeUsed = reportAttempts.reduce((total, reportAttempt) => total + toNumber(reportAttempt.time_used_seconds), 0);
+
+      return {
+        id: attempt.id,
+        user_id: attempt.user_id,
+        student: profileById[attempt.user_id] || null,
+        evolution: attempt.evolution,
+        attempt_no: attempt.attempt_no,
+        status: attempt.status,
+        decision: attempt.decision,
+        accuracy: aggregateAccuracy,
+        total_questions: totals.total_questions || toNumber(attempt.total_questions),
+        questions_attempted: totals.questions_attempted || toNumber(attempt.questions_attempted),
+        correct_answers: totals.correct_answers || toNumber(attempt.correct_answers),
+        wrong_answers: totals.wrong_answers || toNumber(attempt.wrong_answers),
+        unanswered_questions: totals.unanswered_questions || toNumber(attempt.unanswered_questions),
+        time_used_seconds: aggregateTimeUsed || toNumber(attempt.time_used_seconds),
+        completed_at: attempt.completed_at,
+        updated_at: attempt.updated_at,
+        attempts: reportAttempts,
+        passages: reportPassages
+      };
+    }));
   } catch (err) {
     console.error('listTfngInstructorReports Error:', err);
     res.status(500).json({ error: 'DatabaseError', message: 'Failed to load TFNG instructor support reports.' });
@@ -1088,9 +1268,8 @@ export const unlockTfngNextLevelByInstructor = async (req, res) => {
       return res.status(409).json({ error: 'InvalidState', message: 'This TFNG attempt is not waiting for instructor unlock.' });
     }
 
-    const evolutions = await getPlayablePublishedEvolutions();
-    const currentIndex = evolutions.findIndex(item => item.id === attempt.evolution_id);
-    const nextEvolution = currentIndex >= 0 ? evolutions[currentIndex + 1] : null;
+    const evolutions = await getPublishedEvolutions();
+    const nextEvolution = getNextPublishedEvolution(evolutions, attempt.evolution_id);
 
     await supabaseAdmin
       .from('tfng_mastery_evolution_attempts')
@@ -1106,6 +1285,11 @@ export const unlockTfngNextLevelByInstructor = async (req, res) => {
         next_page: 'complete_mastery',
         completed_attempt_id: attempt.id
       });
+    }
+
+    const nextLinks = await ensureEvolutionIsPlayable(nextEvolution, 1);
+    if (nextLinks.length === 0) {
+      return res.status(200).json(buildComingSoonPayload(nextEvolution, attempt.id));
     }
 
     const { data: existingNextAttempt, error: existingError } = await supabaseAdmin
