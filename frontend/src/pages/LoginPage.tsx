@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { ShieldAlert, KeyRound, Mail, ArrowRight, Monitor, CheckSquare, BarChart2 } from 'lucide-react';
 import JawaafLogo from '../components/JawaafLogo';
@@ -15,8 +15,9 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, isAuthenticated, profile, isLoading: authLoading } = useAuthStore();
+  const { login, isAuthenticated, profile, user, isLoading: authLoading } = useAuthStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const {
@@ -30,6 +31,10 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && profile && !isSubmitting) {
+      if (!(user?.email_confirmed_at || user?.confirmed_at)) {
+        navigate('/verify-email', { state: { email: user?.email }, replace: true });
+        return;
+      }
       if (profile.role === 'admin') {
         navigate('/admin');
       } else if (profile.role === 'teacher') {
@@ -38,12 +43,16 @@ export default function LoginPage() {
         navigate('/dashboard');
       }
     }
-  }, [isAuthenticated, profile, isSubmitting, navigate]);
+  }, [isAuthenticated, profile, user, isSubmitting, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setSubmitError(null);
     const result = await login(data.email, data.password);
     if (!result.success) {
+      if (result.emailUnverified) {
+        navigate('/verify-email', { state: { email: data.email } });
+        return;
+      }
       setSubmitError(result.error || 'Failed to login');
     }
   };
@@ -121,6 +130,13 @@ export default function LoginPage() {
             </div>
           )}
 
+          {searchParams.get('verified') === '1' && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 text-green-700 text-[13px] rounded-xl flex items-start gap-3 shadow-sm">
+              <CheckSquare className="h-5 w-5 shrink-0 mt-0.5 text-green-600" />
+              <span className="leading-relaxed font-medium">Your email has been verified. You can now sign in normally.</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <label className="block text-[13px] font-bold text-[#05162E] mb-2">
@@ -150,7 +166,7 @@ export default function LoginPage() {
                 <label className="block text-[13px] font-bold text-[#05162E]">
                   Password
                 </label>
-                <Link to="/" className="text-[12px] font-bold text-[#1E3A6E] hover:text-[#EE6055] transition-colors">
+                <Link to="/forgot-password" className="text-[12px] font-bold text-[#1E3A6E] hover:text-[#EE6055] transition-colors">
                   Forgot password?
                 </Link>
               </div>

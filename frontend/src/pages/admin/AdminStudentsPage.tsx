@@ -90,6 +90,11 @@ export default function AdminStudentsPage() {
     return { label: `Until ${formatPremiumExpiry(student.premium_access_expires_at)}`, className: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
   };
 
+  const formatTargetScore = (score?: string | null) => {
+    const value = Number(score);
+    return Number.isFinite(value) && value > 0 ? `Band ${value.toFixed(1)}` : 'N/A';
+  };
+
   const updateSelectedStudent = (updatedProfile: Partial<Student>) => {
     setStudents(current => current
       .map(student => student.id === updatedProfile.id ? { ...student, ...updatedProfile } : student)
@@ -162,9 +167,17 @@ export default function AdminStudentsPage() {
       student.full_name?.toLowerCase().includes(term) ||
       student.email?.toLowerCase().includes(term) ||
       student.phone?.toLowerCase().includes(term) ||
-      student.interested_country?.toLowerCase().includes(term)
+      student.interested_country?.toLowerCase().includes(term) ||
+      String(student.target_score || '').toLowerCase().includes(term)
     );
   });
+
+  const targetScores = students
+    .map(student => Number(student.target_score))
+    .filter(score => Number.isFinite(score) && score > 0);
+  const averageTargetScore = targetScores.length
+    ? `Band ${(targetScores.reduce((sum, score) => sum + score, 0) / targetScores.length).toFixed(1)}`
+    : 'N/A';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans flex" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -213,7 +226,7 @@ export default function AdminStudentsPage() {
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Average Target Score</p>
-                  <h3 className="text-3xl font-black text-[#061A36] mt-0.5">7.5 Band</h3>
+                  <h3 className="text-3xl font-black text-[#061A36] mt-0.5">{averageTargetScore}</h3>
                 </div>
               </div>
 
@@ -311,7 +324,7 @@ export default function AdminStudentsPage() {
                           </td>
                           <td className="py-4 px-6 text-center">
                             <span className="inline-block px-3 py-1 rounded-xl text-white text-xs font-black" style={{ backgroundColor: '#ef5f55' }}>
-                              Band {student.target_score || '7.0'}
+                              {formatTargetScore(student.target_score)}
                             </span>
                           </td>
                           <td className="py-4 px-6">
@@ -384,7 +397,7 @@ export default function AdminStudentsPage() {
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider block">Target Score</span>
                   <span className="text-[15px] font-bold mt-1 inline-flex items-center gap-1.5" style={{ color: '#ef5f55' }}>
                     <Target className="h-4 w-4" />
-                    Band {selectedStudent.target_score || '7.0'}
+                    {formatTargetScore(selectedStudent.target_score)}
                   </span>
                 </div>
               </div>

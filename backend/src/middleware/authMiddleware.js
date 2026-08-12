@@ -22,6 +22,13 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
+    if (!user.email_confirmed_at && !user.confirmed_at) {
+      return res.status(403).json({
+        error: 'EmailNotVerified',
+        message: 'Please verify your email address before continuing.'
+      });
+    }
+
     // Retrieve full profile details including custom database role and subscription access
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')

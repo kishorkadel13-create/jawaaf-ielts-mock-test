@@ -6,6 +6,9 @@ const loadLandingPage = () => import('../pages/LandingPage');
 const loadFeaturesPage = () => import('../pages/FeaturesPage');
 const loadLoginPage = () => import('../pages/LoginPage');
 const loadRegisterPage = () => import('../pages/RegisterPage');
+const loadVerifyEmailPage = () => import('../pages/VerifyEmailPage');
+const loadForgotPasswordPage = () => import('../pages/ForgotPasswordPage');
+const loadResetPasswordPage = () => import('../pages/ResetPasswordPage');
 
 const loadDashboardPage = () => import('../pages/DashboardPage');
 const loadMockTestsPage = () => import('../pages/MockTestsPage');
@@ -34,6 +37,9 @@ const LandingPage = lazy(loadLandingPage);
 const FeaturesPage = lazy(loadFeaturesPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
+const VerifyEmailPage = lazy(loadVerifyEmailPage);
+const ForgotPasswordPage = lazy(loadForgotPasswordPage);
+const ResetPasswordPage = lazy(loadResetPasswordPage);
 const DashboardPage = lazy(loadDashboardPage);
 const MockTestsPage = lazy(loadMockTestsPage);
 const CoursesPage = lazy(loadCoursesPage);
@@ -80,6 +86,9 @@ export default function AppRoutes() {
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected Student Portal Routes */}
       <Route 

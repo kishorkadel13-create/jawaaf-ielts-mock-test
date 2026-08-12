@@ -4,13 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { ShieldAlert, KeyRound, Mail, User, ArrowRight, CheckCircle2, Monitor, CheckSquare, BarChart2, Phone, Globe2, Target } from 'lucide-react';
+import { ShieldAlert, KeyRound, Mail, User, ArrowRight, Monitor, CheckSquare, BarChart2, Phone, Globe2, Target, ShieldCheck } from 'lucide-react';
 import JawaafLogo from '../components/JawaafLogo';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters long'),
   email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(5, 'Please enter a valid phone number'),
+  phone: z.string().regex(/^\d{10}$/, 'Phone number must be exactly 10 digits'),
   interestedCountry: z.string().min(1, 'Please select a country'),
   targetScore: z.string().min(1, 'Please select a target score'),
   password: z.string().min(6, 'Password must be at least 6 characters long'),
@@ -23,9 +23,8 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register: registerUser, isAuthenticated, profile, isLoading: authLoading } = useAuthStore();
+  const { register: registerUser, isAuthenticated, profile, user, isLoading: authLoading } = useAuthStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -39,13 +38,17 @@ export default function RegisterPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && profile) {
+      if (!(user?.email_confirmed_at || user?.confirmed_at)) {
+        navigate('/verify-email', { state: { email: user?.email }, replace: true });
+        return;
+      }
       if (profile.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
       }
     }
-  }, [isAuthenticated, profile, navigate]);
+  }, [isAuthenticated, profile, user, navigate]);
 
   const onSubmit = async (data: RegisterFormValues) => {
     setSubmitError(null);
@@ -61,34 +64,12 @@ export default function RegisterPage() {
       if (result.emailConfirmed) {
         navigate('/dashboard');
       } else {
-        setRegistrationSuccess(true);
+        navigate('/verify-email', { state: { email: result.email || data.email } });
       }
     } else {
       setSubmitError(result.error || 'Failed to register');
     }
   };
-
-  if (registrationSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-6 font-sans">
-        <div className="w-full max-w-[480px] bg-white rounded-[24px] p-10 border border-slate-100 shadow-[0_8px_32px_rgba(15,23,42,0.08)] text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <h2 className="text-[28px] font-black text-[#05162E] tracking-tight mb-3">Account Created!</h2>
-          <p className="text-slate-500 text-[15px] leading-relaxed mb-8">
-            We have sent a verification email to your address. Please click the confirmation link to complete registration and access the dashboard.
-          </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center justify-center w-full py-3.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white font-bold text-[14px] rounded-xl transition-all duration-200 shadow-[0_8px_24px_rgba(30,58,110,0.25)] gap-2 group"
-          >
-            Back to Login <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex bg-white font-sans overflow-hidden" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -120,7 +101,7 @@ export default function RegisterPage() {
             preparation.
           </h2>
           <p className="text-slate-500 text-[15px] leading-relaxed mb-10">
-            Create an account today to get immediate free access to a full mock exam with instant scoring.
+            Create your account, verify your email once, and then start practicing with Jawaaf IELTS Lab.
           </p>
 
           <div className="space-y-6">
@@ -153,7 +134,7 @@ export default function RegisterPage() {
               <JawaafLogo className="h-20 w-auto mx-auto lg:mx-0 relative left-[-25px]" />
             </Link>
             <h2 className="text-[28px] font-black text-[#05162E] tracking-tight">Create Account</h2>
-            <p className="text-slate-500 text-[14px] mt-1.5">Join thousands of students preparing for IELTS.</p>
+            <p className="text-slate-500 text-[14px] mt-1.5">We will send a verification code to activate your account.</p>
           </div>
 
           {submitError && (
@@ -208,6 +189,12 @@ export default function RegisterPage() {
                   {errors.email.message}
                 </p>
               )}
+              {!errors.email && (
+                <p className="mt-2 text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#1E3A6E]" />
+                  You must enter the email code before accessing your dashboard.
+                </p>
+              )}
             </div>
 
             <div>
@@ -220,9 +207,15 @@ export default function RegisterPage() {
                 </span>
                 <input
                   type="tel"
-                  placeholder="+977 XXXXXXXX"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="98XXXXXXXX"
                   className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.phone ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:border-[#1E3A6E] focus:ring-4 focus:ring-[#1E3A6E]/10'} rounded-xl text-[14px] text-[#05162E] placeholder-slate-400 outline-none transition-all duration-200`}
-                  {...register('phone')}
+                  {...register('phone', {
+                    onChange: (event) => {
+                      event.target.value = event.target.value.replace(/\D/g, '').slice(0, 10);
+                    }
+                  })}
                 />
               </div>
               {errors.phone && (
@@ -253,6 +246,8 @@ export default function RegisterPage() {
                     <option value="USA">USA</option>
                     <option value="New Zealand">New Zealand</option>
                     <option value="Ireland">Ireland</option>
+                    <option value="South Korea">South Korea</option>
+                    <option value="Germany">Germany</option>
                   </select>
                 </div>
                 {errors.interestedCountry && (
@@ -352,7 +347,7 @@ export default function RegisterPage() {
                 </>
               ) : (
                 <>
-                  Create Account <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  Create Account & Verify Email <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>

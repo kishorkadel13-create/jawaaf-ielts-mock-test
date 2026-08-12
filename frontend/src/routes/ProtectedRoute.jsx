@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 
 const getRoleHome = (role) => {
@@ -9,7 +9,8 @@ const getRoleHome = (role) => {
 };
 
 export default function ProtectedRoute({ children, adminOnly = false, roles = null }) {
-  const { isAuthenticated, profile, isLoading, initializeAuth } = useAuthStore();
+  const { isAuthenticated, profile, user, isLoading, initializeAuth } = useAuthStore();
+  const location = useLocation();
 
   // Try checking user session on mount
   useEffect(() => {
@@ -32,6 +33,16 @@ export default function ProtectedRoute({ children, adminOnly = false, roles = nu
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!(user?.email_confirmed_at || user?.confirmed_at)) {
+    return (
+      <Navigate
+        to="/verify-email"
+        replace
+        state={{ email: user?.email, from: location.pathname }}
+      />
+    );
   }
 
   if (adminOnly && profile?.role !== 'admin') {

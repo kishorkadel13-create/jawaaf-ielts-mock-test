@@ -1,6 +1,25 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabase.js';
 
+const getAppUrl = () => {
+  const configuredUrl = import.meta.env.VITE_APP_URL;
+  if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
+  if (typeof window !== 'undefined') return window.location.origin;
+  return 'http://localhost:5173';
+};
+
+const getAuthRedirectUrl = (path) => `${getAppUrl()}${path.startsWith('/') ? path : `/${path}`}`;
+
+const clearAuthState = () => ({
+  user: null,
+  profile: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: false,
+  hasInitialized: true,
+  error: null
+});
+
 const normalizeProfileAccess = (profile) => {
   if (!profile) return profile;
 
@@ -21,6 +40,12 @@ export const useAuthStore = create((set, get) => ({
   isLoading: true,
   hasInitialized: false,
   error: null,
+  pendingVerificationEmail: null,
+
+  isEmailVerified: () => {
+    const user = get().user;
+    return Boolean(user?.email_confirmed_at || user?.confirmed_at);
+  },
 
   // Initialize session and set auth states
   initializeAuth: async (force = false) => {
@@ -92,6 +117,7 @@ export const useAuthStore = create((set, get) => ({
       if (error) throw error;
 
       const { user, session } = data;
+      const isVerified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
 
       // Load corresponding custom database profile
       const { data: profile, error: profileError } = await supabase
@@ -110,11 +136,17 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
         hasInitialized: true
       });
-      return { success: true, profile };
+      return { success: true, profile, emailVerified: isVerified };
     } catch (err) {
       console.error('Login Store Error:', err);
-      set({ error: err.message, isLoading: false });
-      return { success: false, error: err.message };
+      const message = err.message || 'Failed to login';
+      const isUnverified = /email not confirmed|not confirmed/i.test(message);
+      set({
+        error: message,
+        pendingVerificationEmail: isUnverified ? email : get().pendingVerificationEmail,
+        isLoading: false
+      });
+      return { success: false, error: message, emailUnverified: isUnverified, email };
     }
   },
 
@@ -127,6 +159,7 @@ export const useAuthStore = create((set, get) => ({
         email,
         password,
         options: {
+          emailRedirectTo: getAuthRedirectUrl('/login?verified=1'),
           data: {
             full_name: fullName,
             role: 'student',
@@ -139,35 +172,104 @@ export const useAuthStore = create((set, get) => ({
 
       if (error) throw error;
 
-      // In Supabase, if email confirmation is off, it logs in automatically.
-      // If it is on, user needs to verify their mail. We'll handle both.
+      set({ pendingVerificationEmail: email });
+
+      // Students should verify email first even if a local Supabase project
+      // accidentally allows an immediate signup session.
       if (data.session) {
-        const { user, session } = data;
-        
-        // Wait a half-second to let background triggers complete writing profiles
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        set({
-          user,
-          profile: normalizeProfileAccess(profile || { id: user.id, email: user.email, role: 'student', has_full_access: false, premium_access_expires_at: null }),
-          token: session.access_token,
-          isAuthenticated: true,
-          isLoading: false,
-          hasInitialized: true
-        });
-        return { success: true, emailConfirmed: true };
+        await supabase.auth.signOut();
       } else {
-        set({ isLoading: false, hasInitialized: true });
-        return { success: true, emailConfirmed: false };
+        set({ pendingVerificationEmail: email });
       }
+
+      set({ ...clearAuthState(), pendingVerificationEmail: email });
+      return { success: true, emailConfirmed: false, email };
     } catch (err) {
       console.error('Register Store Error:', err);
+      set({ error: err.message, isLoading: false });
+      return { success: false, error: err.message };
+    }
+  },
+
+  resendVerificationEmail: async (email) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl('/login?verified=1')
+        }
+      });
+
+      if (error) throw error;
+
+      set({ isLoading: false, pendingVerificationEmail: email });
+      return { success: true };
+    } catch (err) {
+      console.error('Resend Verification Error:', err);
+      set({ error: err.message, isLoading: false });
+      return { success: false, error: err.message };
+    }
+  },
+
+  verifySignupOtp: async (email, token) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup'
+      });
+
+      if (error) throw error;
+
+      if (data?.session) {
+        await supabase.auth.signOut();
+      }
+
+      set({
+        ...clearAuthState(),
+        pendingVerificationEmail: null
+      });
+      return { success: true };
+    } catch (err) {
+      console.error('Verify Signup OTP Error:', err);
+      const message = err.message || 'Invalid or expired verification code.';
+      set({ error: message, isLoading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  sendPasswordResetEmail: async (email) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthRedirectUrl('/reset-password')
+      });
+
+      if (error) throw error;
+
+      set({ isLoading: false });
+      return { success: true };
+    } catch (err) {
+      console.error('Password Reset Email Error:', err);
+      set({ error: err.message, isLoading: false });
+      return { success: false, error: err.message };
+    }
+  },
+
+  updatePassword: async (password) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) throw error;
+
+      set({ isLoading: false });
+      return { success: true };
+    } catch (err) {
+      console.error('Update Password Error:', err);
       set({ error: err.message, isLoading: false });
       return { success: false, error: err.message };
     }
@@ -185,7 +287,8 @@ export const useAuthStore = create((set, get) => ({
         isAuthenticated: false,
         isLoading: false,
         hasInitialized: true,
-        error: null
+        error: null,
+        pendingVerificationEmail: null
       });
     } catch (err) {
       console.error('Logout Store Error:', err);

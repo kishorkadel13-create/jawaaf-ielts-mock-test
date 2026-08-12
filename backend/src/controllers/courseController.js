@@ -160,6 +160,9 @@ const getUserFromToken = async (token) => {
 
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(cleanToken);
   if (error || !user) return null;
+  if (!user.email_confirmed_at && !user.confirmed_at) {
+    return { email_verified: false };
+  }
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
@@ -172,12 +175,13 @@ const getUserFromToken = async (token) => {
     return {
       id: user.id,
       email: user.email,
+      email_verified: true,
       role: metadataRole,
       has_full_access: metadataRole === 'admin'
     };
   }
 
-  return profile;
+  return { ...profile, email_verified: true };
 };
 
 const sanitizeLockedLesson = (lesson) => ({
@@ -502,6 +506,9 @@ export const getLessonVideoContent = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized', message: 'Video access requires a valid session.' });
+    }
+    if (user.email_verified === false) {
+      return res.status(403).json({ error: 'EmailNotVerified', message: 'Please verify your email address before continuing.' });
     }
 
     const { data: lesson, error } = await supabaseAdmin
