@@ -4,6 +4,7 @@ import {
   BookOpenCheck,
   FileQuestion,
   Highlighter,
+  Italic,
   Layers3,
   Menu,
   Pencil,
@@ -66,7 +67,7 @@ const escapeHtml = (value: string) => value
   .replace(/'/g, '&#039;');
 
 const formatFeedbackHtml = (value: string) => escapeHtml(value || '')
-  .replace(/&lt;(\/?(strong|b|mark|em))&gt;/gi, '<$1>')
+  .replace(/&lt;(\/?(strong|b|mark|em|i))&gt;/gi, '<$1>')
   .replace(/&lt;br\s*\/?&gt;/gi, '<br/>')
   .replace(/\n/g, '<br/>');
 
@@ -481,13 +482,13 @@ export default function AdminReadingMasteryPage() {
     }
   };
 
-  const applyFeedbackMarkup = (tag: 'strong' | 'mark') => {
+  const applyFeedbackMarkup = (tag: 'strong' | 'mark' | 'em') => {
     const textarea = feedbackTextareaRef.current;
     const currentFeedback = questionForm.feedback;
     const start = textarea?.selectionStart ?? currentFeedback.length;
     const end = textarea?.selectionEnd ?? currentFeedback.length;
     const selected = currentFeedback.slice(start, end);
-    const fallbackText = tag === 'strong' ? 'bold text' : 'highlighted text';
+    const fallbackText = tag === 'strong' ? 'bold text' : tag === 'em' ? 'italic text' : 'highlighted text';
     const wrapped = `<${tag}>${selected || fallbackText}</${tag}>`;
     const nextFeedback = `${currentFeedback.slice(0, start)}${wrapped}${currentFeedback.slice(end)}`;
 
@@ -500,13 +501,13 @@ export default function AdminReadingMasteryPage() {
     });
   };
 
-  const applyStrategyMarkup = (tag: 'strong' | 'mark') => {
+  const applyStrategyMarkup = (tag: 'strong' | 'mark' | 'em') => {
     const textarea = strategyTextareaRef.current;
     const currentStrategy = passageForm.quick_strategy_check;
     const start = textarea?.selectionStart ?? currentStrategy.length;
     const end = textarea?.selectionEnd ?? currentStrategy.length;
     const selected = currentStrategy.slice(start, end);
-    const fallbackText = tag === 'strong' ? 'bold text' : 'highlighted text';
+    const fallbackText = tag === 'strong' ? 'bold text' : tag === 'em' ? 'italic text' : 'highlighted text';
     const wrapped = `<${tag}>${selected || fallbackText}</${tag}>`;
     const nextStrategy = `${currentStrategy.slice(0, start)}${wrapped}${currentStrategy.slice(end)}`;
 
@@ -642,6 +643,9 @@ export default function AdminReadingMasteryPage() {
                           <button type="button" onClick={() => applyStrategyMarkup('strong')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black text-[#294b77] hover:bg-[#294b77]/10">
                             <Bold className="h-4 w-4" /> Bold
                           </button>
+                          <button type="button" onClick={() => applyStrategyMarkup('em')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black italic text-[#294b77] hover:bg-[#294b77]/10">
+                            <Italic className="h-4 w-4" /> Italic
+                          </button>
                           <button type="button" onClick={() => applyStrategyMarkup('mark')} className="inline-flex items-center gap-1 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] font-black text-yellow-700 hover:bg-yellow-100">
                             <Highlighter className="h-4 w-4" /> Highlight
                           </button>
@@ -652,7 +656,7 @@ export default function AdminReadingMasteryPage() {
                         <div className="rounded-xl border border-yellow-200 bg-yellow-50/60 p-4">
                           <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-yellow-700">Student Preview</p>
                           <div
-                            className="text-[13px] font-bold leading-6 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                            className="text-[13px] font-medium leading-6 text-slate-700 [&_em]:italic [&_i]:italic [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
                             dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(passageForm.quick_strategy_check) }}
                           />
                         </div>
@@ -711,6 +715,9 @@ export default function AdminReadingMasteryPage() {
                           <button type="button" onClick={() => applyFeedbackMarkup('strong')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black text-[#294b77] hover:bg-[#294b77]/10">
                             <Bold className="h-4 w-4" /> Bold
                           </button>
+                          <button type="button" onClick={() => applyFeedbackMarkup('em')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-black italic text-[#294b77] hover:bg-[#294b77]/10">
+                            <Italic className="h-4 w-4" /> Italic
+                          </button>
                           <button type="button" onClick={() => applyFeedbackMarkup('mark')} className="inline-flex items-center gap-1 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] font-black text-yellow-700 hover:bg-yellow-100">
                             <Highlighter className="h-4 w-4" /> Highlight
                           </button>
@@ -721,7 +728,7 @@ export default function AdminReadingMasteryPage() {
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                           <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">Student Preview</p>
                           <div
-                            className="text-[13px] font-bold leading-6 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                            className="text-[13px] font-medium leading-6 text-slate-700 [&_em]:italic [&_i]:italic [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
                             dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(questionForm.feedback) }}
                           />
                         </div>

@@ -67,7 +67,7 @@ const escapeHtml = (value: string) => value
   .replace(/'/g, '&#039;');
 
 const formatFeedbackHtml = (value: string) => escapeHtml(value || '')
-  .replace(/&lt;(\/?(strong|b|mark|em))&gt;/gi, '<$1>')
+  .replace(/&lt;(\/?(strong|b|mark|em|i))&gt;/gi, '<$1>')
   .replace(/&lt;br\s*\/?&gt;/gi, '<br/>')
   .replace(/\n/g, '<br/>');
 
@@ -760,7 +760,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
                     </div>
                     <div className="mt-5 rounded-2xl border border-yellow-200 bg-yellow-50/60 p-5">
                       <div
-                        className="text-[14px] font-bold leading-7 text-slate-700 [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black"
+                        className="text-[14px] font-medium leading-7 text-slate-700 [&_em]:italic [&_i]:italic [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
                         dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(quickStrategyCheck) }}
                       />
                     </div>
@@ -781,7 +781,7 @@ export default function TFNGMasteryPage({ mode }: TFNGMasteryPageProps) {
                         <p>Trap: <b className="text-[#071A3D]">{currentFeedbackQuestion.trap_type || 'TFNG reasoning'}</b></p>
                         <p>Locate: <b className="text-[#071A3D]">{[currentFeedbackQuestion.locate_paragraph, currentFeedbackQuestion.locate_sentence].filter(Boolean).join(', ') || 'See highlighted text'}</b></p>
                         <div
-                          className="rounded-xl bg-[#F8FAFC] p-4 leading-6 text-[#526079] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
+                          className="rounded-xl bg-[#F8FAFC] p-4 font-medium leading-6 text-[#526079] [&_em]:italic [&_i]:italic [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-1 [&_strong]:font-black [&_strong]:text-[#071A3D]"
                           dangerouslySetInnerHTML={{ __html: formatFeedbackHtml(currentFeedbackQuestion.detailed_explanation || '') }}
                         />
                       </div>
