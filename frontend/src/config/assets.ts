@@ -65,7 +65,7 @@ export const assets = {
     active: imagePath('premium access', 'active.png'),
   },
   otpVerification: {
-    messageBubble: imagePath('OTP Verifications', 'message_icon-user-clean.png'),
+    messageBubble: imagePath('OTP Verifications', 'message_icon-user-clean2.png'),
     mascot: imagePath('OTP Verifications', 'moscot2-clean3.png'),
     shield: imagePath('OTP Verifications', 'tick-clean3.png'),
     topMessage: imagePath('OTP Verifications', 'top_message-clean3.png'),
