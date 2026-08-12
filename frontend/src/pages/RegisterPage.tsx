@@ -243,11 +243,12 @@ export default function RegisterPage() {
                     <option value="UK">United Kingdom</option>
                     <option value="Canada">Canada</option>
                     <option value="Australia">Australia</option>
-                    <option value="USA">USA</option>
                     <option value="New Zealand">New Zealand</option>
-                    <option value="Ireland">Ireland</option>
+                    <option value="USA">USA</option>
                     <option value="South Korea">South Korea</option>
                     <option value="Germany">Germany</option>
+                    <option value="Cyprus">Cyprus</option>
+                    <option value="Malta">Malta</option>
                   </select>
                 </div>
                 {errors.interestedCountry && (

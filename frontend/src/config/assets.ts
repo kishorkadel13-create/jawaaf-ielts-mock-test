@@ -64,6 +64,12 @@ export const assets = {
     background: imagePath('premium access', 'background.png'),
     active: imagePath('premium access', 'active.png'),
   },
+  otpVerification: {
+    messageBubble: imagePath('OTP Verifications', 'message_icon-user-clean.png'),
+    mascot: imagePath('OTP Verifications', 'moscot2-clean3.png'),
+    shield: imagePath('OTP Verifications', 'tick-clean3.png'),
+    topMessage: imagePath('OTP Verifications', 'top_message-clean3.png'),
+  },
   writingTask1: {
     londonBackground: rootImage('london-bg.png'),
     chartIcons: {

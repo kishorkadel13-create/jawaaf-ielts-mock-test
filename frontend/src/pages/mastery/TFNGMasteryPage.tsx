@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Clock, Flame, Flag, GraduationCap, Highlighter, LoaderCircle, RotateCcw, Send, ShieldCheck, Star, Target, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Clock, Flame, Flag, GraduationCap, Highlighter, LoaderCircle, RotateCcw, Send, ShieldCheck, Star, Target, Trophy } from 'lucide-react';
 import { api } from '../../services/api';
 import { assets } from '../../config/assets';
 import { useAuthStore } from '../../store/authStore';
 import JawaafLogo from '../../components/JawaafLogo';
+import NotificationBell from '../../components/NotificationBell';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../utils/textHighlighter';
 
 type PageMode = 'entry' | 'design' | 'practice' | 'feedback' | 'performance';
@@ -929,10 +930,11 @@ const EvolutionAdventureDesign = ({
               </div>
             </div>
             <button className="hidden h-11 w-11 place-items-center rounded-2xl text-[#071A3D] hover:bg-[#F4F7FB] sm:grid" aria-label="Calendar"><CalendarDays className="h-6 w-6" /></button>
-            <button className="relative hidden h-11 w-11 place-items-center rounded-2xl text-[#071A3D] hover:bg-[#F4F7FB] sm:grid" aria-label="Notifications">
-              <Bell className="h-6 w-6" />
-              <span className="absolute right-1 top-0 grid h-[18px] w-[18px] place-items-center rounded-full bg-[#E92F37] text-[10px] font-black leading-none text-white">3</span>
-            </button>
+            <NotificationBell
+              className="relative hidden h-11 w-11 place-items-center rounded-2xl text-[#071A3D] hover:bg-[#F4F7FB] sm:grid"
+              iconClassName="h-6 w-6"
+              badgeClassName="absolute right-1 top-0 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#E92F37] px-1 text-[10px] font-black leading-none text-white"
+            />
             <div className="flex items-center gap-2">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-[#071A3D] text-[17px] font-black text-white">{initial}</span>
               <span className="hidden text-[15px] font-black text-[#071A3D] sm:inline">{firstName}</span>

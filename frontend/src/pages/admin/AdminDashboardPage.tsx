@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   BarChart3,
-  Bell,
   BookOpen,
   CalendarDays,
   ClipboardList,
@@ -21,6 +20,7 @@ import {
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import AdminSidebar from '../../components/admin/AdminSidebar';
+import NotificationBell from '../../components/NotificationBell';
 
 interface AdminTest {
   id: string;
@@ -218,12 +218,12 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-5">
-              <div className="relative hidden sm:block">
-                <Bell className="h-6 w-6 text-[#061A36]" />
-                <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#F59E24] px-1 text-[10px] font-black text-white">
-                  {pendingRequests || 0}
-                </span>
-              </div>
+              <NotificationBell
+                fallbackCount={pendingRequests || 0}
+                className="relative hidden h-11 w-11 place-items-center rounded-xl text-[#061A36] hover:bg-slate-100 sm:grid"
+                iconClassName="h-6 w-6"
+                badgeClassName="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#F59E24] px-1 text-[10px] font-black text-white"
+              />
               <div className="h-8 w-px bg-slate-200 hidden sm:block" />
               <button onClick={handleLogout} className="flex items-center gap-3 rounded-2xl px-2 py-1 hover:bg-slate-100">
                 <div className="grid h-11 w-11 place-items-center rounded-full bg-[#EAF1FB] text-[15px] font-black text-[#1E3A6E]">A</div>

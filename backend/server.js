@@ -23,7 +23,7 @@ const audioDirectory = process.env.AUDIO_DIR
 app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
 
@@ -62,6 +62,7 @@ import accessRoutes from './src/routes/accessRoutes.js';
 import attemptRoutes from './src/routes/attemptRoutes.js';
 import courseRoutes from './src/routes/courseRoutes.js';
 import tfngMasteryRoutes from './src/routes/tfngMasteryRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 // Base Status Route
 app.get('/api/status', (req, res) => {
@@ -80,6 +81,7 @@ app.use('/api/access', accessRoutes);
 app.use('/api/attempts', attemptRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/mastery/tfng', tfngMasteryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Centralized Error Handling Middleware
 app.use((err, req, res, next) => {

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
+import { useAuthStore } from '../store/authStore.js';
 import StudentSidebar from '../components/StudentSidebar';
+import NotificationBell from '../components/NotificationBell';
+import { getStoredStreakData } from '../utils/streak.js';
 import {
   ArrowRight,
   BarChart3,
-  Bell,
   BookOpen,
   Calendar,
   CalendarDays,
@@ -189,11 +191,34 @@ const getAccentTheme = (index) => {
   return themes[index % themes.length];
 };
 
+const getDisplayName = (profile) => {
+  const name = String(profile?.full_name || profile?.email?.split('@')[0] || 'Student').trim();
+  return name || 'Student';
+};
+
+const getFirstName = (profile) => getDisplayName(profile).split(/\s+/)[0] || 'Student';
+
+const getInitial = (profile) => getDisplayName(profile).charAt(0).toUpperCase() || 'S';
+
+const getAttemptDate = (attempt) => {
+  const rawDate = attempt.submitted_at || attempt.created_at;
+  const date = rawDate ? new Date(rawDate) : null;
+  return date && !Number.isNaN(date.getTime()) ? date : null;
+};
+
 export default function HistoryPage() {
+  const { profile } = useAuthStore();
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeWritingTaskFilter, setActiveWritingTaskFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [streakData, setStreakData] = useState({ activeDates: [], currentStreak: 0 });
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    setStreakData(getStoredStreakData(profile.id));
+  }, [profile?.id]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -211,21 +236,27 @@ export default function HistoryPage() {
     fetchHistory();
   }, []);
 
-  const filteredAttempts = useMemo(() => attempts.filter((attempt) => {
-    const section = getPrimarySection(attempt);
-    const matchesBaseFilter = (() => {
-      if (activeFilter === 'all') return true;
-      if (activeFilter === 'mock') return attempt.attempt_mode === 'mock';
-      if (activeFilter === 'practice') return attempt.attempt_mode === 'practice';
-      return section?.type === activeFilter;
-    })();
+  const filteredAttempts = useMemo(() => attempts
+    .filter((attempt) => {
+      const section = getPrimarySection(attempt);
+      const matchesBaseFilter = (() => {
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'mock') return attempt.attempt_mode === 'mock';
+        if (activeFilter === 'practice') return attempt.attempt_mode === 'practice';
+        return section?.type === activeFilter;
+      })();
 
-    if (!matchesBaseFilter) return false;
-    if (activeFilter !== 'writing' || activeWritingTaskFilter === 'all') return true;
+      if (!matchesBaseFilter) return false;
+      if (activeFilter !== 'writing' || activeWritingTaskFilter === 'all') return true;
 
-    const taskCards = getWritingTaskCards(attempt);
-    return taskCards.some(card => card.key === activeWritingTaskFilter);
-  }), [activeFilter, activeWritingTaskFilter, attempts]);
+      const taskCards = getWritingTaskCards(attempt);
+      return taskCards.some(card => card.key === activeWritingTaskFilter);
+    })
+    .sort((first, second) => {
+      const firstTime = getAttemptDate(first)?.getTime() || 0;
+      const secondTime = getAttemptDate(second)?.getTime() || 0;
+      return sortOrder === 'newest' ? secondTime - firstTime : firstTime - secondTime;
+    }), [activeFilter, activeWritingTaskFilter, attempts, sortOrder]);
 
   const reviewedCount = attempts.filter(attempt => attempt.review_status !== 'teacher_review_pending').length;
   const pendingCount = attempts.filter(attempt => attempt.review_status === 'teacher_review_pending').length;
@@ -265,7 +296,7 @@ export default function HistoryPage() {
               <Menu className="h-6 w-6" />
             </button>
             <div className="min-w-0">
-              <h2 className="truncate text-[20px] font-black tracking-tight text-[#071A36]">Hi, Student! <span aria-hidden="true">👋</span></h2>
+              <h2 className="truncate text-[20px] font-black tracking-tight text-[#071A36]">Hi, {getFirstName(profile)}! <span aria-hidden="true">👋</span></h2>
               <p className="mt-0.5 truncate text-[13px] font-bold text-[#71819A]">Let's make today's practice count.</p>
             </div>
           </div>
@@ -281,18 +312,15 @@ export default function HistoryPage() {
             <div className="hidden h-14 items-center gap-3 rounded-2xl border border-[#E7EDF7] bg-white px-4 shadow-sm sm:flex">
               <Flame className="h-7 w-7 text-orange-500" />
               <div>
-                <p className="text-[18px] font-black leading-none text-[#071A36]">7</p>
+                <p className="text-[18px] font-black leading-none text-[#071A36]">{streakData.currentStreak}</p>
                 <p className="mt-1 text-[10px] font-black text-[#71819A]">Day Streak</p>
               </div>
             </div>
             <button type="button" className="grid h-11 w-11 place-items-center rounded-2xl text-[#294b77] transition-colors hover:bg-[#EFF4FB]">
               <CalendarDays className="h-5 w-5" />
             </button>
-            <button type="button" className="relative grid h-11 w-11 place-items-center rounded-2xl text-[#294b77] transition-colors hover:bg-[#EFF4FB]">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#EE6055] px-1 text-[10px] font-black text-white">3</span>
-            </button>
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-[#294b77] text-[15px] font-black text-white shadow-sm">S</div>
+            <NotificationBell />
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-[#294b77] text-[15px] font-black text-white shadow-sm">{getInitial(profile)}</div>
           </div>
         </header>
 
@@ -408,9 +436,14 @@ export default function HistoryPage() {
               <h2 className="flex items-center gap-2 text-[20px] font-black text-[#071A36]">
                 <span className="text-[#EE6055]">▱</span> Recent Attempts
               </h2>
-              <button type="button" className="inline-flex min-h-11 w-fit items-center gap-3 rounded-2xl border border-[#E3EAF5] bg-white px-5 text-[13px] font-black text-[#294b77] shadow-sm">
-                Newest First <span className="text-lg leading-none">⌄</span>
-              </button>
+              <select
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+                className="min-h-11 w-fit rounded-2xl border border-[#E3EAF5] bg-white px-5 text-[13px] font-black text-[#294b77] shadow-sm outline-none"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
             </div>
 
             {loading ? (

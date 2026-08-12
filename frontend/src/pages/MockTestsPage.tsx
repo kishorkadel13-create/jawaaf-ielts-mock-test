@@ -7,8 +7,10 @@ import WritingTask1Practice from '../components/WritingTask1Practice';
 import WritingTask2Practice from '../components/WritingTask2Practice';
 import ReadingPracticeList from '../components/ReadingPracticeList';
 import MobileBottomNav from '../components/MobileBottomNav';
+import NotificationBell from '../components/NotificationBell';
 import { assets } from '../config/assets';
 import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video, SlidersHorizontal, X, Search } from 'lucide-react';
+import { getStoredStreakData } from '../utils/streak';
 
 interface MockTest {
   id: string;
@@ -197,8 +199,14 @@ export default function MockTestsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
   const [readingPracticeListType, setReadingPracticeListType] = useState<ReadingCategoryKey | null>(null);
+  const [streakData, setStreakData] = useState<{ activeDates: string[], currentStreak: number }>({ activeDates: [], currentStreak: 0 });
 
   const [completedTestIds, setCompletedTestIds] = useState<Set<string>>(new Set(cachedLibrary?.completedIds || []));
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    setStreakData(getStoredStreakData(profile.id));
+  }, [profile?.id]);
 
   useEffect(() => {
     const fetchTestsAndAttempts = async () => {
@@ -865,7 +873,7 @@ export default function MockTestsPage() {
               <div className="hidden items-center gap-2 xl:flex">
                 <span className="text-[20px]">🔥</span>
                 <div className="leading-[1.1]">
-                  <p className="text-[15px] font-black text-[#05162E]">7</p>
+                  <p className="text-[15px] font-black text-[#05162E]">{streakData.currentStreak}</p>
                   <p className="text-[9px] font-bold text-slate-500 uppercase">Day Streak</p>
                 </div>
               </div>
@@ -877,12 +885,11 @@ export default function MockTestsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </button>
-              <button className="relative hover:text-slate-600 transition-colors">
-                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute -top-1 -right-1 flex h-[14px] w-[14px] items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border border-white">3</span>
-              </button>
+              <NotificationBell
+                className="relative grid h-[28px] w-[28px] place-items-center text-slate-400 transition-colors hover:text-slate-600"
+                iconClassName="h-[18px] w-[18px]"
+                badgeClassName="absolute -right-1 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full border border-white bg-red-500 px-1 text-[9px] font-bold text-white"
+              />
             </div>
             
             <div className="h-8 w-8 rounded-full bg-[#05162E] text-white flex items-center justify-center text-[13px] font-bold shadow-sm">

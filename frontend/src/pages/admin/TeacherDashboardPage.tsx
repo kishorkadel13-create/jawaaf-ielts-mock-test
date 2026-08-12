@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
-  Bell,
   BookOpen,
   ChevronDown,
   CheckCircle2,
@@ -28,6 +27,7 @@ import {
   Users
 } from 'lucide-react';
 import { api } from '../../services/api';
+import NotificationBell from '../../components/NotificationBell';
 import { useAuthStore } from '../../store/authStore';
 import JawaafLogo from '../../components/JawaafLogo';
 import { TfngOverallPerformanceDesign } from '../mastery/TFNGMasteryPage';
@@ -732,12 +732,10 @@ export default function TeacherDashboardPage() {
           />
           <Search className="h-5 w-5 text-[#294b77]" />
         </label>
-        <button type="button" className="relative grid h-11 w-11 place-items-center rounded-full text-[#294b77] hover:bg-[#EFF4FB]" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#ef5f55] px-1 text-[10px] font-black text-white">
-            {pendingReviews + unansweredQuestions}
-          </span>
-        </button>
+        <NotificationBell
+          fallbackCount={pendingReviews + unansweredQuestions}
+          className="relative grid h-11 w-11 place-items-center rounded-full text-[#294b77] hover:bg-[#EFF4FB]"
+        />
         <button type="button" className="flex min-w-[235px] items-center gap-3 rounded-2xl px-2 py-1 text-left hover:bg-white">
           <span className="grid h-11 w-11 place-items-center rounded-full bg-[#0D2D67] text-[15px] font-black text-white">
             {initials(profile?.full_name)}

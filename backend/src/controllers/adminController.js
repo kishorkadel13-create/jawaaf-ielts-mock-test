@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { createNotifications } from '../services/notificationService.js';
 
 const ASSET_BUCKET = 'ielts-assets';
 const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 500);
@@ -457,6 +458,18 @@ export const createListeningAudioUpload = async (req, res) => {
       .createSignedUploadUrl(audioPath, { upsert: true });
 
     if (error) throw error;
+
+    await createNotifications([{
+      user_id: profile.id,
+      actor_id: req.user.id,
+      type: has_full_access ? 'premium_access_updated' : 'premium_access_revoked',
+      title: has_full_access ? 'Premium access updated' : 'Premium access revoked',
+      body: has_full_access
+        ? 'Your premium access has been updated by the admin team.'
+        : 'Your premium access has been revoked by the admin team.',
+      link: has_full_access ? '/dashboard' : '/access-request',
+      metadata: { premium_access_expires_at: profile.premium_access_expires_at }
+    }]);
 
     res.status(200).json({
       bucket: ASSET_BUCKET,

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Bell, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import StudentSidebar from '../components/StudentSidebar';
 import JawaafLogo from '../components/JawaafLogo';
+import NotificationBell from '../components/NotificationBell';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import { resolveStorageUrl } from '../utils/storageUrl';
@@ -1476,10 +1477,11 @@ export default function CoursesPage() {
                   <input className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold outline-none placeholder:text-[#8D735F]" placeholder="Search for lessons..." />
                 </label>
                 <div className="flex items-center justify-end gap-3">
-                <button className="relative grid h-[52px] w-[52px] place-items-center rounded-full border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[#3D2418] shadow-[0_8px_20px_rgba(88,56,35,0.10)] sm:h-[58px] sm:w-[58px]">
-                  <Bell className="h-6 w-6" />
-                  <span className="absolute right-3 top-3 h-3.5 w-3.5 rounded-full bg-[#E84332] ring-2 ring-[#FFF8EE]" />
-                </button>
+                <NotificationBell
+                  className="relative grid h-[52px] w-[52px] place-items-center rounded-full border border-[#D7C2A3] bg-[#FFF8EE]/88 text-[#3D2418] shadow-[0_8px_20px_rgba(88,56,35,0.10)] sm:h-[58px] sm:w-[58px]"
+                  iconClassName="h-6 w-6"
+                  badgeClassName="absolute right-2 top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#E84332] px-1 text-[10px] font-black text-white ring-2 ring-[#FFF8EE]"
+                />
                 <div className="flex items-center gap-2 border-l border-[#D7C2A3] pl-3 sm:pl-4">
                   <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-[#EADBC5] text-[22px] font-black text-[#2E1D14] shadow-sm sm:h-[58px] sm:w-[58px]">
                     {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'S'}

@@ -19,6 +19,28 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- Enable RLS (Row Level Security)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    actor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    type TEXT NOT NULL DEFAULT 'system',
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    link TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    read_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created_at
+ON notifications(user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
+ON notifications(user_id, read_at)
+WHERE read_at IS NULL;
+
 -- 2. MOCK TESTS TABLE
 CREATE TABLE IF NOT EXISTS mock_tests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -254,6 +276,22 @@ CREATE POLICY "Public profiles are readable by everyone" ON profiles
 
 CREATE POLICY "Users can edit their own profiles" ON profiles
     FOR UPDATE USING (auth.uid() = id);
+
+-- Notifications policies
+CREATE POLICY "Users can read their notifications" ON notifications
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their notifications" ON notifications
+    FOR UPDATE USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins manage notifications" ON notifications
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        )
+    );
 
 -- Mock tests policies
 CREATE POLICY "Published or demo tests are readable by everyone" ON mock_tests

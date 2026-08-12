@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import { supabaseAdmin } from '../config/supabase.js';
+import { createNotifications, notifyRoles } from '../services/notificationService.js';
 
 const ASSET_BUCKET = 'ielts-assets';
 const isAdminLike = (user) => ['admin', 'teacher'].includes(user?.role);
@@ -434,6 +435,34 @@ export const createLessonQuestion = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    const { data: lesson } = await supabaseAdmin
+      .from('course_lessons')
+      .select('id, title')
+      .eq('id', lessonId)
+      .maybeSingle();
+
+    const notificationPayload = {
+      actorId: req.user.id,
+      type: 'lesson_question_submitted',
+      title: 'New lesson question',
+      body: `${req.user.full_name || req.user.email || 'A student'} asked a question${lesson?.title ? ` in ${lesson.title}` : ''}.`,
+      metadata: { lesson_id: lessonId, question_id: data.id }
+    };
+
+    await Promise.all([
+      notifyRoles({
+        roles: ['teacher'],
+        ...notificationPayload,
+        link: '/teacher/qa'
+      }),
+      notifyRoles({
+        roles: ['admin'],
+        ...notificationPayload,
+        link: '/admin/courses'
+      })
+    ]);
+
     res.status(201).json(data);
   } catch (err) {
     console.error('createLessonQuestion Error:', err);
@@ -658,6 +687,17 @@ export const answerLessonQuestion = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    await createNotifications([{
+      user_id: data.user_id,
+      actor_id: req.user.id,
+      type: 'lesson_question_answered',
+      title: 'Your lesson question was answered',
+      body: 'Your instructor replied to your recorded lesson question.',
+      link: '/courses',
+      metadata: { lesson_id: data.lesson_id, question_id: data.id }
+    }]);
+
     res.status(200).json(data);
   } catch (err) {
     console.error('answerLessonQuestion Error:', err);

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { evaluateAnswer, convertScoreToIeltsBand } from '../services/scoreService.js';
+import { createNotifications, notifyRoles } from '../services/notificationService.js';
 
 const canReviewWriting = (user) => ['admin', 'teacher'].includes(user?.role);
 
@@ -280,6 +281,35 @@ export const submitAttempt = async (req, res) => {
       .single();
 
     if (finalError) throw finalError;
+
+    if (questions.some(question => question.question_type === 'WRITING_TASK')) {
+      const { data: test } = await supabaseAdmin
+        .from('mock_tests')
+        .select('title')
+        .eq('id', attempt.mock_test_id)
+        .maybeSingle();
+
+      const notificationPayload = {
+        actorId: req.user.id,
+        type: 'writing_submitted',
+        title: 'Writing submitted for review',
+        body: `${req.user.full_name || req.user.email || 'A student'} submitted ${test?.title || 'a writing test'}.`,
+        metadata: { attempt_id: id, mock_test_id: attempt.mock_test_id }
+      };
+
+      await Promise.all([
+        notifyRoles({
+          roles: ['teacher'],
+          ...notificationPayload,
+          link: '/teacher/reviews'
+        }),
+        notifyRoles({
+          roles: ['admin'],
+          ...notificationPayload,
+          link: '/admin/submissions'
+        })
+      ]);
+    }
 
     res.status(200).json({
       message: 'Exam submitted and graded successfully.',
@@ -637,7 +667,7 @@ export const submitWritingFeedback = async (req, res) => {
 
     const { data: attempt, error: attemptError } = await supabaseAdmin
       .from('user_attempts')
-      .select('id')
+      .select('id, user_id, mock_test_id, mock_tests(title)')
       .eq('id', id)
       .single();
 
@@ -667,6 +697,16 @@ export const submitWritingFeedback = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    await createNotifications([{
+      user_id: attempt.user_id,
+      actor_id: req.user.id,
+      type: 'writing_feedback_ready',
+      title: 'Writing feedback ready',
+      body: `Your teacher has reviewed ${attempt.mock_tests?.title || 'your writing submission'}.`,
+      link: `/attempts/${id}/result`,
+      metadata: { attempt_id: id, mock_test_id: attempt.mock_test_id, band_score: feedback.band_score }
+    }]);
 
     res.status(200).json({
       message: 'Writing feedback submitted successfully.',

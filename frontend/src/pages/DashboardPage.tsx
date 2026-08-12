@@ -6,11 +6,13 @@ import StudentSidebar from '../components/StudentSidebar';
 import {
   Monitor, Headphones, BookOpen, History, Award,
   Settings, LogOut, Lock, CheckSquare, Calendar,
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Bell, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu
 } from 'lucide-react';
 import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
+import NotificationBell from '../components/NotificationBell';
+import { getStoredStreakData } from '../utils/streak';
 // Interfaces for typing
 interface TestAttempt {
   id: string;
@@ -107,33 +109,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!profile?.id) return;
-    
-    const storageKey = `user_streak_data_${profile.id}`;
-    const savedData = localStorage.getItem(storageKey);
-    let activeDates = savedData ? JSON.parse(savedData) : [];
-    
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    
-    if (!activeDates.includes(todayStr)) {
-      activeDates.push(todayStr);
-      localStorage.setItem(storageKey, JSON.stringify(activeDates));
-    }
-    
-    let currentStreak = 0;
-    let checkDate = new Date();
-    
-    while (true) {
-      const checkStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
-      if (activeDates.includes(checkStr)) {
-        currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-    
-    setStreakData({ activeDates, currentStreak });
+
+    setStreakData(getStoredStreakData(profile.id));
   }, [profile?.id]);
 
   const loadDashboardData = async () => {
@@ -330,10 +307,11 @@ export default function DashboardPage() {
                 <Search className="h-4 w-4" />
               </button>
 
-              <button className="relative h-10 w-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm">
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-0 right-0 h-4 w-4 bg-[#EE6055] border-2 border-white rounded-full text-[9px] font-bold text-white flex items-center justify-center">3</span>
-              </button>
+              <NotificationBell
+                className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:text-slate-600"
+                iconClassName="h-4 w-4"
+                badgeClassName="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-[#EE6055] px-1 text-[9px] font-bold text-white"
+              />
 
               <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#EBF0F9] text-[14px] font-black text-[#1E3A6E] shadow-sm">
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'T'}

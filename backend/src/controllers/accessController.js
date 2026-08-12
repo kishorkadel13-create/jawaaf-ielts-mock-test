@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { createNotifications, notifyRoles } from '../services/notificationService.js';
 
 const DEFAULT_ACCESS_DURATION_DAYS = 30;
 
@@ -48,6 +49,16 @@ export const requestAccess = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    await notifyRoles({
+      roles: ['admin'],
+      actorId: userId,
+      type: 'access_request_submitted',
+      title: 'New access request',
+      body: `${req.user.full_name || req.user.email || 'A student'} requested premium access.`,
+      link: '/admin/access',
+      metadata: { request_id: accessReq.id }
+    });
 
     res.status(201).json({
       message: 'Access request submitted successfully.',
@@ -152,6 +163,18 @@ export const reviewAccessRequest = async (req, res) => {
 
       if (profileError) throw profileError;
     }
+
+    await createNotifications([{
+      user_id: request.user_id,
+      actor_id: req.user.id,
+      type: status === 'approved' ? 'access_request_approved' : 'access_request_rejected',
+      title: status === 'approved' ? 'Premium access approved' : 'Access request update',
+      body: status === 'approved'
+        ? 'Your premium access request was approved. You can now open locked lessons and tests.'
+        : 'Your premium access request was reviewed and declined. You can submit another request later.',
+      link: status === 'approved' ? '/dashboard' : '/access-request',
+      metadata: { request_id: id, status, premium_access_expires_at: premiumAccessExpiresAt }
+    }]);
 
     res.status(200).json({
       message: `Access request ${status} successfully.`,
