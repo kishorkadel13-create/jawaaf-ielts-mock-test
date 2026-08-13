@@ -12,7 +12,17 @@ import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import NotificationBell from '../components/NotificationBell';
-import { getStoredStreakData } from '../utils/streak';
+import {
+  STREAK_UPDATED_EVENT,
+  addDaysToDateKey,
+  formatNepalMonthLabel,
+  getNepalDateKey,
+  getNepalMonthCursor,
+  getNepalMonthMeta,
+  getNepalWeekdayNarrow,
+  getStoredStreakData,
+  shiftNepalMonthCursor,
+} from '../utils/streak';
 // Interfaces for typing
 interface TestAttempt {
   id: string;
@@ -99,7 +109,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   const [streakData, setStreakData] = useState<{ activeDates: string[], currentStreak: number }>({ activeDates: [], currentStreak: 0 });
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getNepalMonthCursor);
   const [progressStats, setProgressStats] = useState({
     mockTotal: 0, mockCompleted: 0,
     practiceTotal: 0, practiceCompleted: 0,
@@ -110,7 +120,18 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!profile?.id) return;
 
-    setStreakData(getStoredStreakData(profile.id));
+    const syncStreak = () => setStreakData(getStoredStreakData(profile.id));
+    const handleStreakUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId?: string }>;
+      if (!customEvent.detail?.userId || customEvent.detail.userId === profile.id) {
+        syncStreak();
+      }
+    };
+
+    syncStreak();
+    window.addEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
+
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
   }, [profile?.id]);
 
   const loadDashboardData = async () => {
@@ -634,10 +655,8 @@ export default function DashboardPage() {
 
             <div className="flex items-center justify-between gap-1">
               {[6, 5, 4, 3, 2, 1, 0].map((daysAgo) => {
-                const date = new Date();
-                date.setDate(date.getDate() - daysAgo);
-                const dayName = date.toLocaleDateString('en-US', { weekday: 'narrow' });
-                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dateStr = addDaysToDateKey(getNepalDateKey(), -daysAgo);
+                const dayName = getNepalWeekdayNarrow(dateStr);
                 
                 let isMissed = false;
                 let isActive = false;
@@ -665,23 +684,15 @@ export default function DashboardPage() {
           {/* Calendar */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-black text-[#05162E]">{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+              <h3 className="text-[14px] font-black text-[#05162E]">{formatNepalMonthLabel(currentMonth)}</h3>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => {
-                    const newMonth = new Date(currentMonth);
-                    newMonth.setMonth(newMonth.getMonth() - 1);
-                    setCurrentMonth(newMonth);
-                  }}
+                  onClick={() => setCurrentMonth((month) => shiftNepalMonthCursor(month, -1))}
                   className="h-6 w-6 rounded-md bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600">
                   <ChevronLeft className="h-3 w-3" />
                 </button>
                 <button 
-                  onClick={() => {
-                    const newMonth = new Date(currentMonth);
-                    newMonth.setMonth(newMonth.getMonth() + 1);
-                    setCurrentMonth(newMonth);
-                  }}
+                  onClick={() => setCurrentMonth((month) => shiftNepalMonthCursor(month, 1))}
                   className="h-6 w-6 rounded-md bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600">
                   <ChevronRight className="h-3 w-3" />
                 </button>
@@ -694,12 +705,9 @@ export default function DashboardPage() {
               ))}
               
               {(() => {
-                const year = currentMonth.getFullYear();
-                const month = currentMonth.getMonth();
-                const firstDay = new Date(year, month, 1);
-                const startingDay = (firstDay.getDay() + 6) % 7; // Monday as 0
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const today = new Date();
+                const { year, month } = currentMonth;
+                const { startingDay, daysInMonth } = getNepalMonthMeta(currentMonth);
+                const todayStr = getNepalDateKey();
                 
                 const days = [];
                 for (let i = 0; i < startingDay; i++) {
@@ -707,10 +715,9 @@ export default function DashboardPage() {
                 }
                 
                 for (let i = 1; i <= daysInMonth; i++) {
-                  const checkDate = new Date(year, month, i);
-                  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                   
-                  const isFuture = checkDate > today;
+                  const isFuture = dateStr > todayStr;
                   const isActive = streakData.activeDates.includes(dateStr);
                   const isMissed = !isFuture && !isActive;
                   

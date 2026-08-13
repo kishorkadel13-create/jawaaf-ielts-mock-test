@@ -4,7 +4,7 @@ import { api } from '../services/api.js';
 import { useAuthStore } from '../store/authStore.js';
 import StudentSidebar from '../components/StudentSidebar';
 import NotificationBell from '../components/NotificationBell';
-import { getStoredStreakData } from '../utils/streak.js';
+import { STREAK_UPDATED_EVENT, getStoredStreakData } from '../utils/streak.js';
 import {
   ArrowRight,
   BarChart3,
@@ -217,7 +217,18 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!profile?.id) return;
-    setStreakData(getStoredStreakData(profile.id));
+
+    const syncStreak = () => setStreakData(getStoredStreakData(profile.id));
+    const handleStreakUpdate = (event) => {
+      if (!event.detail?.userId || event.detail.userId === profile.id) {
+        syncStreak();
+      }
+    };
+
+    syncStreak();
+    window.addEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
+
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
   }, [profile?.id]);
 
   useEffect(() => {

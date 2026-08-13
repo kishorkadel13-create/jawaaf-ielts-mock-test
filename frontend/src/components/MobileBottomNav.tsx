@@ -7,7 +7,7 @@ const items = [
   { label: 'Practice', to: '/tests?mode=practice', icon: BookOpen, active: (path: string, search: string) => path === '/tests' && search !== '?mode=mock' },
   { label: 'Mock', to: '/tests?mode=mock', icon: PenLine, active: (path: string, search: string) => path === '/tests' && search === '?mode=mock' },
   { label: 'Courses', to: '/courses', icon: Play, active: (path: string) => path === '/courses' },
-  { label: 'Profile', to: '/dashboard', icon: User, active: () => false },
+  { label: 'Profile', to: '/profile', icon: User, active: (path: string) => path === '/profile' || path === '/settings' },
 ];
 
 export default function MobileBottomNav() {

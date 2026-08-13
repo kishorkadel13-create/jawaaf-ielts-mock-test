@@ -14,6 +14,8 @@ const loadDashboardPage = () => import('../pages/DashboardPage');
 const loadMockTestsPage = () => import('../pages/MockTestsPage');
 const loadCoursesPage = () => import('../pages/CoursesPage');
 const loadHistoryPage = () => import('../pages/HistoryPage');
+const loadProfilePage = () => import('../pages/ProfilePage');
+const loadSettingsPage = () => import('../pages/SettingsPage');
 const loadAccessRequestPage = () => import('../pages/AccessRequestPage');
 const loadExamInterface = () => import('../pages/ExamInterface');
 const loadResultPage = () => import('../pages/ResultPage');
@@ -44,6 +46,8 @@ const DashboardPage = lazy(loadDashboardPage);
 const MockTestsPage = lazy(loadMockTestsPage);
 const CoursesPage = lazy(loadCoursesPage);
 const HistoryPage = lazy(loadHistoryPage);
+const ProfilePage = lazy(loadProfilePage);
+const SettingsPage = lazy(loadSettingsPage);
 const AccessRequestPage = lazy(loadAccessRequestPage);
 const ExamInterface = lazy(loadExamInterface);
 const ResultPage = lazy(loadResultPage);
@@ -66,6 +70,8 @@ export const prefetchStudentRoutes = () => {
   loadCoursesPage();
   loadMockTestsPage();
   loadHistoryPage();
+  loadProfilePage();
+  loadSettingsPage();
   loadTFNGMasteryPage();
 };
 
@@ -124,6 +130,22 @@ export default function AppRoutes() {
             <HistoryPage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <SettingsPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/access-request" 

@@ -275,6 +275,42 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  updateProfileDetails: async ({ full_name }) => {
+    try {
+      const { profile } = get();
+      if (!profile?.id) throw new Error('Profile not loaded');
+
+      const cleanName = String(full_name || '').trim();
+      if (cleanName.length < 2) throw new Error('Full name must be at least 2 characters');
+
+      set({ isLoading: true, error: null });
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ full_name: cleanName })
+        .eq('id', profile.id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      await supabase.auth.updateUser({
+        data: { full_name: cleanName }
+      });
+
+      const normalizedProfile = normalizeProfileAccess(data);
+      set({
+        profile: normalizedProfile,
+        isLoading: false
+      });
+      return { success: true, profile: normalizedProfile };
+    } catch (err) {
+      console.error('Update Profile Details Error:', err);
+      set({ error: err.message, isLoading: false });
+      return { success: false, error: err.message };
+    }
+  },
+
   // Log Out and clear session parameters
   logout: async () => {
     try {

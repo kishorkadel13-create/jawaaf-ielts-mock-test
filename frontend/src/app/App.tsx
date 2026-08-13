@@ -3,6 +3,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRoutes, { prefetchAdminRoutes, prefetchStudentRoutes } from '../routes/AppRoutes';
 import { useAuthStore } from '../store/authStore';
+import { getStoredStreakData } from '../utils/streak';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -41,6 +42,29 @@ export default function App() {
 
     return () => idleCancel(handle);
   }, [isAuthenticated, profile?.role]);
+
+  useEffect(() => {
+    if (!isAuthenticated || profile?.role !== 'student' || !profile?.id) return;
+
+    const touchStreak = () => {
+      getStoredStreakData(profile.id);
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) touchStreak();
+    };
+
+    touchStreak();
+    window.addEventListener('focus', touchStreak);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const intervalId = window.setInterval(touchStreak, 60 * 1000);
+
+    return () => {
+      window.removeEventListener('focus', touchStreak);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(intervalId);
+    };
+  }, [isAuthenticated, profile?.id, profile?.role]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -23,8 +23,8 @@ const navItems = [
   { label: 'Practice Tests', to: '/tests?mode=practice', icon: BookOpen, match: (path: string, search: string) => path === '/tests' && search !== '?mode=mock' },
   { label: 'Mock Tests', to: '/tests?mode=mock', icon: PenLine, match: (path: string, search: string) => path === '/tests' && search === '?mode=mock' },
   { label: 'Results', to: '/history', icon: CheckSquare, match: (path: string) => path === '/history' },
-  { label: 'Profile', to: '/dashboard', icon: User, match: () => false },
-  { label: 'Settings', to: '/dashboard', icon: Settings, match: () => false }
+  { label: 'Profile', to: '/profile', icon: User, match: (path: string) => path === '/profile' },
+  { label: 'Settings', to: '/settings', icon: Settings, match: (path: string) => path === '/settings' }
 ];
 
 interface StudentSidebarProps {

@@ -10,7 +10,7 @@ import MobileBottomNav from '../components/MobileBottomNav';
 import NotificationBell from '../components/NotificationBell';
 import { assets } from '../config/assets';
 import { BarChart3, BookOpen, CheckSquare, ClipboardList, Headphones, Lock, ArrowLeft, ArrowRight, Play, Clock, Info, PenLine, Target, Star, Timer, Monitor, History, User, Settings, LogOut, Award, Menu, Video, SlidersHorizontal, X, Search } from 'lucide-react';
-import { getStoredStreakData } from '../utils/streak';
+import { STREAK_UPDATED_EVENT, getStoredStreakData } from '../utils/streak';
 
 interface MockTest {
   id: string;
@@ -205,7 +205,19 @@ export default function MockTestsPage() {
 
   useEffect(() => {
     if (!profile?.id) return;
-    setStreakData(getStoredStreakData(profile.id));
+
+    const syncStreak = () => setStreakData(getStoredStreakData(profile.id));
+    const handleStreakUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId?: string }>;
+      if (!customEvent.detail?.userId || customEvent.detail.userId === profile.id) {
+        syncStreak();
+      }
+    };
+
+    syncStreak();
+    window.addEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
+
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, handleStreakUpdate);
   }, [profile?.id]);
 
   useEffect(() => {
