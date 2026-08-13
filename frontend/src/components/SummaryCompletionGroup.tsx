@@ -44,36 +44,46 @@ const splitTableRow = (line: string) => {
   return null;
 };
 
-const parseTableSource = (source: string) => {
-  const parsedRows = source
+const tableSeparatorRe = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/;
+
+const parseTableRows = (source: string) => {
+  const rows: string[][] = [];
+  let lastTableRow: string[] | null = null;
+
+  source
     .split('\n')
     .map((line) => line.trimEnd())
-    .filter((line) => line.trim() && !/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line))
-    .map(splitTableRow);
+    .forEach((line) => {
+      if (!line.trim() || tableSeparatorRe.test(line)) return;
 
-  if (parsedRows.length < 2 || parsedRows.some((row) => !row || row.length < 2)) {
-    return null;
-  }
+      const row = splitTableRow(line);
 
-  const rows: string[][] = [];
+      if (!row || row.length < 2) {
+        if (lastTableRow && line.trim()) {
+          const targetIndex = Math.max(lastTableRow.length - 1, 0);
+          lastTableRow[targetIndex] = [lastTableRow[targetIndex], line.trim()].filter(Boolean).join('\n');
+        }
+        return;
+      }
 
-  parsedRows.forEach((row) => {
-    if (!row) return;
+      const previous = rows[rows.length - 1];
+      const isContinuationRow = previous && row[0] === '' && row.slice(1).some(Boolean);
 
-    const previous = rows[rows.length - 1];
-    const isContinuationRow = previous && row[0] === '' && row.slice(1).some(Boolean);
+      if (isContinuationRow) {
+        row.slice(1).forEach((cell, index) => {
+          if (!cell) return;
+          const targetIndex = index + 1;
+          previous[targetIndex] = [previous[targetIndex], cell].filter(Boolean).join('\n\n');
+        });
+        lastTableRow = previous;
+        return;
+      }
 
-    if (isContinuationRow) {
-      row.slice(1).forEach((cell, index) => {
-        if (!cell) return;
-        const targetIndex = index + 1;
-        previous[targetIndex] = [previous[targetIndex], cell].filter(Boolean).join('\n\n');
-      });
-      return;
-    }
+      rows.push(row);
+      lastTableRow = row;
+    });
 
-    rows.push(row);
-  });
+  if (rows.length < 2) return null;
 
   const columnCount = Math.max(...rows.map((row) => row?.length || 0));
 
@@ -82,6 +92,90 @@ const parseTableSource = (source: string) => {
     while (padded.length < columnCount) padded.push('');
     return padded;
   });
+};
+
+const normalizeIeltsTableRows = (rows: string[][]) => {
+  const columnCount = Math.max(...rows.map((row) => row.length));
+
+  return rows.map((row) => {
+    const trimmed = row.map((cell) => cell.trim());
+
+    if (trimmed.length === columnCount) return trimmed;
+
+    const hasDayCell = /^day\s*\d+/i.test(trimmed[0] || '');
+    if (columnCount === 4 && trimmed.length === 3 && hasDayCell) {
+      return [trimmed[0], trimmed[1], trimmed[2], ''];
+    }
+
+    const padded = [...trimmed];
+    while (padded.length < columnCount) padded.push('');
+    return padded;
+  });
+};
+
+const isTitleRow = (row: string[]) => {
+  const filledCells = row.filter((cell) => cell.trim());
+  return filledCells.length === 1 && !new RegExp(blankTokenRe.source, 'i').test(filledCells[0]);
+};
+
+const isHeaderRow = (row: string[]) => {
+  const normalized = row.map((cell) => cell.trim().toLowerCase());
+  return normalized.includes('activity') && normalized.includes('notes');
+};
+
+const parseTableSegment = (source: string) => {
+  const lines = source.split('\n');
+  const firstTableLineIndex = lines.findIndex((line) => Boolean(splitTableRow(line)) || tableSeparatorRe.test(line));
+
+  if (firstTableLineIndex >= 0) {
+    const rows = parseTableRows(lines.slice(firstTableLineIndex).join('\n'));
+
+    if (rows) {
+      return {
+        rows: normalizeIeltsTableRows(rows),
+        beforeLines: lines.slice(0, firstTableLineIndex).map((line) => line.trim()).filter(Boolean),
+        afterLines: [],
+      };
+    }
+  }
+
+  const groups: Array<{ start: number; end: number; lines: string[] }> = [];
+  let current: { start: number; end: number; lines: string[] } | null = null;
+
+  lines.forEach((line, index) => {
+    const isTableLike = Boolean(splitTableRow(line)) || tableSeparatorRe.test(line);
+
+    if (isTableLike) {
+      if (!current) {
+        current = { start: index, end: index, lines: [line] };
+      } else {
+        current.end = index;
+        current.lines.push(line);
+      }
+      return;
+    }
+
+    if (current) {
+      groups.push(current);
+      current = null;
+    }
+  });
+
+  if (current) groups.push(current);
+
+  const parsedGroups = groups
+    .map((group) => ({ group, rows: parseTableRows(group.lines.join('\n')) }))
+    .filter((item): item is { group: { start: number; end: number; lines: string[] }; rows: string[][] } => Boolean(item.rows));
+
+  if (!parsedGroups.length) return null;
+
+  const best = parsedGroups.sort((a, b) => b.rows.length - a.rows.length)[0];
+
+  return {
+    rows: normalizeIeltsTableRows(best.rows),
+    beforeLines: lines.slice(0, best.group.start).map((line) => line.trim()).filter(Boolean),
+    afterLines: lines.slice(best.group.end + 1).map((line) => line.trim()).filter(Boolean),
+  };
 };
 
 const splitSummarySegments = (questions: any[]) => {
@@ -299,7 +393,7 @@ export const SummaryCompletionGroup = ({
     <div className={panelClass}>
       <div className="space-y-8">
         {segments.map((segment, segmentIndex) => {
-          const tableRows = parseTableSource(segment.source);
+          const tableSegment = parseTableSegment(segment.source);
           const fallbackHeading = getSegmentRange(segment.questions);
           const instruction = getSegmentInstruction(segment.questions, groupInstruction);
           const { heading, lines } = formatInstructionLines(instruction, fallbackHeading);
@@ -318,32 +412,70 @@ export const SummaryCompletionGroup = ({
             </div>
           );
 
-          if (tableRows) {
+          if (tableSegment) {
             return (
               <div key={segmentIndex}>
                 {instructionBlock}
+                {tableSegment.beforeLines.length > 0 && (
+                  <div className={`${textClass} mb-4 space-y-2`}>
+                    {tableSegment.beforeLines.map((line, lineIndex) => (
+                      <div key={lineIndex}>
+                        {renderFormattedBlockText(line, `table-before-${segmentIndex}-${lineIndex}`)}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className={`w-full border-collapse text-left ${isDark ? 'text-slate-300' : 'text-[#05162E]'}`}>
                     <tbody>
-                      {tableRows.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <td
-                              key={cellIndex}
-                              className={`align-middle border px-4 py-3 leading-loose whitespace-pre-wrap ${
-                                isDark
-                                  ? 'border-slate-700 bg-slate-950/40'
-                                  : 'border-slate-200 bg-white'
-                              } ${cellIndex === 0 ? 'w-[28%] font-semibold' : ''}`}
-                            >
-                              {renderTextWithBlanks(cell, `${segmentIndex}-${rowIndex}-${cellIndex}`)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                      {tableSegment.rows.map((row, rowIndex) => {
+                        if (isTitleRow(row)) {
+                          const title = row.find((cell) => cell.trim()) || '';
+                          return (
+                            <tr key={rowIndex}>
+                              <td
+                                colSpan={row.length}
+                                className={`border px-5 py-4 text-[22px] font-black leading-tight ${
+                                  isDark ? 'border-slate-700 bg-slate-950/40 text-white' : 'border-slate-200 bg-white text-[#05162E]'
+                                }`}
+                              >
+                                {renderFormattedBlockText(title, `table-title-${segmentIndex}-${rowIndex}`)}
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        const headerRow = isHeaderRow(row);
+
+                        return (
+                          <tr key={rowIndex}>
+                            {row.map((cell, cellIndex) => (
+                              <td
+                                key={cellIndex}
+                                className={`align-middle border px-4 py-4 leading-loose whitespace-pre-wrap ${
+                                  isDark
+                                    ? 'border-slate-700 bg-slate-950/40'
+                                    : 'border-slate-200 bg-white'
+                                } ${headerRow ? 'text-center text-[20px] font-black' : 'text-[17px] font-medium'} ${
+                                  cellIndex === 0 ? 'w-[15%]' : cellIndex === 1 ? 'w-[25%]' : 'w-[30%]'
+                                }`}
+                              >
+                                {renderTextWithBlanks(cell, `${segmentIndex}-${rowIndex}-${cellIndex}`)}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
+                {tableSegment.afterLines.length > 0 && (
+                  <div className={`${textClass} mt-4 space-y-2`}>
+                    {tableSegment.afterLines.map((line, lineIndex) => (
+                      <p key={lineIndex}>{renderFormattedText(line, `table-after-${segmentIndex}-${lineIndex}`)}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           }

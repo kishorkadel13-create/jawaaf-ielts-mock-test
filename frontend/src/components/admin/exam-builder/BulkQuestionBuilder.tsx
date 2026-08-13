@@ -5,10 +5,14 @@ import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../Summa
 import { renderFormattedBlockText } from '../../../utils/renderFormattedText';
 
 interface BulkQuestionBuilderProps {
-  onSave: (questions: QuestionData[], instruction?: string) => void;
+  onSave: (questions: QuestionData[], instruction?: string) => void | Promise<void>;
   onCancel: () => void;
   nextOrderNo: number;
   currentInstruction?: string;
+  initialRawText?: string;
+  initialBulkType?: string;
+  initialQuestionStatement?: string;
+  submitLabel?: string;
 }
 
 const BULK_TYPES = [
@@ -357,11 +361,20 @@ const normalizeAnswersForOptions = (answers: string[], options: string[], questi
   return answer;
 });
 
-export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, currentInstruction = '' }: BulkQuestionBuilderProps) {
-  const [rawText, setRawText] = useState('');
+export default function BulkQuestionBuilder({
+  onSave,
+  onCancel,
+  nextOrderNo,
+  currentInstruction = '',
+  initialRawText = '',
+  initialBulkType = 'AUTO',
+  initialQuestionStatement,
+  submitLabel,
+}: BulkQuestionBuilderProps) {
+  const [rawText, setRawText] = useState(initialRawText);
   const [headingOptionsText, setHeadingOptionsText] = useState('');
-  const [bulkType, setBulkType] = useState('AUTO');
-  const [questionStatement, setQuestionStatement] = useState(currentInstruction);
+  const [bulkType, setBulkType] = useState(initialBulkType);
+  const [questionStatement, setQuestionStatement] = useState(initialQuestionStatement ?? currentInstruction);
   const statementRef = useRef<HTMLTextAreaElement | null>(null);
   const rawTextRef = useRef<HTMLTextAreaElement | null>(null);
   const headingOptionsRef = useRef<HTMLTextAreaElement | null>(null);
@@ -371,6 +384,15 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
 
   const formatGuide = useMemo(() => FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO, [bulkType]);
   const suggestedStatement = useMemo(() => SUGGESTED_STATEMENTS[bulkType] || '', [bulkType]);
+
+  useEffect(() => {
+    setRawText(initialRawText);
+    setHeadingOptionsText('');
+    setBulkType(initialBulkType);
+    setQuestionStatement(initialQuestionStatement ?? currentInstruction);
+    setParsedQuestions(null);
+    setError(null);
+  }, [initialRawText, initialBulkType, initialQuestionStatement, currentInstruction]);
 
   const applyTextareaFormat = (
     textarea: HTMLTextAreaElement | null,
@@ -725,6 +747,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                   values={{}}
                   onChange={() => undefined}
                   mode="light"
+                  groupInstruction={questionStatement}
                 />
               )}
 
@@ -777,7 +800,7 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                 className="px-6 py-2.5 bg-emerald-600 text-white disabled:bg-emerald-400 font-bold text-[13px] rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm"
               >
                 {isSaving ? <AlertCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                {isSaving ? 'Saving...' : `Save ${parsedQuestions.length} Questions`}
+                {isSaving ? 'Saving...' : submitLabel || `Save ${parsedQuestions.length} Questions`}
               </button>
             </div>
           </div>

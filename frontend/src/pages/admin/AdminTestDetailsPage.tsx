@@ -39,6 +39,7 @@ export default function AdminTestDetailsPage() {
   const [editingQuestion, setEditingQuestion] = useState<QuestionData | null>(null);
   const [editingBatchKey, setEditingBatchKey] = useState<string | null>(null);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [editingBulkBatch, setEditingBulkBatch] = useState<any | null>(null);
   const [audioUploading, setAudioUploading] = useState(false);
   const [audioUrlInput, setAudioUrlInput] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
@@ -619,10 +620,17 @@ export default function AdminTestDetailsPage() {
   const handleSaveBulkQuestions = async (questions: QuestionData[], instruction?: string) => {
     if (!activeGroup) return;
     try {
-      const bulkBatchId = `bulk-${Date.now()}`;
+      const existingBatch = editingBulkBatch;
+      const existingBatchKey = existingBatch?.key ? String(existingBatch.key) : '';
+      const bulkBatchId = existingBatchKey.startsWith('bulk-') ? existingBatchKey : `bulk-${Date.now()}`;
       const bulkInstruction = instruction?.trim();
 
-      // Loop through and save all questions
+      if (existingBatch?.questions?.length) {
+        for (const q of existingBatch.questions) {
+          await api.delete(`/admin/questions/${q.id}`);
+        }
+      }
+
       for (const q of questions) {
         const dbType = mapToDBType(q.question_type);
         const payload = {
@@ -639,7 +647,9 @@ export default function AdminTestDetailsPage() {
         };
         await api.post('/admin/questions', payload);
       }
+      setEditingBulkBatch(null);
       setIsBulkEditing(false);
+      setExpandedBatchKey(bulkBatchId);
       fetchTestDetails();
     } catch (err: any) {
       alert(err.message || 'Failed to save bulk questions');
@@ -721,7 +731,54 @@ export default function AdminTestDetailsPage() {
     questions: [...batch.questions].sort((a: any, b: any) => (Number(a.order_no) || 0) - (Number(b.order_no) || 0)),
   }));
 
+  const getBulkEditType = (batch: any) =>
+    batch.questions?.[0]?.extra_data_json?.original_type || batch.questions?.[0]?.question_type || 'AUTO';
+
+  const getBulkEditInstruction = (batch: any) =>
+    batch.questions?.find((q: any) => q.extra_data_json?.bulk_instruction)?.extra_data_json?.bulk_instruction ||
+    batch.questions?.find((q: any) => q.instruction)?.instruction ||
+    activeGroup?.instruction ||
+    '';
+
+  const getBulkEditRawText = (batch: any) => {
+    const source = batch.questions?.find((q: any) => q.extra_data_json?.bulk_source)?.extra_data_json?.bulk_source?.trim();
+    const rows = source || batch.questions?.map((q: any) => {
+      const text = String(q.question_text || `Question ${q.question_number}`)
+        .replace(/\[blank\]/g, `${q.question_number}........`)
+        .trim();
+      const options = Array.isArray(q.options_json) && q.options_json.length
+        ? `\n${q.options_json.map((option: string, index: number) => `${String.fromCharCode(65 + index)}. ${option}`).join('\n')}`
+        : '';
+
+      return `${q.question_number}. ${text}${options}`;
+    }).join('\n');
+
+    const answerLines = batch.questions?.map((q: any) => {
+      const answers = Array.isArray(q.correct_answers_json) ? q.correct_answers_json.filter(Boolean) : [];
+      return answers.length ? `${q.question_number} ${answers.join(', ')}` : '';
+    }).filter(Boolean).join('\n');
+
+    if (!answerLines || /answer\s*key|correct answers?|^answers\b/im.test(rows || '')) {
+      return rows || '';
+    }
+
+    return `${rows}\n\nAnswer Key:\n${answerLines}`;
+  };
+
+  const startEditBulkBatch = (batch: any) => {
+    setEditingQuestion(null);
+    setEditingBatchKey(null);
+    setIsBulkEditing(false);
+    setEditingBulkBatch(batch);
+    setExpandedBatchKey(batch.key);
+  };
+
+  const cancelEditBulkBatch = () => {
+    setEditingBulkBatch(null);
+  };
+
   const startEditQuestion = (q: any, batchKey?: string | null) => {
+    setEditingBulkBatch(null);
     setEditingBatchKey(batchKey || getBatchKey(q));
     setEditingQuestion(q);
   };
@@ -895,7 +952,7 @@ export default function AdminTestDetailsPage() {
               {test?.sections?.map((sec: any) => (
                 <div 
                   key={sec.id}
-                  onClick={() => { setSelectedSection(sec); setSelectedGroup(sec.question_groups?.[0] || null); cancelEditQuestion(); setIsBulkEditing(false); setExpandedBatchKey(null); }}
+                  onClick={() => { setSelectedSection(sec); setSelectedGroup(sec.question_groups?.[0] || null); cancelEditQuestion(); setEditingBulkBatch(null); setIsBulkEditing(false); setExpandedBatchKey(null); }}
                   className={`p-3 rounded-xl border-2 transition-all cursor-pointer group flex flex-col gap-2 ${
                     activeSection?.id === sec.id
                       ? 'border-[#1E3A6E] bg-[#EFF4FB]'
@@ -1140,7 +1197,7 @@ export default function AdminTestDetailsPage() {
                     {activeSection.question_groups?.map((grp: any) => (
                       <div key={grp.id} className="relative group">
                         <button
-                          onClick={() => { setSelectedGroup(grp); cancelEditQuestion(); setIsBulkEditing(false); setExpandedBatchKey(null); }}
+                          onClick={() => { setSelectedGroup(grp); cancelEditQuestion(); setEditingBulkBatch(null); setIsBulkEditing(false); setExpandedBatchKey(null); }}
                           className={`px-4 py-2.5 rounded-xl text-[13px] font-bold transition-all border-2 ${
                             activeGroup?.id === grp.id
                               ? 'bg-white border-[#1E3A6E] text-[#1E3A6E] shadow-sm'
@@ -1304,7 +1361,38 @@ export default function AdminTestDetailsPage() {
 
                             {isExpanded && (
                               <div className="p-4 bg-[#F8FAFC] border-t border-slate-200 flex flex-col gap-3">
-                                {batch.questions.map((q: any) => renderQuestionCard(q, batch.key))}
+                                {editingBulkBatch?.key === batch.key ? (
+                                  <BulkQuestionBuilder
+                                    key={`edit-${batch.key}`}
+                                    onSave={handleSaveBulkQuestions}
+                                    onCancel={cancelEditBulkBatch}
+                                    nextOrderNo={Number(firstQuestion.order_no) || 1}
+                                    currentInstruction={getBulkEditInstruction(batch)}
+                                    initialQuestionStatement={getBulkEditInstruction(batch)}
+                                    initialBulkType={getBulkEditType(batch)}
+                                    initialRawText={getBulkEditRawText(batch)}
+                                    submitLabel={`Update ${batch.questions.length} Questions`}
+                                  />
+                                ) : (
+                                  <>
+                                    <div className="flex flex-col gap-3 rounded-xl border border-[#1E3A6E]/10 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                                      <div>
+                                        <p className="text-[12px] font-black uppercase tracking-wider text-[#1E3A6E]">Bulk Source Edit</p>
+                                        <p className="text-[12px] font-semibold text-slate-500">
+                                          Open the original paste format, edit the full set, then save it back together.
+                                        </p>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => startEditBulkBatch(batch)}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition-colors hover:bg-[#162d57]"
+                                      >
+                                        <Wand2 className="h-4 w-4" /> Edit Bulk Set
+                                      </button>
+                                    </div>
+                                    {batch.questions.map((q: any) => renderQuestionCard(q, batch.key))}
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1351,7 +1439,7 @@ export default function AdminTestDetailsPage() {
                             <Plus className="h-4 w-4" /> Add Single Question
                           </button>
                           <button
-                            onClick={() => setIsBulkEditing(true)}
+                            onClick={() => { setEditingBulkBatch(null); setIsBulkEditing(true); }}
                             className="flex-1 py-4 bg-[#F8FAFC] border-2 border-dashed border-[#1E3A6E]/30 hover:border-[#1E3A6E] hover:bg-white text-[#1E3A6E] rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all"
                           >
                             <Wand2 className="h-4 w-4" /> Bulk Add Questions
