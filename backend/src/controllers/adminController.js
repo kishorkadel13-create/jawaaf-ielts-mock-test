@@ -2,7 +2,8 @@ import { supabaseAdmin } from '../config/supabase.js';
 import { createNotifications } from '../services/notificationService.js';
 
 const ASSET_BUCKET = 'ielts-assets';
-const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 500);
+const UPLOAD_MAX_SIZE_MB = Number(process.env.UPLOAD_MAX_SIZE_MB || 50);
+const UPLOAD_MAX_SIZE_BYTES = UPLOAD_MAX_SIZE_MB * 1024 * 1024;
 const AUDIO_MIME_TYPES = new Set([
   'audio/mpeg',
   'audio/mp3',
@@ -434,7 +435,7 @@ export const deleteQuestion = async (req, res) => {
 export const createListeningAudioUpload = async (req, res) => {
   try {
     const { testId } = req.params;
-    const { file_name, content_type } = req.body;
+    const { file_name, content_type, file_size } = req.body;
 
     if (!file_name || !content_type) {
       return res.status(400).json({
@@ -450,6 +451,14 @@ export const createListeningAudioUpload = async (req, res) => {
       });
     }
 
+    if (Number(file_size || 0) > UPLOAD_MAX_SIZE_BYTES) {
+      return res.status(413).json({
+        error: 'FileTooLarge',
+        message: `This audio file is too large. Please upload audio under ${UPLOAD_MAX_SIZE_MB}MB.`,
+        max_size_mb: UPLOAD_MAX_SIZE_MB
+      });
+    }
+
     await ensureAssetBucket();
 
     const audioPath = getListeningAudioStoragePath(testId, file_name);
@@ -459,24 +468,13 @@ export const createListeningAudioUpload = async (req, res) => {
 
     if (error) throw error;
 
-    await createNotifications([{
-      user_id: profile.id,
-      actor_id: req.user.id,
-      type: has_full_access ? 'premium_access_updated' : 'premium_access_revoked',
-      title: has_full_access ? 'Premium access updated' : 'Premium access revoked',
-      body: has_full_access
-        ? 'Your premium access has been updated by the admin team.'
-        : 'Your premium access has been revoked by the admin team.',
-      link: has_full_access ? '/dashboard' : '/access-request',
-      metadata: { premium_access_expires_at: profile.premium_access_expires_at }
-    }]);
-
     res.status(200).json({
       bucket: ASSET_BUCKET,
       audio_file: data.path,
       token: data.token,
       signed_url: data.signedUrl,
-      url: getAudioUrl(data.path)
+      url: getAudioUrl(data.path),
+      max_size_mb: UPLOAD_MAX_SIZE_MB
     });
   } catch (err) {
     console.error('createListeningAudioUpload Error:', err);

@@ -39,7 +39,7 @@ const router = Router();
 
 // In-Memory Multer config to handle uploads cleanly
 const storage = multer.memoryStorage();
-const uploadMaxSizeMb = Number(process.env.UPLOAD_MAX_SIZE_MB || 500);
+const uploadMaxSizeMb = Number(process.env.UPLOAD_MAX_SIZE_MB || 50);
 const upload = multer({
   storage,
   limits: { fileSize: uploadMaxSizeMb * 1024 * 1024 },

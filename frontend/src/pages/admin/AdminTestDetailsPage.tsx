@@ -16,8 +16,16 @@ import { normalizeMatchingQuestionType } from '../../utils/matchingHeadings';
 import { renderFormattedBlockText, renderFormattedText } from '../../utils/renderFormattedText';
 import { resolveListeningAudioUrl } from '../../utils/audioUrl';
 
-const MAX_UPLOAD_SIZE_MB = Number((import.meta as any).env.VITE_UPLOAD_MAX_SIZE_MB || 500);
+const MAX_UPLOAD_SIZE_MB = Number((import.meta as any).env.VITE_UPLOAD_MAX_SIZE_MB || 50);
 const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
+const formatFileSizeMb = (size: number) => (size / 1024 / 1024).toFixed(1);
+const getStorageUploadMessage = (message: string, file: File, maxSizeMb = MAX_UPLOAD_SIZE_MB) => {
+  if (/maximum allowed size|exceeded.*size|file.*too large|payload too large/i.test(message)) {
+    return `This audio file is ${formatFileSizeMb(file.size)}MB, but the current storage limit is ${maxSizeMb}MB. Compress/export the audio smaller, or increase the Supabase Storage global and bucket file-size limits.`;
+  }
+
+  return message || 'Failed to upload listening audio.';
+};
 
 export default function AdminTestDetailsPage() {
   const { id } = useParams();
@@ -250,7 +258,7 @@ export default function AdminTestDetailsPage() {
   const handleUploadListeningAudio = async (file?: File | null) => {
     if (!file || !activeSection || activeSection.type !== 'listening') return;
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      alert(`This file is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please upload an MP3 or M4A under ${MAX_UPLOAD_SIZE_MB}MB.`);
+      alert(`This file is ${formatFileSizeMb(file.size)}MB. Please upload an MP3 or M4A under ${MAX_UPLOAD_SIZE_MB}MB.`);
       return;
     }
 
@@ -259,6 +267,7 @@ export default function AdminTestDetailsPage() {
       const { data: uploadSession } = await api.post(`/admin/tests/${id}/audio/sign`, {
         file_name: file.name,
         content_type: file.type || 'audio/mpeg',
+        file_size: file.size,
       });
 
       const uploadPath = uploadSession.audio_file || uploadSession.path;
@@ -269,7 +278,7 @@ export default function AdminTestDetailsPage() {
         });
 
       if (uploadError) {
-        throw new Error(uploadError.message || 'Failed to upload listening audio to storage.');
+        throw new Error(getStorageUploadMessage(uploadError.message || '', file, uploadSession.max_size_mb));
       }
 
       await api.put(`/admin/tests/${id}/audio`, {
@@ -278,7 +287,9 @@ export default function AdminTestDetailsPage() {
 
       await fetchTestDetails();
     } catch (err: any) {
-      alert(err.message || 'Failed to upload listening audio');
+      const apiMessage = err.response?.data?.message || err.message || '';
+      const maxSizeMb = err.response?.data?.max_size_mb || MAX_UPLOAD_SIZE_MB;
+      alert(getStorageUploadMessage(apiMessage, file, maxSizeMb));
     } finally {
       setAudioUploading(false);
     }
@@ -382,7 +393,7 @@ export default function AdminTestDetailsPage() {
   const handleUploadGroupImage = async (file?: File | null) => {
     if (!file || !activeGroup) return;
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      alert(`This file is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please upload a file under ${MAX_UPLOAD_SIZE_MB}MB.`);
+      alert(`This file is ${formatFileSizeMb(file.size)}MB. Please upload a file under ${MAX_UPLOAD_SIZE_MB}MB.`);
       return;
     }
 

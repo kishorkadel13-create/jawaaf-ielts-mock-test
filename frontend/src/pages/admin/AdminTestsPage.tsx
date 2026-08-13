@@ -620,17 +620,17 @@ export default function AdminTestsPage() {
         {/* Create/Edit Modal */}
         <AnimatePresence>
           {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05162E]/60 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#05162E]/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
+                className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:rounded-3xl"
               >
-                <div className="px-7 py-5 bg-[#F8FAFC] border-b border-slate-100 flex items-center justify-between">
+                <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-[#F8FAFC] px-4 py-4 sm:px-7 sm:py-5">
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#F9544F]">Test Builder</p>
-                    <h3 className="font-black text-[22px] text-[#05162E]">
+                    <h3 className="text-[18px] font-black text-[#05162E] sm:text-[22px]">
                       {modalMode === 'create'
                         ? createContext === 'practice'
                           ? 'Create Practice Test'
@@ -646,9 +646,9 @@ export default function AdminTestsPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className={`grid gap-0 ${modalMode === 'create' ? 'lg:grid-cols-[0.95fr_1.05fr]' : ''}`}>
+                <form onSubmit={handleSubmit} className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${modalMode === 'create' ? 'grid gap-0 lg:grid-cols-[0.95fr_1.05fr]' : ''}`}>
                   {modalMode === 'create' && (
-                    <div className="bg-[#F8FAFC] p-7 border-r border-slate-100">
+                    <div className="border-b border-slate-100 bg-[#F8FAFC] p-4 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
                       <h4 className="text-[15px] font-black text-[#05162E]">
                         {createContext === 'practice' ? 'Choose practice module' : 'Mock exam structure'}
                       </h4>
@@ -679,7 +679,7 @@ export default function AdminTestsPage() {
                             key={template.key}
                             type="button"
                             onClick={() => { setSectionTemplate(template.key); setDuration(template.durationValue); }}
-                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${
+                            className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all sm:gap-4 sm:p-4 ${
                               isSelected
                                 ? 'border-[#1E3A6E] bg-[#EFF4FB] text-[#1E3A6E]'
                                 : 'border-slate-200 bg-white text-slate-500 hover:bg-[#F8FAFC]'
@@ -699,7 +699,7 @@ export default function AdminTestsPage() {
                     </div>
                   )}
 
-                  <div className="p-7 flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 p-4 sm:p-6 lg:p-7">
                   <div className="flex flex-col gap-2">
                     <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider">Test Title</label>
                     <input
@@ -723,7 +723,7 @@ export default function AdminTestsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider">Duration (Mins)</label>
                       <input
@@ -857,18 +857,18 @@ export default function AdminTestsPage() {
                     </label>
                   </div>
 
-                  <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-slate-100">
+                  <div className="sticky bottom-0 -mx-4 mt-2 flex flex-col-reverse gap-3 border-t border-slate-100 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:flex-row sm:justify-end sm:px-6 lg:-mx-7 lg:px-7">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[14px] font-bold rounded-xl transition-all"
+                      className="min-h-12 rounded-xl bg-slate-100 px-5 py-3 text-[14px] font-bold text-slate-600 transition-all hover:bg-slate-200 sm:min-h-0"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-3 bg-[#F9544F] hover:bg-[#e64944] disabled:opacity-50 text-white text-[14px] font-bold rounded-xl transition-all shadow-sm"
+                      className="min-h-12 rounded-xl bg-[#F9544F] px-6 py-3 text-[14px] font-bold text-white shadow-sm transition-all hover:bg-[#e64944] disabled:opacity-50 sm:min-h-0"
                     >
                         {submitting ? 'Saving...' : createContext === 'practice' ? 'Save Practice Test' : 'Save Mock Test'}
                     </button>
