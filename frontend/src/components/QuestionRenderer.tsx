@@ -356,11 +356,18 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
   // Choose Two / Multi Select
   if (question_type === 'MULTI_SELECT') {
     const selectedValues = Array.isArray(value) ? value : [];
+    const maxSelections = Math.max(
+      1,
+      Number(question.extra_data_json?.max_selections) ||
+        Number(question.marks) ||
+        (Array.isArray(question.correct_answers_json) ? question.correct_answers_json.filter((answer: string) => answer && answer !== '[NO ANSWER DETECTED]').length : 0) ||
+        2
+    );
     
     const toggleValue = (opt: string) => {
       if (selectedValues.includes(opt)) {
         onChange(selectedValues.filter((v: string) => v !== opt));
-      } else {
+      } else if (selectedValues.length < maxSelections) {
         onChange([...selectedValues, opt]);
       }
     };
@@ -371,11 +378,14 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
         <div className="flex flex-col gap-2">
           {options.map((opt: string, idx: number) => {
             const isSelected = selectedValues.includes(opt);
+            const isDisabled = !isSelected && selectedValues.length >= maxSelections;
             const letter = String.fromCharCode(65 + idx);
             return (
               <label 
                 key={idx} 
-                className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${optionClass(isSelected)}`}
+                className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${
+                  isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                } ${optionClass(isSelected)}`}
               >
                 <div className="pt-0.5">
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
@@ -386,6 +396,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
                   <input
                     type="checkbox"
                     checked={isSelected}
+                    disabled={isDisabled}
                     onChange={() => toggleValue(opt)}
                     className="hidden"
                   />

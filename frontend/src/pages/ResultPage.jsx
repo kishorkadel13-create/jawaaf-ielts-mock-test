@@ -72,9 +72,21 @@ export default function ResultPage({ writingTaskType = null }) {
   const hasTeacherFeedback = Boolean(data.feedback);
   const isPendingTeacherReview = hasWriting && !hasTeacherFeedback && data.can_view_results === false;
   const isReviewedWriting = isWritingOnly && hasTeacherFeedback;
-  const correctCount = objectiveAnswers.filter(a => a.is_correct).length;
-  const wrongCount = objectiveAnswers.filter(a => a.student_answer && !a.is_correct).length;
-  const unansweredCount = answers.filter(a => !a.student_answer).length;
+  const hasStudentAnswer = (answer) => Array.isArray(answer)
+    ? answer.some(item => String(item || '').trim())
+    : Boolean(String(answer || '').trim());
+  const getAnswerScore = (answer) => {
+    const score = Number(answer?.score);
+    return Number.isFinite(score) ? score : answer?.is_correct ? Number(answer?.marks) || 1 : 0;
+  };
+  const getAnswerMaxScore = (answer) => {
+    const marks = Number(answer?.marks);
+    if (Number.isFinite(marks) && marks > 0) return marks;
+    return 1;
+  };
+  const correctCount = objectiveAnswers.reduce((sum, answer) => sum + getAnswerScore(answer), 0);
+  const wrongCount = objectiveAnswers.filter(answer => hasStudentAnswer(answer.student_answer) && getAnswerScore(answer) <= 0).length;
+  const unansweredCount = answers.filter(answer => !hasStudentAnswer(answer.student_answer)).length;
   const getTaskFeedback = (answer) => (
     data.feedback?.task_feedback?.[answer.question_id] ||
     data.feedback?.task_feedback?.[answer.id] ||
@@ -89,6 +101,24 @@ export default function ResultPage({ writingTaskType = null }) {
   ];
 
   const currentQ = answers[activeQuestionIndex];
+  const currentScore = getAnswerScore(currentQ);
+  const currentMaxScore = getAnswerMaxScore(currentQ);
+  const currentHasAnswer = hasStudentAnswer(currentQ?.student_answer);
+  const currentIsFullyCorrect = currentQ?.is_correct || currentScore >= currentMaxScore;
+  const cleanReviewValue = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const getOptionLetter = (index) => String.fromCharCode(65 + index);
+  const isReviewOptionSelected = (question, option, index) => {
+    const submitted = Array.isArray(question?.student_answer) ? question.student_answer : [question?.student_answer];
+    const optionLetter = getOptionLetter(index);
+    const optionText = cleanReviewValue(option);
+    return submitted.some(answer => cleanReviewValue(answer) === cleanReviewValue(optionLetter) || cleanReviewValue(answer) === optionText);
+  };
+  const isReviewOptionCorrect = (question, option, index) => {
+    const correctAnswers = Array.isArray(question?.correct_answers) ? question.correct_answers : [];
+    const optionLetter = getOptionLetter(index);
+    const optionText = cleanReviewValue(option);
+    return correctAnswers.some(answer => cleanReviewValue(answer) === cleanReviewValue(optionLetter) || cleanReviewValue(answer) === optionText);
+  };
   const currentTaskFeedback = currentQ?.question_type === 'WRITING_TASK' ? getTaskFeedback(currentQ) : {};
   const currentTaskTitle = currentQ?.extra_data?.task_type || (currentQ?.question_type === 'WRITING_TASK' ? `Writing Task ${allWritingAnswers.findIndex(answer => answer.id === currentQ.id) + 1}` : '');
   const isWritingFeedbackPage = Boolean((writingTaskType || isWritingOnly) && hasWriting);
@@ -477,9 +507,9 @@ export default function ResultPage({ writingTaskType = null }) {
                 } ${
                   ans.question_type === 'WRITING_TASK'
                     ? 'bg-white border border-[#EE6055]/40 text-[#EE6055] hover:bg-[#EE6055] hover:text-white'
-                    : ans.is_correct
+                    : getAnswerScore(ans) > 0
                     ? 'bg-white border border-emerald-300 text-emerald-600 hover:bg-emerald-50'
-                    : ans.student_answer
+                    : hasStudentAnswer(ans.student_answer)
                     ? 'bg-white border border-[#EE6055]/40 text-[#EE6055] hover:bg-[#EE6055] hover:text-white'
                     : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white hover:text-[#294b77]'
                 }`}
@@ -559,13 +589,17 @@ export default function ResultPage({ writingTaskType = null }) {
                   }`}>
                     <ClipboardCheck className="h-4 w-4" /> {hasTeacherFeedback ? 'Teacher Reviewed' : 'Teacher Review Pending'}
                   </span>
-                ) : currentQ.is_correct ? (
+                ) : currentIsFullyCorrect ? (
                   <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-black rounded-lg flex items-center gap-1.5 shrink-0">
-                    <CheckCircle2 className="h-4 w-4" /> Correct (+1)
+                    <CheckCircle2 className="h-4 w-4" /> Correct (+{currentScore})
+                  </span>
+                ) : currentScore > 0 ? (
+                  <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-black rounded-lg flex items-center gap-1.5 shrink-0">
+                    <CheckCircle2 className="h-4 w-4" /> Partially Correct (+{currentScore})
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 bg-[#FFF3F2] border border-[#EE6055]/30 text-[#EE6055] text-xs font-black rounded-lg flex items-center gap-1.5 shrink-0">
-                    <XCircle className="h-4 w-4" /> {currentQ.student_answer ? 'Incorrect (+0)' : 'Unanswered (+0)'}
+                    <XCircle className="h-4 w-4" /> {currentHasAnswer ? 'Incorrect (+0)' : 'Unanswered (+0)'}
                   </span>
                 )}
               </div>
@@ -587,22 +621,27 @@ export default function ResultPage({ writingTaskType = null }) {
                 <div className="space-y-2">
                   <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-2">Available Options</span>
                   <div className="grid gap-2">
-                    {currentQ.options.map((opt, i) => (
-                      <div 
-                        key={i} 
-                        className={`p-3 text-xs rounded-xl border ${
-                          currentQ.student_answer === opt.substring(0, 1) || (Array.isArray(currentQ.student_answer) && currentQ.student_answer.includes(opt.substring(0, 1)))
-                            ? currentQ.is_correct
+                    {currentQ.options.map((opt, i) => {
+                      const isSelected = isReviewOptionSelected(currentQ, opt, i);
+                      const isCorrectOption = isReviewOptionCorrect(currentQ, opt, i);
+
+                      return (
+                        <div
+                          key={i}
+                          className={`p-3 text-xs rounded-xl border ${
+                            isSelected && isCorrectOption
                               ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                              : 'bg-[#FFF3F2] border-[#EE6055]/30 text-[#EE6055]'
-                            : currentQ.correct_answers.includes(opt.substring(0, 1))
-                            ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                            : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {opt}
-                      </div>
-                    ))}
+                              : isSelected
+                              ? 'bg-[#FFF3F2] border-[#EE6055]/30 text-[#EE6055]'
+                              : isCorrectOption
+                              ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                              : 'bg-slate-50 border-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {opt}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -612,7 +651,7 @@ export default function ResultPage({ writingTaskType = null }) {
                 <div className="p-3 bg-[#F8FAFC] border border-slate-200 rounded-xl">
                   <span className="text-slate-500 font-bold block">Your Answer:</span>
                   <span className={`font-bold mt-1 block ${
-                    currentQ.is_correct ? 'text-emerald-700' : currentQ.student_answer ? 'text-[#05162E]' : 'text-slate-500'
+                    currentScore > 0 ? 'text-emerald-700' : currentHasAnswer ? 'text-[#05162E]' : 'text-slate-500'
                   }`}>
                     {Array.isArray(currentQ.student_answer)
                       ? currentQ.student_answer.join(', ')

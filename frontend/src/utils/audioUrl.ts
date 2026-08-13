@@ -9,10 +9,9 @@ export const resolveListeningAudioUrl = (audioFile?: string | null) => {
   const normalizedPath = value.replace(/^\/+/, '');
   const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const isBareLegacyFilename = !normalizedPath.includes('/');
-  const localFallbackFileName = normalizedPath.split('/').filter(Boolean).pop();
 
-  if (isLocalHost && localFallbackFileName) {
-    return `/audio/${encodeURIComponent(isBareLegacyFilename ? normalizedPath : localFallbackFileName)}`;
+  if (isLocalHost && isBareLegacyFilename) {
+    return `/audio/${encodeURIComponent(normalizedPath)}`;
   }
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

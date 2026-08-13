@@ -3,6 +3,8 @@ import { X, Clock, HelpCircle, CheckCircle2, XCircle, RotateCcw, ClipboardCheck,
 import { normalizePassageHtml } from '../../../utils/passageHtml';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../../utils/textHighlighter';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
+import { ListeningMatchingTextGroup, isListeningMatchingTextBlock } from '../../ListeningMatchingTextGroup';
+import { MultiSelectAnswerGroup, isMultiSelectAnswerGroup } from '../../MultiSelectAnswerGroup';
 import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
 import { resolveListeningAudioUrl } from '../../../utils/audioUrl';
@@ -116,12 +118,38 @@ const formatPreviewAnswer = (value: any) => {
   return Array.isArray(value) ? value.filter((item) => cleanAnswer(item)).join(', ') : String(value);
 };
 
-const evaluatePreviewAnswer = (submittedAnswer: any, correctAnswers: any[] = [], questionType = '') => {
+const expandPreviewAnswersWithLetters = (answers: any[] = [], options: any[] = []) => {
+  if (!Array.isArray(options) || options.length === 0) return answers.map(cleanAnswer);
+
+  const expanded = new Set<string>();
+
+  answers.forEach((answer) => {
+    const cleanedAnswer = cleanAnswer(answer);
+    if (!cleanedAnswer) return;
+
+    expanded.add(cleanedAnswer);
+
+    if (/^[a-z]$/.test(cleanedAnswer)) {
+      const option = options[cleanedAnswer.charCodeAt(0) - 97];
+      if (option) expanded.add(cleanAnswer(option));
+      return;
+    }
+
+    const optionIndex = options.findIndex((option) => cleanAnswer(option) === cleanedAnswer);
+    if (optionIndex >= 0) {
+      expanded.add(String.fromCharCode(97 + optionIndex));
+    }
+  });
+
+  return Array.from(expanded);
+};
+
+const evaluatePreviewAnswer = (submittedAnswer: any, correctAnswers: any[] = [], questionType = '', options: any[] = []) => {
   const validCorrectAnswers = correctAnswers.filter((answer) => answer !== '[NO ANSWER DETECTED]');
 
   if (!hasPreviewAnswer(submittedAnswer) || validCorrectAnswers.length === 0) return false;
 
-  const cleanedCorrect = validCorrectAnswers.map(cleanAnswer);
+  const cleanedCorrect = expandPreviewAnswersWithLetters(validCorrectAnswers, options);
 
   if (Array.isArray(submittedAnswer)) {
     const cleanedSubmitted = submittedAnswer.map(cleanAnswer).filter(Boolean);
@@ -180,7 +208,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
   const reviewRows = useMemo(() => allQuestions.map((question: any) => {
     const studentAnswer = previewAnswers[question.id];
     const isWritingTask = question.question_type === 'WRITING_TASK';
-    const isCorrect = isWritingTask ? false : evaluatePreviewAnswer(studentAnswer, question.correct_answers_json, question.question_type);
+    const isCorrect = isWritingTask ? false : evaluatePreviewAnswer(studentAnswer, question.correct_answers_json, question.question_type, question.options_json);
 
     return {
       question,
@@ -288,7 +316,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
     }));
   };
 
-  const togglePreviewMultiAnswer = (questionId: string, option: string) => {
+  const togglePreviewMultiAnswer = (questionId: string, option: string, maxSelections = 2) => {
     if (isSubmitted) return;
     setPreviewAnswers((current) => {
       const selected = Array.isArray(current[questionId]) ? current[questionId] : [];
@@ -296,7 +324,9 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
         ...current,
         [questionId]: selected.includes(option)
           ? selected.filter((item: string) => item !== option)
-          : [...selected, option],
+          : selected.length < maxSelections
+          ? [...selected, option]
+          : selected,
       };
     });
   };
@@ -684,7 +714,25 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
 
                       return (
                         <div key={block.id} className="flex flex-col gap-4">
-                          <QuestionInstructionCard instruction={block.instruction} />
+                          {sec.type === 'listening' && isListeningMatchingTextBlock(block.questions) ? (
+                            <ListeningMatchingTextGroup
+                              questions={block.questions}
+                              instruction={block.instruction}
+                              values={previewAnswers}
+                              onChange={setPreviewAnswer}
+                              disabled={isSubmitted}
+                            />
+                          ) : isMultiSelectAnswerGroup(block.questions) ? (
+                            <MultiSelectAnswerGroup
+                              questions={block.questions}
+                              instruction={block.instruction}
+                              values={previewAnswers}
+                              onChange={setPreviewAnswer}
+                              disabled={isSubmitted}
+                            />
+                          ) : (
+                            <>
+                              <QuestionInstructionCard instruction={block.instruction} />
                           {block.questions.map((q: any) => (
                       <div key={q.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-start gap-4">
                         <div className="h-8 w-8 bg-[#1E3A6E] text-white rounded-full flex items-center justify-center font-black text-[13px] shrink-0 shadow-md">
@@ -796,12 +844,26 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
 
                           {['SINGLE_MCQ', 'MULTI_SELECT'].includes(q.question_type) && q.options_json && (
                             <div className="flex flex-col gap-2 mt-4">
-                              {q.options_json.map((opt: string, idx: number) => (
+                              {q.options_json.map((opt: string, idx: number) => {
+                                const selectedValues = Array.isArray(previewAnswers[q.id]) ? previewAnswers[q.id] : [];
+                                const maxSelections = Math.max(
+                                  1,
+                                  Number(q.extra_data_json?.max_selections) ||
+                                    Number(q.marks) ||
+                                    (Array.isArray(q.correct_answers_json) ? q.correct_answers_json.filter((answer: string) => answer && answer !== '[NO ANSWER DETECTED]').length : 0) ||
+                                    2
+                                );
+                                const isMultiSelected = selectedValues.includes(opt);
+                                const isMultiDisabled = q.question_type === 'MULTI_SELECT' && !isMultiSelected && selectedValues.length >= maxSelections;
+
+                                return (
                                 <label
                                   key={idx}
-                                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                                    isMultiDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                                  } ${
                                     q.question_type === 'MULTI_SELECT'
-                                      ? Array.isArray(previewAnswers[q.id]) && previewAnswers[q.id].includes(opt)
+                                      ? isMultiSelected
                                         ? 'border-[#1E3A6E] bg-[#EFF4FB]'
                                         : 'border-slate-200 hover:bg-[#F8FAFC]'
                                       : previewAnswers[q.id] === opt
@@ -811,15 +873,15 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                                 >
                                   <input 
                                     type={q.question_type === 'SINGLE_MCQ' ? 'radio' : 'checkbox'} 
-                                    disabled={isSubmitted}
+                                    disabled={isSubmitted || isMultiDisabled}
                                     checked={
                                       q.question_type === 'MULTI_SELECT'
-                                        ? Array.isArray(previewAnswers[q.id]) && previewAnswers[q.id].includes(opt)
+                                        ? isMultiSelected
                                         : previewAnswers[q.id] === opt
                                     }
                                     onChange={() => {
                                       if (q.question_type === 'MULTI_SELECT') {
-                                        togglePreviewMultiAnswer(q.id, opt);
+                                        togglePreviewMultiAnswer(q.id, opt, maxSelections);
                                       } else {
                                         setPreviewAnswer(q.id, opt);
                                       }
@@ -828,7 +890,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                                   />
                                   <span className="text-[14px] text-slate-700">{opt}</span>
                                 </label>
-                              ))}
+                              )})}
                             </div>
                           )}
 
@@ -854,6 +916,8 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                         </div>
                       </div>
                           ))}
+                            </>
+                          )}
                         </div>
                       );
                     })}

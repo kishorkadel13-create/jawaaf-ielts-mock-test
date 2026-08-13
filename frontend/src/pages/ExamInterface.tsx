@@ -4,6 +4,8 @@ import { useExamStore } from '../store/examStore';
 import { api } from '../services/api';
 import { QuestionRenderer } from '../components/QuestionRenderer';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../components/SummaryCompletionGroup';
+import { ListeningMatchingTextGroup, isListeningMatchingTextBlock } from '../components/ListeningMatchingTextGroup';
+import { MultiSelectAnswerGroup, isMultiSelectAnswerGroup } from '../components/MultiSelectAnswerGroup';
 import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../utils/renderFormattedText';
 import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
@@ -1243,7 +1245,25 @@ export default function ExamInterface() {
 
                     return (
                       <div key={block.id} className="space-y-4">
-                        <QuestionInstructionCard instruction={block.instruction} />
+                        {activeSection?.type === 'listening' && isListeningMatchingTextBlock(block.questions) ? (
+                          <ListeningMatchingTextGroup
+                            questions={block.questions}
+                            instruction={block.instruction}
+                            values={answers}
+                            onChange={setAnswer}
+                            onActivateQuestion={setActiveQuestionId}
+                          />
+                        ) : isMultiSelectAnswerGroup(block.questions) ? (
+                          <MultiSelectAnswerGroup
+                            questions={block.questions}
+                            instruction={block.instruction}
+                            values={answers}
+                            onChange={setAnswer}
+                            onActivateQuestion={setActiveQuestionId}
+                          />
+                        ) : (
+                          <>
+                            <QuestionInstructionCard instruction={block.instruction} />
                         {block.questions.map((question: any) => (
                           <div 
                             key={question.id} 
@@ -1287,6 +1307,8 @@ export default function ExamInterface() {
                             </div>
                           </div>
                         ))}
+                          </>
+                        )}
                       </div>
                     );
                   })}

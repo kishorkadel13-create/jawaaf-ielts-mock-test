@@ -48,8 +48,9 @@ export const splitQuestionInstruction = (instruction: string) => {
 
   if (!normalized) return { heading: '', body: '' };
 
-  const match = normalized.match(/^\s*\*\*(Questions?\s*\d{1,2}(?:\s*[–-]\s*\d{1,2})?)(?:\*\*)?/i) ||
-    normalized.match(/^\s*(Questions?\s*\d{1,2}(?:\s*[–-]\s*\d{1,2})?)/i);
+  const questionRangePattern = /Questions?\s*\d{1,2}(?:\s*(?:and|&|[–-])\s*\d{1,2})?/i;
+  const match = normalized.match(new RegExp(`^\\s*\\*\\*(${questionRangePattern.source})(?:\\*\\*)?`, 'i')) ||
+    normalized.match(new RegExp(`^\\s*(${questionRangePattern.source})`, 'i'));
 
   if (!match) return { heading: '', body: normalized };
 

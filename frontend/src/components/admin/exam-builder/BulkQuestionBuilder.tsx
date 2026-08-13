@@ -164,6 +164,22 @@ const parseAnswerLine = (line: string): Array<[number, string[]]> => {
     .trim();
 
   const results: Array<[number, string[]]> = [];
+  const groupedQuestionMatch = cleaned.match(/^((?:\d{1,2}\s*(?:&|and|\/|[–-])\s*)+\d{1,2})\s+(.+)$/i);
+
+  if (groupedQuestionMatch) {
+    const numbers = groupedQuestionMatch[1]
+      .split(/\s*(?:&|and|\/|[–-])\s*/i)
+      .map(Number)
+      .filter(Boolean);
+    const answers = splitAnswers(groupedQuestionMatch[2]);
+
+    numbers.forEach((questionNumber) => {
+      results.push([questionNumber, answers]);
+    });
+
+    return results;
+  }
+
   const pairRe = /(\d{1,2})\s*[\.\):\-]?\s*([A-Za-z][A-Za-z\s]*|[^\d,;]+)/g;
   let match: RegExpExecArray | null;
 
@@ -188,7 +204,7 @@ const extractAnswerMap = (lines: string[]) => {
     const startsAnswerKey = /^(?:answer(?:s)?|ans|key|correct answers?)\b/i.test(trimmed);
     const answerPairs = startsAnswerKey ? parseAnswerLine(trimmed) : [];
     const isAnswerKeyHeader = /^(?:answer\s*key|answers|key|correct answers?)\b/i.test(trimmed);
-    const compactAnswerPair = /^(\d{1,2})[\.\):\-]?\s+(.+)$/.exec(trimmed);
+    const compactAnswerPair = /^((?:\d{1,2}\s*(?:&|and|\/|[–-])\s*)*\d{1,2})[\.\):\-]?\s+(.+)$/i.exec(trimmed);
 
     if (startsAnswerKey) {
       if (answerPairs.length === 0 && !isAnswerKeyHeader) {
@@ -204,10 +220,15 @@ const extractAnswerMap = (lines: string[]) => {
     }
 
     if (inAnswerKey && compactAnswerPair && !OPTION_RE.test(trimmed)) {
-      const num = Number(compactAnswerPair[1]);
+      const nums = compactAnswerPair[1]
+        .split(/\s*(?:&|and|\/|[–-])\s*/i)
+        .map(Number)
+        .filter(Boolean);
       const answer = compactAnswerPair[2].trim();
-      if (num && answer) {
-        answerMap[num] = splitAnswers(answer);
+      if (nums.length && answer) {
+        nums.forEach((num) => {
+          answerMap[num] = splitAnswers(answer);
+        });
         return;
       }
     }
@@ -320,6 +341,21 @@ const removeSharedOptionLines = (text: string) => text
   .join('\n')
   .replace(/\n{3,}/g, '\n\n')
   .trim();
+
+const extractQuestionNumbersFromInstruction = (instruction: string) => {
+  const match = instruction.match(/questions?\s*(\d{1,2})(?:\s*(?:and|&|[–-])\s*(\d{1,2}))?/i);
+  if (!match) return [];
+
+  const start = Number(match[1]);
+  const end = Number(match[2] || match[1]);
+
+  if (!start || !end) return [];
+  if (end > start) {
+    return Array.from({ length: end - start + 1 }, (_item, index) => start + index);
+  }
+
+  return [start];
+};
 
 const normalizeBlankText = (text: string, questionNumber: number, isolateTargetBlank = false) => {
   const withNumberedBlank = text.replace(NUMBERED_BLANK_RE(questionNumber), '[blank]');
@@ -481,6 +517,43 @@ export default function BulkQuestionBuilder({
     const regularBlocks = splitQuestionBlocks(parseTextSource);
     const shouldPreferBlankBlocks = blankFocusedTypes.has(bulkType) || (bulkType === 'AUTO' && blankBlocks.length > regularBlocks.length);
     const blocks = shouldPreferBlankBlocks && blankBlocks.length > 0 ? blankBlocks : regularBlocks;
+
+    if (bulkType === 'MULTI_SELECT' && blocks.length === 0) {
+      const questionNumbers = Object.keys(answerMap).map(Number).filter(Boolean);
+      const fallbackNumbers = questionNumbers.length > 0 ? questionNumbers : extractQuestionNumbersFromInstruction(questionStatement);
+      const targetNumbers = fallbackNumbers.length > 0 ? fallbackNumbers : [nextOrderNo];
+      const promptText = removeSharedOptionLines(questionTextSource);
+      const rawAnswers = fallbackNumbers
+        .flatMap((number) => answerMap[number] || [])
+        .filter(Boolean);
+      const dedupedAnswers = Array.from(new Set(rawAnswers));
+      const options = extractSharedOptions(questionTextSource);
+      const answers = normalizeAnswersForOptions(dedupedAnswers, options, 'MULTI_SELECT');
+
+      if (!promptText || options.length === 0) {
+        setError('No questions found. Paste the unnumbered prompt, A-E options, and an Answer Key such as "29 B, D".');
+        return;
+      }
+
+      let order = nextOrderNo;
+      const groupId = `multi-select-${targetNumbers.join('-')}-${Date.now()}`;
+
+      setParsedQuestions(targetNumbers.map((questionNumber) => ({
+        question_type: 'MULTI_SELECT',
+        question_number: questionNumber,
+        question_text: promptText,
+        options_json: options,
+        correct_answers_json: answers.length > 0 ? answers : ['[NO ANSWER DETECTED]'],
+        extra_data_json: {
+          bulk_source: parseTextSource,
+          multi_select_group_id: groupId,
+          max_selections: targetNumbers.length,
+        },
+        marks: 1,
+        order_no: order++,
+      })));
+      return;
+    }
 
     if (blocks.length === 0) {
       setError('No questions found. Use numbered items like "1. ..." or notes with numbered blanks like "1. ........".');

@@ -7,8 +7,50 @@ export const cleanString = (str) => {
     .replace(/\s+/g, ' '); // Replace double/triple spaces with single space
 };
 
+const expandWithOptionLetters = (answers = [], options = []) => {
+  if (!Array.isArray(options) || options.length === 0) return answers.map(cleanString);
+
+  const expanded = new Set();
+
+  answers.forEach(answer => {
+    const cleanedAnswer = cleanString(answer);
+    if (!cleanedAnswer) return;
+
+    expanded.add(cleanedAnswer);
+
+    if (/^[a-z]$/.test(cleanedAnswer)) {
+      const option = options[cleanedAnswer.charCodeAt(0) - 97];
+      if (option) expanded.add(cleanString(option));
+      return;
+    }
+
+    const optionIndex = options.findIndex(option => cleanString(option) === cleanedAnswer);
+    if (optionIndex >= 0) {
+      expanded.add(String.fromCharCode(97 + optionIndex));
+    }
+  });
+
+  return Array.from(expanded);
+};
+
+export const scoreAnswer = (submittedAnswer, correctAnswers, questionType = '', options = [], marks = 1) => {
+  if (!correctAnswers || !Array.isArray(correctAnswers) || correctAnswers.length === 0) {
+    return 0;
+  }
+
+  if (questionType === 'MULTI_SELECT' && Array.isArray(submittedAnswer)) {
+    const cleanedCorrect = expandWithOptionLetters(correctAnswers, options);
+    const uniqueSubmitted = Array.from(new Set(submittedAnswer.map(cleanString).filter(Boolean)));
+    const correctSelectedCount = uniqueSubmitted.filter(answer => cleanedCorrect.includes(answer)).length;
+
+    return Math.min(Number(marks) || correctAnswers.length || 1, correctSelectedCount);
+  }
+
+  return evaluateAnswer(submittedAnswer, correctAnswers, questionType, options) ? (Number(marks) || 1) : 0;
+};
+
 // Auto-grade a single answer against correct options
-export const evaluateAnswer = (submittedAnswer, correctAnswers, questionType = '') => {
+export const evaluateAnswer = (submittedAnswer, correctAnswers, questionType = '', options = []) => {
   if (!correctAnswers || !Array.isArray(correctAnswers) || correctAnswers.length === 0) {
     return false;
   }
@@ -16,12 +58,12 @@ export const evaluateAnswer = (submittedAnswer, correctAnswers, questionType = '
   // If correct answers are simple string arrays (e.g. ["A"] or ["TRUE"] or ["carbon dioxide", "co2"])
   if (Array.isArray(submittedAnswer)) {
     const cleanedSubmitted = submittedAnswer.map(s => cleanString(s));
-    const cleanedCorrect = correctAnswers.map(c => cleanString(c));
+    const cleanedCorrect = expandWithOptionLetters(correctAnswers, options);
     
     if (cleanedSubmitted.length !== cleanedCorrect.length) return false;
 
     if (questionType === 'MULTI_SELECT') {
-      return cleanedSubmitted.every(val => cleanedCorrect.includes(val));
+      return cleanedSubmitted.length > 0 && cleanedSubmitted.every(val => cleanedCorrect.includes(val));
     }
 
     // Multi-blank and dropdown-blank answers are order-sensitive.
@@ -30,9 +72,10 @@ export const evaluateAnswer = (submittedAnswer, correctAnswers, questionType = '
 
   // Standard single string evaluation
   const submission = cleanString(submittedAnswer);
+  const cleanedCorrect = expandWithOptionLetters(correctAnswers, options);
   
   // Return true if submission matches any of the accepted correct alternatives
-  return correctAnswers.some(correctVal => cleanString(correctVal) === submission);
+  return cleanedCorrect.includes(submission);
 };
 
 // Map correct raw score (e.g., out of 40) to official IELTS Band Scores

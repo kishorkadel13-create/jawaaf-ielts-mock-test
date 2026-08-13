@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
-import { evaluateAnswer, convertScoreToIeltsBand } from '../services/scoreService.js';
+import { evaluateAnswer, scoreAnswer, convertScoreToIeltsBand } from '../services/scoreService.js';
 import { createNotifications, notifyRoles } from '../services/notificationService.js';
 
 const canReviewWriting = (user) => ['admin', 'teacher'].includes(user?.role);
@@ -219,6 +219,7 @@ export const submitAttempt = async (req, res) => {
     const gradingPayloads = [];
 
     const objectiveQuestions = questions.filter(question => question.question_type !== 'WRITING_TASK');
+    const totalObjectiveMarks = objectiveQuestions.reduce((sum, question) => sum + (Number(question.marks) || 1), 0);
 
     // Grade objective questions in the test. Writing is saved for manual review.
     objectiveQuestions.forEach(question => {
@@ -226,12 +227,10 @@ export const submitAttempt = async (req, res) => {
       const studentAns = saved ? saved.answer : null;
       
       const originalType = question.extra_data_json?.original_type || question.question_type;
-      const isCorrect = evaluateAnswer(studentAns, question.correct_answers_json, originalType);
-      const questionScore = isCorrect ? question.marks : 0;
+      const questionScore = scoreAnswer(studentAns, question.correct_answers_json, originalType, question.options_json, question.marks);
+      const isCorrect = questionScore >= (Number(question.marks) || 1) || evaluateAnswer(studentAns, question.correct_answers_json, originalType, question.options_json);
       
-      if (isCorrect) {
-        totalCorrect += question.marks;
-      }
+      totalCorrect += questionScore;
 
       gradingPayloads.push({
         attempt_id: id,
@@ -266,7 +265,7 @@ export const submitAttempt = async (req, res) => {
     }
 
     // Convert raw score to official IELTS Band
-    const bandScore = convertScoreToIeltsBand(totalCorrect, objectiveQuestions.length);
+    const bandScore = convertScoreToIeltsBand(totalCorrect, totalObjectiveMarks || objectiveQuestions.length);
 
     // Update user_attempts header
     const { data: finalAttempt, error: finalError } = await supabaseAdmin
@@ -1101,7 +1100,8 @@ export const getAttemptReview = async (req, res) => {
           options_json,
           correct_answers_json,
           extra_data_json,
-          question_type
+          question_type,
+          marks
         )
       `)
       .eq('attempt_id', id);
@@ -1133,20 +1133,32 @@ export const getAttemptReview = async (req, res) => {
       feedback,
       attempt_mode: attemptMode,
       can_view_results: canViewFullResults,
-      answers: answers.map(item => ({
-        id: item.id,
-        question_id: item.question_id,
-        student_answer: item.answer,
-        is_correct: item.is_correct,
-        score: item.score,
-        question_number: item.questions.question_number,
-        question_text: item.questions.question_text,
-        instruction: item.questions.instruction,
-        options: item.questions.options_json,
-        correct_answers: item.questions.correct_answers_json,
-        extra_data: item.questions.extra_data_json,
-        question_type: item.questions.question_type
-      })).sort((a, b) => a.question_number - b.question_number)
+      answers: answers.map(item => {
+        const questionType = item.questions.question_type;
+        const marks = Number(item.questions.marks) || 1;
+        const liveScore = questionType === 'WRITING_TASK'
+          ? Number(item.score) || 0
+          : scoreAnswer(item.answer, item.questions.correct_answers_json, questionType, item.questions.options_json, marks);
+        const liveIsCorrect = questionType === 'WRITING_TASK'
+          ? item.is_correct
+          : liveScore >= marks || evaluateAnswer(item.answer, item.questions.correct_answers_json, questionType, item.questions.options_json);
+
+        return {
+          id: item.id,
+          question_id: item.question_id,
+          student_answer: item.answer,
+          is_correct: liveIsCorrect,
+          score: liveScore,
+          marks,
+          question_number: item.questions.question_number,
+          question_text: item.questions.question_text,
+          instruction: item.questions.instruction,
+          options: item.questions.options_json,
+          correct_answers: item.questions.correct_answers_json,
+          extra_data: item.questions.extra_data_json,
+          question_type: questionType
+        };
+      }).sort((a, b) => a.question_number - b.question_number)
     });
   } catch (err) {
     console.error('getAttemptReview Error:', err);
