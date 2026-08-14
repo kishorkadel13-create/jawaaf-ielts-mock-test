@@ -5,6 +5,7 @@ import {
   BookOpen, 
   Target, 
   UsersRound, 
+  UserPlus,
   ShieldCheck, 
   BarChart3, 
   LogOut,
@@ -16,7 +17,7 @@ import JawaafLogo from '../JawaafLogo';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 
-type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'reading-mastery' | 'courses' | 'goals' | 'students' | 'approvals' | 'reports';
+type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'reading-mastery' | 'courses' | 'goals' | 'students' | 'registered-students' | 'approvals' | 'reports';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -121,6 +122,9 @@ export default function AdminSidebar({ activeTab, onAddTeacherClick, isOpen = fa
         <p className="px-4 pt-7 pb-2 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
         <Link to="/admin/students" onClick={onClose} className={getLinkClass('students')}>
           <UsersRound className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Approved Students</span>
+        </Link>
+        <Link to="/admin/registered-students" onClick={onClose} className={getLinkClass('registered-students')}>
+          <UserPlus className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Total Registered Students</span>
         </Link>
         <Link
           to="/admin"

@@ -3,6 +3,7 @@ import multer from 'multer';
 import {
   createTeacher,
   getApprovedStudents,
+  getRegisteredStudentSignups,
   updateStudentAccess,
   createSection, updateSection, deleteSection,
   createQuestionGroup, updateQuestionGroup, deleteQuestionGroup,
@@ -82,6 +83,7 @@ router.use(adminMiddleware);
 
 router.post('/teachers', createTeacher);
 router.get('/students', getApprovedStudents);
+router.get('/students/signups', getRegisteredStudentSignups);
 router.put('/students/:studentId/access', validateBody(studentAccessSchema), updateStudentAccess);
 
 // Recorded Course / LMS management

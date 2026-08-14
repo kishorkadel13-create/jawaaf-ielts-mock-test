@@ -33,6 +33,7 @@ const loadAdminTestDetailsPage = () => import('../pages/admin/AdminTestDetailsPa
 const loadAdminAccessPage = () => import('../pages/admin/AdminAccessPage');
 const loadAdminSubmissionsPage = () => import('../pages/admin/AdminSubmissionsPage');
 const loadAdminStudentsPage = () => import('../pages/admin/AdminStudentsPage');
+const loadAdminRegisteredStudentsPage = () => import('../pages/admin/AdminRegisteredStudentsPage');
 const loadTeacherDashboardPage = () => import('../pages/admin/TeacherDashboardPage');
 
 const LandingPage = lazy(loadLandingPage);
@@ -63,6 +64,7 @@ const AdminTestDetailsPage = lazy(loadAdminTestDetailsPage);
 const AdminAccessPage = lazy(loadAdminAccessPage);
 const AdminSubmissionsPage = lazy(loadAdminSubmissionsPage);
 const AdminStudentsPage = lazy(loadAdminStudentsPage);
+const AdminRegisteredStudentsPage = lazy(loadAdminRegisteredStudentsPage);
 const TeacherDashboardPage = lazy(loadTeacherDashboardPage);
 
 export const prefetchStudentRoutes = () => {
@@ -81,6 +83,8 @@ export const prefetchAdminRoutes = () => {
   loadAdminCoursesPage();
   loadAdminTodayGoalsPage();
   loadAdminSubmissionsPage();
+  loadAdminStudentsPage();
+  loadAdminRegisteredStudentsPage();
 };
 
 export default function AppRoutes() {
@@ -300,6 +304,14 @@ export default function AppRoutes() {
             <AdminStudentsPage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/admin/registered-students"
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminRegisteredStudentsPage />
+          </ProtectedRoute>
+        }
       />
 
       {/* Protected Teacher Portal Routes */}

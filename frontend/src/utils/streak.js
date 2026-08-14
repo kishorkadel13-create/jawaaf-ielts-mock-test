@@ -79,22 +79,49 @@ export const getStoredStreakData = (userId) => {
   }
 
   const storageKey = `user_streak_data_${userId}`;
+  const lastSeenKey = `user_streak_last_seen_${userId}`;
   let activeDates = [];
+  let lastSeenDate = '';
 
   try {
     const savedData = window.localStorage.getItem(storageKey);
-    const parsedDates = savedData ? JSON.parse(savedData) : [];
+    const parsedData = savedData ? JSON.parse(savedData) : [];
+    const parsedDates = Array.isArray(parsedData) ? parsedData : parsedData?.activeDates;
     activeDates = Array.isArray(parsedDates) ? parsedDates.filter(Boolean) : [];
+    lastSeenDate = Array.isArray(parsedData) ? '' : parsedData?.lastSeenDate || '';
   } catch {
     activeDates = [];
   }
 
+  try {
+    lastSeenDate = lastSeenDate || window.localStorage.getItem(lastSeenKey) || '';
+  } catch {}
+
+  activeDates = Array.from(new Set(activeDates)).sort();
+
   const todayStr = getNepalDateKey();
+  const yesterdayStr = addDaysToDateKey(todayStr, -1);
+
+  if (lastSeenDate === yesterdayStr && !activeDates.includes(yesterdayStr)) {
+    activeDates = [...activeDates, yesterdayStr];
+  }
+
   if (!activeDates.includes(todayStr)) {
     activeDates = [...activeDates, todayStr];
-    window.localStorage.setItem(storageKey, JSON.stringify(activeDates));
     window.dispatchEvent(new CustomEvent(STREAK_UPDATED_EVENT, { detail: { userId } }));
   }
+
+  activeDates = Array.from(new Set(activeDates)).sort();
+
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify({
+      activeDates,
+      lastSeenDate: todayStr,
+      updatedAt: new Date().toISOString(),
+      timeZone: STREAK_TIME_ZONE,
+    }));
+    window.localStorage.setItem(lastSeenKey, todayStr);
+  } catch {}
 
   let currentStreak = 0;
   let checkStr = todayStr;

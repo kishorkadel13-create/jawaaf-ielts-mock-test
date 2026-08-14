@@ -726,6 +726,77 @@ export const getApprovedStudents = async (req, res) => {
   }
 };
 
+// Admin lists registered student users who are not currently approved (Admin Only)
+export const getRegisteredStudentSignups = async (req, res) => {
+  try {
+    const { data: profiles, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('role', 'student');
+
+    if (profileError) throw profileError;
+
+    const now = Date.now();
+    const signupProfiles = (profiles || []).filter(profile => {
+      if (!profile.has_full_access) return true;
+      if (!profile.premium_access_expires_at) return false;
+
+      const expiry = new Date(profile.premium_access_expires_at);
+      return Number.isNaN(expiry.getTime()) || expiry.getTime() <= now;
+    });
+
+    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000
+    });
+
+    if (authError) throw authError;
+
+    const userMetaMap = new Map(users.map(user => [user.id, user.user_metadata || {}]));
+    const signupIds = signupProfiles.map(profile => profile.id);
+    const latestRequestByUserId = new Map();
+
+    if (signupIds.length > 0) {
+      const { data: accessRequests, error: requestsError } = await supabaseAdmin
+        .from('access_requests')
+        .select('id, user_id, status, requested_at, reviewed_at, premium_access_expires_at')
+        .in('user_id', signupIds)
+        .order('requested_at', { ascending: false });
+
+      if (requestsError) throw requestsError;
+
+      (accessRequests || []).forEach(request => {
+        if (!latestRequestByUserId.has(request.user_id)) {
+          latestRequestByUserId.set(request.user_id, request);
+        }
+      });
+    }
+
+    const signups = signupProfiles
+      .map(profile => {
+        const meta = userMetaMap.get(profile.id) || {};
+        const latestAccessRequest = latestRequestByUserId.get(profile.id) || null;
+        return {
+          id: profile.id,
+          full_name: profile.full_name || meta.full_name || 'N/A',
+          email: profile.email || meta.email || 'N/A',
+          phone: meta.phone || 'N/A',
+          interested_country: meta.interested_country || 'N/A',
+          target_score: meta.target_score || 'N/A',
+          has_full_access: profile.has_full_access,
+          premium_access_expires_at: profile.premium_access_expires_at,
+          latest_access_request: latestAccessRequest,
+          created_at: profile.created_at
+        };
+      })
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+    res.status(200).json(signups);
+  } catch (err) {
+    console.error('getRegisteredStudentSignups Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to retrieve registered student signups.' });
+  }
+};
+
 export const updateStudentAccess = async (req, res) => {
   try {
     const { studentId } = req.params;
