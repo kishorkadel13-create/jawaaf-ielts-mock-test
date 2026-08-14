@@ -156,20 +156,20 @@ export default function ReadingPracticeList({
   };
 
   return (
-    <div className="flex h-full w-full flex-col xl:flex-row gap-8 font-['Inter',sans-serif] text-[#05162E]">
+    <div className="flex min-h-0 w-full flex-col gap-8 pb-28 font-['Inter',sans-serif] text-[#05162E] xl:flex-row xl:pb-0">
       
       {/* Main Content Column */}
       <div className="flex-1 flex flex-col min-w-0">
 
       {/* Hero Section */}
-      <div className="relative mt-2 flex min-h-[140px] w-full items-center justify-between overflow-hidden rounded-[20px] bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-100">
-        <div className="flex items-center gap-6">
-          <div className="relative flex h-[100px] w-[130px] shrink-0 items-center justify-center">
+      <div className="relative mt-2 flex min-h-[140px] w-full flex-col gap-5 overflow-hidden rounded-[20px] border border-slate-100 bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)] sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-5 sm:gap-6">
+          <div className="relative flex h-[88px] w-[104px] shrink-0 items-center justify-center sm:h-[100px] sm:w-[130px]">
             {/* Using book illustration since asset might be missing, or keeping it clean */}
-            <div className="text-[70px]">📖</div>
+            <div className="text-[58px] sm:text-[70px]">📖</div>
           </div>
-          <div className="flex flex-col justify-center">
-            <h2 className="text-[28px] font-black leading-tight tracking-tight text-[#05162E]">
+          <div className="flex min-w-0 flex-col justify-center">
+            <h2 className="break-words text-[28px] font-black leading-tight tracking-tight text-[#05162E] sm:text-[32px]">
               {CATEGORY_META[category].label.replace(' Library', '').replace(' Test Set', '')}
               {category === 'complete' ? ' Set' : ' Library'}
             </h2>
@@ -183,7 +183,7 @@ export default function ReadingPracticeList({
         </div>
 
         {/* Passage Tabs directly in Hero section as per design */}
-        <div className="flex items-center gap-[12px]">
+        <div className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 overflow-x-auto px-1 pb-1 lg:w-auto lg:overflow-visible">
           {(['complete', 'passage-1', 'passage-2', 'passage-3'] as const).map(catKey => {
             const isActive = category === catKey;
             
@@ -194,7 +194,7 @@ export default function ReadingPracticeList({
                   key={catKey}
                   type="button"
                   onClick={() => { onCategoryChange(catKey); setActiveQuestionType('all'); }}
-                  className="flex h-[44px] px-5 items-center justify-center gap-2 rounded-full border border-amber-300 bg-[#FFFDF5] text-[14px] font-bold text-amber-600 transition-all hover:bg-amber-50"
+                  className="flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-full border border-amber-300 bg-[#FFFDF5] px-5 text-[14px] font-bold text-amber-600 transition-all hover:bg-amber-50"
                 >
                   <span>🏆</span>
                   <span>Complete Set</span>
@@ -217,7 +217,7 @@ export default function ReadingPracticeList({
                 key={catKey}
                 type="button"
                 onClick={() => { onCategoryChange(catKey); setActiveQuestionType('all'); }}
-                className={`flex h-[44px] px-5 items-center justify-center gap-2 rounded-full text-[14px] font-bold transition-all shadow-sm ${buttonStyle}`}
+                className={`flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold shadow-sm transition-all ${buttonStyle}`}
               >
                 <BookOpen className={`h-[18px] w-[18px] ${iconColor}`} />
                 <span>{CATEGORY_META[catKey].shortLabel}</span>
@@ -229,8 +229,8 @@ export default function ReadingPracticeList({
 
       {/* Filter Area */}
       <div className="mt-6 flex flex-col gap-5">
-        <div className="flex items-center justify-between rounded-full bg-white p-2 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-          <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+        <div className="flex flex-col gap-2 rounded-[28px] border border-slate-100 bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sm:flex-row sm:items-center sm:justify-between sm:rounded-full">
+          <div className="relative min-w-0 flex-1 sm:max-w-[300px]">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -241,8 +241,8 @@ export default function ReadingPracticeList({
             />
           </div>
           
-          <div className="flex items-center gap-2 pr-2">
-            <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto pr-1 sm:pr-2">
+            <div className="mx-2 hidden h-6 w-[1px] shrink-0 bg-slate-200 sm:block"></div>
             <div className="relative">
               <select 
                 value={difficultyFilter}
@@ -257,7 +257,7 @@ export default function ReadingPracticeList({
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
             
-            <div className="h-6 w-[1px] bg-slate-200 mx-1"></div>
+            <div className="mx-1 h-6 w-[1px] shrink-0 bg-slate-200"></div>
             <div className="relative">
               <select
                 value={activeQuestionType}
@@ -271,7 +271,7 @@ export default function ReadingPracticeList({
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
             
-            <div className="h-6 w-[1px] bg-slate-200 mx-1"></div>
+            <div className="mx-1 h-6 w-[1px] shrink-0 bg-slate-200"></div>
             <div className="relative">
               <select
                 value={completedFilter}
@@ -285,7 +285,7 @@ export default function ReadingPracticeList({
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
             
-            <div className="h-6 w-[1px] bg-slate-200 mx-1"></div>
+            <div className="mx-1 h-6 w-[1px] shrink-0 bg-slate-200"></div>
             <div className="relative">
               <select
                 value={sortFilter}

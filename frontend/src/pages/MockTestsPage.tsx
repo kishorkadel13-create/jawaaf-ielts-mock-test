@@ -911,7 +911,7 @@ export default function MockTestsPage() {
         </header>
 
         <div
-          className={`w-full ${activeTab === 'practice' && practiceType === 'reading' ? 'h-[calc(100vh-80px)] overflow-hidden bg-no-repeat px-4 py-4 sm:px-6 xl:px-8 xl:py-4' : 'p-4 md:p-5 xl:p-6'} ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-visible' : ''}`}
+          className={`w-full ${activeTab === 'practice' && practiceType === 'reading' ? 'min-h-[calc(100dvh-80px)] overflow-visible bg-no-repeat px-4 pb-28 pt-4 sm:px-6 lg:pb-8 xl:px-8 xl:py-4' : 'p-4 md:p-5 xl:p-6'} ${activeTab === 'practice' && (!practiceType || (practiceType === 'writing' && !writingPracticeType)) ? 'overflow-visible' : ''}`}
           style={activeTab === 'practice' && practiceType === 'reading' ? {
             backgroundImage: `url('${readingAssets.background}')`,
             backgroundPosition: 'bottom center',
@@ -1158,7 +1158,7 @@ export default function MockTestsPage() {
               </div>
             </section>
 
-            <div className="w-full overflow-x-hidden">
+            <div className="w-full overflow-x-auto pb-1">
               <div className="inline-flex min-w-full rounded-[15px] border border-slate-200 bg-white p-1 shadow-sm sm:min-w-[640px]">
                 {(['complete', 'passage-1', 'passage-2', 'passage-3'] as ReadingCategoryKey[]).map(category => (
                   <button

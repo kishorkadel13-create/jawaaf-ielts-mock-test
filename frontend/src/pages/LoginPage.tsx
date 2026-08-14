@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { ShieldAlert, KeyRound, Mail, ArrowRight, Monitor, CheckSquare, BarChart2 } from 'lucide-react';
+import { ShieldAlert, KeyRound, Mail, ArrowRight, Monitor, CheckSquare, BarChart2, Eye, EyeOff } from 'lucide-react';
 import JawaafLogo from '../components/JawaafLogo';
 
 const loginSchema = z.object({
@@ -17,6 +17,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const { login, isAuthenticated, profile, user, isLoading: authLoading } = useAuthStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -175,11 +176,19 @@ export default function LoginPage() {
                   <KeyRound className="h-5 w-5" />
                 </span>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
-                  className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.password ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:border-[#1E3A6E] focus:ring-4 focus:ring-[#1E3A6E]/10'} rounded-xl text-[14px] text-[#05162E] placeholder-slate-400 outline-none transition-all duration-200`}
+                  className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:border-[#1E3A6E] focus:ring-4 focus:ring-[#1E3A6E]/10'} rounded-xl text-[14px] text-[#05162E] placeholder-slate-400 outline-none transition-all duration-200`}
                   {...register('password')}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-slate-400 transition-colors hover:text-[#1E3A6E] focus:outline-none focus:text-[#1E3A6E]"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
               {errors.password && (
                 <p className="mt-2 text-[12px] font-medium text-red-500 flex items-center gap-1">
