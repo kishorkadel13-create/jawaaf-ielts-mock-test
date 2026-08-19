@@ -357,8 +357,8 @@ export default function DashboardPage() {
       <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {showVisaPromotion && visaPromotion && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#05162E]/60 px-4 py-6 backdrop-blur-sm">
-          <div className="relative max-h-[92vh] w-full max-w-[520px] overflow-hidden rounded-[24px] bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#05162E]/60 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
+          <div className="relative w-full max-w-[min(94vw,640px)] overflow-hidden rounded-[24px] bg-white shadow-2xl">
             <button
               type="button"
               onClick={closeVisaPromotion}
@@ -369,11 +369,11 @@ export default function DashboardPage() {
             </button>
 
             {visaPromotion.image_url ? (
-              <div className="flex max-h-[52vh] min-h-[220px] items-center justify-center bg-[#EFF4FB] sm:min-h-[320px]">
-                <img src={visaPromotion.image_url} alt={visaPromotion.title} className="max-h-[52vh] w-full object-contain" />
+              <div className="flex justify-center bg-[#EFF4FB] p-3 sm:p-4">
+                <img src={visaPromotion.image_url} alt={visaPromotion.title} className="block max-h-[52vh] max-w-full rounded-[30px] object-contain [clip-path:inset(0_round_30px)] [@media(max-height:820px)]:max-h-[44vh] [@media(max-height:720px)]:max-h-[38vh]" />
               </div>
             ) : (
-              <div className="grid aspect-[16/9] place-items-center bg-[#EFF4FB] px-8 text-center">
+              <div className="grid aspect-[16/9] place-items-center bg-[#EFF4FB] p-3 text-center sm:p-4 [@media(max-height:720px)]:aspect-[2/1]">
                 <div>
                   <Crown className="mx-auto h-12 w-12 text-[#F59E24]" />
                   <p className="mt-3 text-[12px] font-black uppercase tracking-[0.18em] text-[#294b77]">Jawaaf Visa Support</p>
@@ -381,31 +381,31 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="p-5 sm:p-6">
+            <div className="p-5 sm:p-6 [@media(max-height:820px)]:p-4">
               {(visaPromotion.country_name || visaPromotion.country_flag) && (
-                <div className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#F59E24]/12 px-3 py-1 text-[12px] font-black uppercase tracking-[0.08em] text-[#C46A00]">
+                <div className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#F59E24]/12 px-3 py-1 text-[12px] font-black uppercase tracking-[0.08em] text-[#C46A00] [@media(max-height:720px)]:mb-2 [@media(max-height:720px)]:min-h-8">
                   {visaPromotion.country_flag && <span className="text-[18px] leading-none">{visaPromotion.country_flag}</span>}
                   <span>{visaPromotion.country_name || 'Visa destination'}</span>
                 </div>
               )}
-              <h2 className="break-words text-[24px] font-black leading-tight text-[#05162E] sm:text-[28px]">{visaPromotion.title}</h2>
+              <h2 className="break-words text-[24px] font-black leading-tight text-[#05162E] sm:text-[28px] [@media(max-height:720px)]:text-[22px]">{visaPromotion.title}</h2>
               {visaPromotion.institute_name && (
-                <div className="mt-3 inline-flex min-h-9 items-center rounded-full bg-[#EFF4FB] px-3 py-1 text-[12px] font-black text-[#294b77]">
+                <div className="mt-3 inline-flex min-h-9 items-center rounded-full bg-[#EFF4FB] px-3 py-1 text-[12px] font-black text-[#294b77] [@media(max-height:720px)]:mt-2 [@media(max-height:720px)]:min-h-8">
                   {visaPromotion.institute_name}
                 </div>
               )}
               {visaPromotion.description && (
-                <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-6 text-slate-600 sm:text-[15px]">
+                <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-6 text-slate-600 sm:text-[15px] [@media(max-height:720px)]:mt-2 [@media(max-height:720px)]:text-[13px] [@media(max-height:720px)]:leading-5">
                   {visaPromotion.description}
                 </p>
               )}
               {visaPromotion.student_quote && (
-                <blockquote className="mt-4 rounded-2xl border border-[#F59E24]/20 bg-[#FFF8ED] px-4 py-3 text-[14px] font-bold leading-6 text-[#4B5563]">
+                <blockquote className="mt-4 rounded-2xl border border-[#F59E24]/20 bg-[#FFF8ED] px-4 py-3 text-[14px] font-bold leading-6 text-[#4B5563] [@media(max-height:820px)]:mt-3 [@media(max-height:720px)]:px-3 [@media(max-height:720px)]:py-2 [@media(max-height:720px)]:text-[12px] [@media(max-height:720px)]:leading-5">
                   "{visaPromotion.student_quote}"
                 </blockquote>
               )}
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] [@media(max-height:820px)]:mt-4 [@media(max-height:720px)]:mt-3">
                 {visaPromotion.cta_url ? (
                   <a
                     href={visaPromotion.cta_url}
