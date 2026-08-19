@@ -3,7 +3,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRoutes, { prefetchAdminRoutes, prefetchStudentRoutes } from '../routes/AppRoutes';
 import { useAuthStore } from '../store/authStore';
-import { getStoredStreakData } from '../utils/streak';
+import { touchStoredStreakData } from '../utils/streak';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -47,7 +47,7 @@ export default function App() {
     if (!isAuthenticated || profile?.role !== 'student' || !profile?.id) return;
 
     const touchStreak = () => {
-      getStoredStreakData(profile.id);
+      touchStoredStreakData(profile.id);
     };
 
     const handleVisibilityChange = () => {

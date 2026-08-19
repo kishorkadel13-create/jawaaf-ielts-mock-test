@@ -23,6 +23,71 @@ const getDateKeyFromParts = (year, month, day) => {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 };
 
+const isDateKey = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+const getStreakStorageKeys = (userId) => ({
+  storageKey: `user_streak_data_${userId}`,
+  lastSeenKey: `user_streak_last_seen_${userId}`,
+});
+
+const readStoredStreakState = (userId) => {
+  const { storageKey, lastSeenKey } = getStreakStorageKeys(userId);
+  let activeDates = [];
+  let lastSeenDate = '';
+  let lastOpenedAt = '';
+
+  try {
+    const savedData = window.localStorage.getItem(storageKey);
+    const parsedData = savedData ? JSON.parse(savedData) : [];
+    const parsedDates = Array.isArray(parsedData) ? parsedData : parsedData?.activeDates;
+    activeDates = Array.isArray(parsedDates) ? parsedDates.filter(isDateKey) : [];
+    lastSeenDate = Array.isArray(parsedData) ? '' : parsedData?.lastSeenDate || '';
+    lastOpenedAt = Array.isArray(parsedData) ? '' : parsedData?.lastOpenedAt || parsedData?.updatedAt || '';
+  } catch {
+    activeDates = [];
+  }
+
+  try {
+    const legacyLastSeenDate = window.localStorage.getItem(lastSeenKey) || '';
+    if (isDateKey(legacyLastSeenDate)) activeDates.push(legacyLastSeenDate);
+    if (!lastSeenDate && isDateKey(legacyLastSeenDate)) lastSeenDate = legacyLastSeenDate;
+  } catch {}
+
+  if (isDateKey(lastSeenDate)) activeDates.push(lastSeenDate);
+
+  return {
+    activeDates: Array.from(new Set(activeDates)).sort(),
+    lastOpenedAt,
+  };
+};
+
+const saveStoredStreakState = (userId, activeDates, todayStr, openedAt) => {
+  const { storageKey, lastSeenKey } = getStreakStorageKeys(userId);
+
+  window.localStorage.setItem(storageKey, JSON.stringify({
+    activeDates,
+    lastSeenDate: todayStr,
+    lastOpenedAt: openedAt,
+    updatedAt: openedAt,
+    timeZone: STREAK_TIME_ZONE,
+  }));
+  window.localStorage.setItem(lastSeenKey, todayStr);
+};
+
+const calculateCurrentStreak = (activeDates, anchorDateKey) => {
+  if (!anchorDateKey || !activeDates.includes(anchorDateKey)) return 0;
+
+  let currentStreak = 0;
+  let checkStr = anchorDateKey;
+
+  while (activeDates.includes(checkStr)) {
+    currentStreak += 1;
+    checkStr = addDaysToDateKey(checkStr, -1);
+  }
+
+  return currentStreak;
+};
+
 export const getNepalDateParts = (date = new Date()) => {
   const parts = nepalDateFormatter.formatToParts(date).reduce((acc, part) => {
     if (part.type !== 'literal') acc[part.type] = part.value;
@@ -78,59 +143,45 @@ export const getStoredStreakData = (userId) => {
     return { activeDates: [], currentStreak: 0 };
   }
 
-  const storageKey = `user_streak_data_${userId}`;
-  const lastSeenKey = `user_streak_last_seen_${userId}`;
-  let activeDates = [];
-  let lastSeenDate = '';
+  const todayStr = getNepalDateKey();
+  const { activeDates, lastOpenedAt } = readStoredStreakState(userId);
 
-  try {
-    const savedData = window.localStorage.getItem(storageKey);
-    const parsedData = savedData ? JSON.parse(savedData) : [];
-    const parsedDates = Array.isArray(parsedData) ? parsedData : parsedData?.activeDates;
-    activeDates = Array.isArray(parsedDates) ? parsedDates.filter(Boolean) : [];
-    lastSeenDate = Array.isArray(parsedData) ? '' : parsedData?.lastSeenDate || '';
-  } catch {
-    activeDates = [];
+  return {
+    activeDates,
+    currentStreak: calculateCurrentStreak(activeDates, todayStr),
+    lastOpenedAt,
+  };
+};
+
+export const touchStoredStreakData = (userId) => {
+  if (!userId || typeof window === 'undefined') {
+    return { activeDates: [], currentStreak: 0 };
   }
 
-  try {
-    lastSeenDate = lastSeenDate || window.localStorage.getItem(lastSeenKey) || '';
-  } catch {}
+  const openedAt = new Date();
+  const openedAtIso = openedAt.toISOString();
+  const todayStr = getNepalDateKey(openedAt);
+  let { activeDates } = readStoredStreakState(userId);
+  const alreadyTouchedToday = activeDates.includes(todayStr);
+
+  if (!alreadyTouchedToday) {
+    activeDates = [...activeDates, todayStr].sort();
+  }
 
   activeDates = Array.from(new Set(activeDates)).sort();
+  const currentStreak = calculateCurrentStreak(activeDates, todayStr);
 
-  const todayStr = getNepalDateKey();
-  const yesterdayStr = addDaysToDateKey(todayStr, -1);
+  try {
+    saveStoredStreakState(userId, activeDates, todayStr, openedAtIso);
+  } catch {}
 
-  if (lastSeenDate === yesterdayStr && !activeDates.includes(yesterdayStr)) {
-    activeDates = [...activeDates, yesterdayStr];
-  }
-
-  if (!activeDates.includes(todayStr)) {
-    activeDates = [...activeDates, todayStr];
+  if (!alreadyTouchedToday) {
     window.dispatchEvent(new CustomEvent(STREAK_UPDATED_EVENT, { detail: { userId } }));
   }
 
-  activeDates = Array.from(new Set(activeDates)).sort();
-
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify({
-      activeDates,
-      lastSeenDate: todayStr,
-      updatedAt: new Date().toISOString(),
-      timeZone: STREAK_TIME_ZONE,
-    }));
-    window.localStorage.setItem(lastSeenKey, todayStr);
-  } catch {}
-
-  let currentStreak = 0;
-  let checkStr = todayStr;
-
-  while (true) {
-    if (!activeDates.includes(checkStr)) break;
-    currentStreak += 1;
-    checkStr = addDaysToDateKey(checkStr, -1);
-  }
-
-  return { activeDates, currentStreak };
+  return {
+    activeDates,
+    currentStreak,
+    lastOpenedAt: openedAtIso,
+  };
 };

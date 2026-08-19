@@ -28,6 +28,7 @@ const loadAdminDashboardPage = () => import('../pages/admin/AdminDashboardPage')
 const loadAdminTestsPage = () => import('../pages/admin/AdminTestsPage');
 const loadAdminCoursesPage = () => import('../pages/admin/AdminCoursesPage');
 const loadAdminTodayGoalsPage = () => import('../pages/admin/AdminTodayGoalsPage');
+const loadAdminVisaPromotionsPage = () => import('../pages/admin/AdminVisaPromotionsPage');
 const loadAdminReadingMasteryPage = () => import('../pages/admin/AdminReadingMasteryPage');
 const loadAdminTestDetailsPage = () => import('../pages/admin/AdminTestDetailsPage');
 const loadAdminAccessPage = () => import('../pages/admin/AdminAccessPage');
@@ -59,6 +60,7 @@ const AdminDashboardPage = lazy(loadAdminDashboardPage);
 const AdminTestsPage = lazy(loadAdminTestsPage);
 const AdminCoursesPage = lazy(loadAdminCoursesPage);
 const AdminTodayGoalsPage = lazy(loadAdminTodayGoalsPage);
+const AdminVisaPromotionsPage = lazy(loadAdminVisaPromotionsPage);
 const AdminReadingMasteryPage = lazy(loadAdminReadingMasteryPage);
 const AdminTestDetailsPage = lazy(loadAdminTestDetailsPage);
 const AdminAccessPage = lazy(loadAdminAccessPage);
@@ -82,6 +84,7 @@ export const prefetchAdminRoutes = () => {
   loadAdminTestsPage();
   loadAdminCoursesPage();
   loadAdminTodayGoalsPage();
+  loadAdminVisaPromotionsPage();
   loadAdminSubmissionsPage();
   loadAdminStudentsPage();
   loadAdminRegisteredStudentsPage();
@@ -256,6 +259,14 @@ export default function AppRoutes() {
             <AdminTodayGoalsPage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/admin/visa-promotions"
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminVisaPromotionsPage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/admin/reading-mastery"

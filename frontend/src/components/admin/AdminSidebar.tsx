@@ -10,6 +10,7 @@ import {
   BarChart3, 
   LogOut,
   GraduationCap,
+  Megaphone,
   Zap,
   X
 } from 'lucide-react';
@@ -17,7 +18,7 @@ import JawaafLogo from '../JawaafLogo';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 
-type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'reading-mastery' | 'courses' | 'goals' | 'students' | 'registered-students' | 'approvals' | 'reports';
+type AdminTab = 'dashboard' | 'mock-tests' | 'practice-tests' | 'reading-mastery' | 'courses' | 'goals' | 'visa-promotions' | 'students' | 'registered-students' | 'approvals' | 'reports';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -117,6 +118,11 @@ export default function AdminSidebar({ activeTab, onAddTeacherClick, isOpen = fa
         </Link>
         <Link to="/admin/today-goals" onClick={onClose} className={getLinkClass('goals')}>
           <Target className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Today's Goals</span>
+        </Link>
+
+        <p className="px-4 pt-7 pb-2 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">Marketing</p>
+        <Link to="/admin/visa-promotions" onClick={onClose} className={getLinkClass('visa-promotions')}>
+          <Megaphone className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Visa Popup</span>
         </Link>
 
         <p className="px-4 pt-7 pb-2 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>

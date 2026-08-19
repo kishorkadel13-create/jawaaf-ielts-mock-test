@@ -6,7 +6,7 @@ import StudentSidebar from '../components/StudentSidebar';
 import {
   Monitor, Headphones, BookOpen, History, Award,
   Settings, LogOut, Lock, CheckSquare, Calendar,
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu, X, ExternalLink
 } from 'lucide-react';
 import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
@@ -83,6 +83,17 @@ interface CourseSectionPreview {
   completedCount: number;
 }
 
+interface VisaPromotion {
+  id: string;
+  title: string;
+  description?: string | null;
+  image_url?: string | null;
+  cta_label?: string | null;
+  cta_url?: string | null;
+  updated_at?: string | null;
+  created_at?: string | null;
+}
+
 const courseSectionIcon = (slug: string) => {
   if (slug === 'listening') return Headphones;
   if (slug.startsWith('writing-task')) return PenLine;
@@ -106,6 +117,8 @@ export default function DashboardPage() {
   const [courseSections, setCourseSections] = useState<CourseSectionPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [visaPromotion, setVisaPromotion] = useState<VisaPromotion | null>(null);
+  const [showVisaPromotion, setShowVisaPromotion] = useState(false);
   const navigate = useNavigate();
 
   const [streakData, setStreakData] = useState<{ activeDates: string[], currentStreak: number }>({ activeDates: [], currentStreak: 0 });
@@ -116,6 +129,9 @@ export default function DashboardPage() {
     courseTotal: 0, courseCompleted: 0,
     overallPercent: 0
   });
+  const todayDateKey = getNepalDateKey();
+  const displayStreakCount = streakData.currentStreak > 0 ? streakData.currentStreak : 1;
+  const isOpenDateActive = (dateStr: string) => dateStr === todayDateKey || streakData.activeDates.includes(dateStr);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -255,6 +271,52 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    let isMounted = true;
+
+    const loadVisaPromotion = async () => {
+      try {
+        const { data } = await api.get('/visa-promotions/active').catch(() => ({ data: null }));
+        if (!isMounted || !data?.id) return;
+
+        const promotionVersion = data.updated_at || data.created_at || data.id;
+        const storageKey = `visa_promotion_closed_until_${profile.id}_${data.id}_${promotionVersion}`;
+        const closedUntil = Number(window.localStorage.getItem(storageKey) || 0);
+
+        setVisaPromotion(data);
+        setShowVisaPromotion(!closedUntil || closedUntil <= Date.now());
+      } catch {
+        if (isMounted) {
+          setVisaPromotion(null);
+          setShowVisaPromotion(false);
+        }
+      }
+    };
+
+    loadVisaPromotion();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile?.id]);
+
+  const closeVisaPromotion = () => {
+    setShowVisaPromotion(false);
+  };
+
+  const closeVisaPromotionFor24Hours = () => {
+    if (profile?.id && visaPromotion?.id) {
+      const promotionVersion = visaPromotion.updated_at || visaPromotion.created_at || visaPromotion.id;
+      const storageKey = `visa_promotion_closed_until_${profile.id}_${visaPromotion.id}_${promotionVersion}`;
+      try {
+        window.localStorage.setItem(storageKey, String(Date.now() + 24 * 60 * 60 * 1000));
+      } catch {}
+    }
+    setShowVisaPromotion(false);
+  };
+
   const handleStartTest = async (testId: string) => {
     try {
       const { data } = await api.post(`/attempts/start`, { mock_test_id: testId });
@@ -289,6 +351,71 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] pb-24 font-sans lg:flex-row lg:pb-0" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
 
       <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      {showVisaPromotion && visaPromotion && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#05162E]/60 px-4 py-6 backdrop-blur-sm">
+          <div className="relative max-h-[92vh] w-full max-w-[520px] overflow-hidden rounded-[24px] bg-white shadow-2xl">
+            <button
+              type="button"
+              onClick={closeVisaPromotion}
+              className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-500 shadow-lg transition-colors hover:text-[#05162E]"
+              aria-label="Close visa promotion"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {visaPromotion.image_url ? (
+              <div className="flex max-h-[52vh] min-h-[220px] items-center justify-center bg-[#EFF4FB] sm:min-h-[320px]">
+                <img src={visaPromotion.image_url} alt={visaPromotion.title} className="max-h-[52vh] w-full object-contain" />
+              </div>
+            ) : (
+              <div className="grid aspect-[16/9] place-items-center bg-[#EFF4FB] px-8 text-center">
+                <div>
+                  <Crown className="mx-auto h-12 w-12 text-[#F59E24]" />
+                  <p className="mt-3 text-[12px] font-black uppercase tracking-[0.18em] text-[#294b77]">Jawaaf Visa Support</p>
+                </div>
+              </div>
+            )}
+
+            <div className="p-5 sm:p-6">
+              <div className="mb-3 inline-flex rounded-full bg-[#F59E24]/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#C46A00]">
+                Consultancy Visa Offer
+              </div>
+              <h2 className="break-words text-[24px] font-black leading-tight text-[#05162E] sm:text-[28px]">{visaPromotion.title}</h2>
+              {visaPromotion.description && (
+                <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-6 text-slate-600 sm:text-[15px]">
+                  {visaPromotion.description}
+                </p>
+              )}
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                {visaPromotion.cta_url ? (
+                  <a
+                    href={visaPromotion.cta_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#294b77] px-5 py-3 text-center text-[14px] font-black text-white shadow-lg shadow-[#294b77]/20"
+                  >
+                    {visaPromotion.cta_label || 'Learn More'}
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <button type="button" onClick={closeVisaPromotion} className="min-h-12 rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white">
+                    Got it
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeVisaPromotionFor24Hours}
+                  className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-black text-slate-600 transition-colors hover:border-[#294b77] hover:text-[#294b77]"
+                >
+                  Close for 24 hours
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex min-w-0 flex-grow flex-col 2xl:flex-row">
@@ -646,22 +773,22 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-[16px] font-black text-[#05162E]">Your Streak</h3>
-                <p className="text-[11px] text-slate-500 font-medium">{streakData.currentStreak > 0 ? "Great job! Keep it up." : "Start your streak today!"}</p>
+                <p className="text-[11px] text-slate-500 font-medium">Great job! Keep it up.</p>
               </div>
-              <div className={`flex items-center gap-1 font-black text-[14px] ${streakData.currentStreak > 0 ? 'text-[#EE6055]' : 'text-slate-400'}`}>
-                <Flame className="h-4 w-4 fill-current" /> {streakData.currentStreak} Days
+              <div className="flex items-center gap-1 font-black text-[14px] text-[#EE6055]">
+                <Flame className="h-4 w-4 fill-current" /> {displayStreakCount} Days
               </div>
             </div>
 
             <div className="flex items-center justify-between gap-1">
               {[6, 5, 4, 3, 2, 1, 0].map((daysAgo) => {
-                const dateStr = addDaysToDateKey(getNepalDateKey(), -daysAgo);
+                const dateStr = addDaysToDateKey(todayDateKey, -daysAgo);
                 const dayName = getNepalWeekdayNarrow(dateStr);
                 
                 let isMissed = false;
                 let isActive = false;
                 
-                if (streakData.activeDates.includes(dateStr)) {
+                if (isOpenDateActive(dateStr)) {
                   isActive = true;
                 } else if (daysAgo > 0) {
                   isMissed = true; // Missed day in the past
@@ -707,7 +834,7 @@ export default function DashboardPage() {
               {(() => {
                 const { year, month } = currentMonth;
                 const { startingDay, daysInMonth } = getNepalMonthMeta(currentMonth);
-                const todayStr = getNepalDateKey();
+                const todayStr = todayDateKey;
                 
                 const days = [];
                 for (let i = 0; i < startingDay; i++) {
@@ -718,7 +845,7 @@ export default function DashboardPage() {
                   const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                   
                   const isFuture = dateStr > todayStr;
-                  const isActive = streakData.activeDates.includes(dateStr);
+                  const isActive = isOpenDateActive(dateStr);
                   const isMissed = !isFuture && !isActive;
                   
                   days.push(

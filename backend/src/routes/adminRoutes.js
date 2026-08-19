@@ -15,6 +15,12 @@ import {
   createAssetUpload
 } from '../controllers/adminController.js';
 import {
+  createVisaPromotion,
+  deleteVisaPromotion,
+  getAdminVisaPromotions,
+  updateVisaPromotion
+} from '../controllers/visaPromotionController.js';
+import {
   getAdminCourseLibrary,
   createCourseSection,
   updateCourseSection,
@@ -102,6 +108,12 @@ router.post('/lesson-resources', createLessonResource);
 router.delete('/lesson-resources/:resourceId', deleteLessonResource);
 router.get('/lesson-questions', getAdminLessonQuestions);
 router.put('/lesson-questions/:questionId', answerLessonQuestion);
+
+// Visa Promotion Popup management
+router.get('/visa-promotions', getAdminVisaPromotions);
+router.post('/visa-promotions', createVisaPromotion);
+router.put('/visa-promotions/:promotionId', updateVisaPromotion);
+router.delete('/visa-promotions/:promotionId', deleteVisaPromotion);
 
 // Sections CRUD
 router.post('/sections', validateBody(testSectionSchema), createSection);

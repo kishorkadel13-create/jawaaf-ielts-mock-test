@@ -24,7 +24,7 @@ export const assets = {
     book: '/images/Reading%20Practice/Book,png-clean.png',
     tfng: imagePath('Reading Practice', 'TFNG-clean.png'),
     tfngFocus: imagePath('Reading Practice', 'Tfng Focus-clean.png'),
-    heading: imagePath('Reading Practice', 'heading-clean.png'),
+    heading: imagePath('Reading Practice', 'heading-natural.png'),
     headingFocus: imagePath('Reading Practice', 'heading foucs-clean.png'),
     hootyTips: imagePath('Reading Practice', "hooty's typs.png"),
     hootyTipsNote: imagePath('Reading Practice', 'hooty-tip-note-cropped.png'),

@@ -41,6 +41,24 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
 ON notifications(user_id, read_at)
 WHERE read_at IS NULL;
 
+CREATE TABLE IF NOT EXISTS visa_promotions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    cta_label TEXT,
+    cta_url TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE visa_promotions ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_visa_promotions_active_created
+ON visa_promotions(is_active, created_at DESC);
+
 -- 2. MOCK TESTS TABLE
 CREATE TABLE IF NOT EXISTS mock_tests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -287,6 +305,24 @@ CREATE POLICY "Users can update their notifications" ON notifications
 
 CREATE POLICY "Admins manage notifications" ON notifications
     FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        )
+    );
+
+-- Visa promotion policies
+CREATE POLICY "Active visa promotions are readable" ON visa_promotions
+    FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Admins manage visa promotions" ON visa_promotions
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        )
+    )
+    WITH CHECK (
         EXISTS (
             SELECT 1 FROM profiles
             WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
