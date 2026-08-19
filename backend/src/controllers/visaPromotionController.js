@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
-const VISA_PROMOTION_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260818_add_visa_promotions.sql in Supabase, then reload the API schema cache.';
+const VISA_PROMOTION_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260818_add_visa_promotions.sql and backend/src/config/migrations/20260819_add_visa_promotion_details.sql in Supabase, then reload the API schema cache.';
 
 const isMissingVisaPromotionSchemaError = (error) => {
   const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
@@ -27,6 +27,10 @@ const buildPromotionPayload = (body, userId) => {
   const title = String(body.title || '').trim();
   const description = String(body.description || '').trim();
   const imageUrl = cleanUrl(body.image_url);
+  const countryName = String(body.country_name || '').trim();
+  const countryFlag = String(body.country_flag || '').trim();
+  const studentQuote = String(body.student_quote || '').trim();
+  const instituteName = String(body.institute_name || '').trim();
   const ctaLabel = String(body.cta_label || '').trim();
   const ctaUrl = cleanUrl(body.cta_url);
 
@@ -34,6 +38,10 @@ const buildPromotionPayload = (body, userId) => {
     title,
     description: description || null,
     image_url: imageUrl,
+    country_name: countryName || null,
+    country_flag: countryFlag || null,
+    student_quote: studentQuote || null,
+    institute_name: instituteName || null,
     cta_label: ctaLabel || null,
     cta_url: ctaUrl,
     is_active: Boolean(body.is_active),
@@ -45,7 +53,7 @@ export const getActiveVisaPromotion = async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('visa_promotions')
-      .select('id, title, description, image_url, cta_label, cta_url, updated_at, created_at')
+      .select('id, title, description, image_url, country_name, country_flag, student_quote, institute_name, cta_label, cta_url, updated_at, created_at')
       .eq('is_active', true)
       .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false })

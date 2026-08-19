@@ -88,6 +88,10 @@ interface VisaPromotion {
   title: string;
   description?: string | null;
   image_url?: string | null;
+  country_name?: string | null;
+  country_flag?: string | null;
+  student_quote?: string | null;
+  institute_name?: string | null;
   cta_label?: string | null;
   cta_url?: string | null;
   updated_at?: string | null;
@@ -378,14 +382,27 @@ export default function DashboardPage() {
             )}
 
             <div className="p-5 sm:p-6">
-              <div className="mb-3 inline-flex rounded-full bg-[#F59E24]/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#C46A00]">
-                Consultancy Visa Offer
-              </div>
+              {(visaPromotion.country_name || visaPromotion.country_flag) && (
+                <div className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#F59E24]/12 px-3 py-1 text-[12px] font-black uppercase tracking-[0.08em] text-[#C46A00]">
+                  {visaPromotion.country_flag && <span className="text-[18px] leading-none">{visaPromotion.country_flag}</span>}
+                  <span>{visaPromotion.country_name || 'Visa destination'}</span>
+                </div>
+              )}
               <h2 className="break-words text-[24px] font-black leading-tight text-[#05162E] sm:text-[28px]">{visaPromotion.title}</h2>
+              {visaPromotion.institute_name && (
+                <div className="mt-3 inline-flex min-h-9 items-center rounded-full bg-[#EFF4FB] px-3 py-1 text-[12px] font-black text-[#294b77]">
+                  {visaPromotion.institute_name}
+                </div>
+              )}
               {visaPromotion.description && (
                 <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-6 text-slate-600 sm:text-[15px]">
                   {visaPromotion.description}
                 </p>
+              )}
+              {visaPromotion.student_quote && (
+                <blockquote className="mt-4 rounded-2xl border border-[#F59E24]/20 bg-[#FFF8ED] px-4 py-3 text-[14px] font-bold leading-6 text-[#4B5563]">
+                  "{visaPromotion.student_quote}"
+                </blockquote>
               )}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
