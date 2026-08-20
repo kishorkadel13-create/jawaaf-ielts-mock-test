@@ -118,6 +118,11 @@ export default function AdminTestsPage() {
     setDescription('');
     setCoverImageUrl('');
     setStarRating(4);
+    setDifficulty(template.startsWith('reading') ? 'Standard' : 'Medium');
+    setChartCategory('Bar graph');
+    setEssayCategory('Opinion Essay');
+    setIsWritingTask1Edit(false);
+    setIsWritingTask2Edit(false);
     setIsDemo(false);
     setIsPublished(false);
     setSectionTemplate(template);
@@ -146,7 +151,9 @@ export default function AdminTestsPage() {
 
   const openEditModal = (test: MockTest) => {
     setModalMode('edit');
-    setCreateContext('mock');
+    const inferredCategory = getTestCategory(test) as SectionTemplate;
+    const inferredIsPractice = pageMode === 'practice' || isPracticeTest(test) || inferredCategory !== 'full_mock';
+    setCreateContext(inferredIsPractice ? 'practice' : 'mock');
     setEditingTestId(test.id);
     setTitle(test.title);
     
@@ -168,9 +175,9 @@ export default function AdminTestsPage() {
           isTask1 = true;
         } else if (parsed.essayCategory) {
           parsedEssayCategory = parsed.essayCategory;
-          parsedDifficulty = parsed.difficulty || 'Medium';
           isTask2 = true;
         }
+        parsedDifficulty = parsed.difficulty || parsedDifficulty;
         if (parsed.cover_image_url) {
           parsedCover = parsed.cover_image_url;
         }
@@ -208,7 +215,7 @@ export default function AdminTestsPage() {
     setIsDemo(test.is_demo);
     setIsPublished(test.is_published);
     setDuration(test.duration);
-    setSectionTemplate('full_mock');
+    setSectionTemplate(inferredIsPractice ? inferredCategory : 'full_mock');
     setIsModalOpen(true);
   };
 

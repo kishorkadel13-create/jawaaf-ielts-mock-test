@@ -183,7 +183,7 @@ export default function ReadingPracticeList({
         </div>
 
         {/* Passage Tabs directly in Hero section as per design */}
-        <div className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 overflow-x-auto px-1 pb-1 2xl:w-auto 2xl:overflow-visible">
+        <div className="-mx-1 grid w-[calc(100%+0.5rem)] min-w-0 grid-cols-1 gap-3 overflow-visible px-1 pb-1 sm:grid-cols-2 2xl:ml-auto 2xl:w-[560px] 2xl:flex-none">
           {(['complete', 'passage-1', 'passage-2', 'passage-3'] as const).map(catKey => {
             const isActive = category === catKey;
             
@@ -194,10 +194,10 @@ export default function ReadingPracticeList({
                   key={catKey}
                   type="button"
                   onClick={() => { onCategoryChange(catKey); setActiveQuestionType('all'); }}
-                  className="flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-full border border-amber-300 bg-[#FFFDF5] px-5 text-[14px] font-bold text-amber-600 transition-all hover:bg-amber-50"
+                  className="flex h-[44px] w-full items-center justify-center gap-2 rounded-full border border-amber-300 bg-[#FFFDF5] px-5 text-[14px] font-bold text-amber-600 transition-all hover:bg-amber-50 2xl:px-4"
                 >
                   <span>🏆</span>
-                  <span>Complete Set</span>
+                  <span className="whitespace-nowrap">Complete Set</span>
                 </button>
               );
             }
@@ -217,10 +217,10 @@ export default function ReadingPracticeList({
                 key={catKey}
                 type="button"
                 onClick={() => { onCategoryChange(catKey); setActiveQuestionType('all'); }}
-                className={`flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold shadow-sm transition-all ${buttonStyle}`}
+                className={`flex h-[44px] w-full items-center justify-center gap-2 rounded-full px-5 text-[14px] font-bold shadow-sm transition-all 2xl:px-4 ${buttonStyle}`}
               >
                 <BookOpen className={`h-[18px] w-[18px] ${iconColor}`} />
-                <span>{CATEGORY_META[catKey].shortLabel}</span>
+                <span className="whitespace-nowrap">{CATEGORY_META[catKey].shortLabel}</span>
               </button>
             );
           })}
@@ -591,9 +591,12 @@ export default function ReadingPracticeList({
             <p className="text-[13px] font-medium leading-relaxed text-[#05162E]">
               Read the title first. Look for keywords, not every word.
             </p>
-            <div className="text-[60px] leading-none drop-shadow-md">
-              🦉
-            </div>
+            <img
+              src={assets.readingPractice.hootyMascot}
+              alt="Jawaaf mascot"
+              className="h-[96px] w-[96px] shrink-0 object-contain drop-shadow-md"
+              draggable={false}
+            />
           </div>
         </div>
 
