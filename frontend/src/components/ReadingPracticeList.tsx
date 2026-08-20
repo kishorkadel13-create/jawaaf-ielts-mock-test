@@ -162,14 +162,14 @@ export default function ReadingPracticeList({
       <div className="flex-1 flex flex-col min-w-0">
 
       {/* Hero Section */}
-      <div className="relative mt-2 flex min-h-[140px] w-full flex-col gap-5 overflow-hidden rounded-[20px] border border-slate-100 bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)] sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative mt-2 flex min-h-[140px] w-full flex-col gap-5 overflow-hidden rounded-[20px] border border-slate-100 bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)] sm:p-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="flex min-w-0 items-center gap-5 sm:gap-6">
           <div className="relative flex h-[88px] w-[104px] shrink-0 items-center justify-center sm:h-[100px] sm:w-[130px]">
             {/* Using book illustration since asset might be missing, or keeping it clean */}
             <div className="text-[58px] sm:text-[70px]">📖</div>
           </div>
           <div className="flex min-w-0 flex-col justify-center">
-            <h2 className="break-words text-[28px] font-black leading-tight tracking-tight text-[#05162E] sm:text-[32px]">
+            <h2 className="text-[28px] font-black leading-tight tracking-tight text-[#05162E] sm:text-[32px]">
               {CATEGORY_META[category].label.replace(' Library', '').replace(' Test Set', '')}
               {category === 'complete' ? ' Set' : ' Library'}
             </h2>
@@ -183,7 +183,7 @@ export default function ReadingPracticeList({
         </div>
 
         {/* Passage Tabs directly in Hero section as per design */}
-        <div className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 overflow-x-auto px-1 pb-1 lg:w-auto lg:overflow-visible">
+        <div className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 overflow-x-auto px-1 pb-1 2xl:w-auto 2xl:overflow-visible">
           {(['complete', 'passage-1', 'passage-2', 'passage-3'] as const).map(catKey => {
             const isActive = category === catKey;
             
@@ -353,7 +353,7 @@ export default function ReadingPracticeList({
       {/* Card Grid */}
       <div 
         ref={gridRef}
-        className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${
+        className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 ${
         showAllCards 
           ? 'max-h-[calc(100vh-400px)] overflow-y-auto pr-2 pb-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200' 
           : ''
