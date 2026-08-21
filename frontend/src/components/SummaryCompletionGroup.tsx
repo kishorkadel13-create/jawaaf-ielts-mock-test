@@ -272,6 +272,23 @@ const extractOptionBank = (source: string) => source
   .filter((match): match is RegExpMatchArray => Boolean(match))
   .map((match) => ({ letter: match[1].toUpperCase(), text: match[2].trim() }));
 
+const getDropdownOptionBank = (questions: any[], source: string) => {
+  const options = questions.find((question) =>
+    question.question_type === 'SUMMARY_COMPLETION_OPTIONS' &&
+    Array.isArray(question.options_json) &&
+    question.options_json.length > 0
+  )?.options_json;
+
+  if (Array.isArray(options) && options.length > 0) {
+    return options.map((option: string, index: number) => ({
+      letter: optionLetter(index),
+      text: option,
+    }));
+  }
+
+  return extractOptionBank(source);
+};
+
 export const SummaryCompletionGroup = ({
   questions,
   values,
@@ -397,6 +414,7 @@ export const SummaryCompletionGroup = ({
           const fallbackHeading = getSegmentRange(segment.questions);
           const instruction = getSegmentInstruction(segment.questions, groupInstruction);
           const { heading, lines } = formatInstructionLines(instruction, fallbackHeading);
+          const dropdownOptionBank = getDropdownOptionBank(segment.questions, segment.source);
           const instructionBlock = (
             <div className={segmentIndex === 0 ? 'mb-5' : 'mb-5 border-t border-slate-200 pt-7'}>
               <h3 className={`text-[22px] font-black mb-4 ${isDark ? 'text-white' : 'text-[#05162E]'}`}>
@@ -407,6 +425,24 @@ export const SummaryCompletionGroup = ({
                   {lines.map((line, lineIndex) => (
                     <p key={lineIndex}>{renderFormattedText(line)}</p>
                   ))}
+                </div>
+              )}
+              {dropdownOptionBank.length > 0 && (
+                <div className={`mt-5 rounded-xl border p-4 ${
+                  isDark
+                    ? 'border-slate-700 bg-slate-950/40 text-slate-200'
+                    : 'border-[#1E3A6E]/15 bg-[#EFF4FB] text-[#05162E]'
+                }`}>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {dropdownOptionBank.map((option) => (
+                      <div key={option.letter} className="grid grid-cols-[28px_1fr] gap-2 text-[15px] leading-relaxed">
+                        <span className={isDark ? 'font-black text-white' : 'font-black text-[#1E3A6E]'}>
+                          {option.letter}.
+                        </span>
+                        <span>{renderFormattedText(option.text, `summary-option-${segmentIndex}-${option.letter}`)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -742,7 +742,16 @@ export default function AdminTestDetailsPage() {
 
   const getBulkEditRawText = (batch: any) => {
     const source = batch.questions?.find((q: any) => q.extra_data_json?.bulk_source)?.extra_data_json?.bulk_source?.trim();
-    const rows = source || batch.questions?.map((q: any) => {
+    const sharedOptions = batch.questions?.find((q: any) => Array.isArray(q.options_json) && q.options_json.length)?.options_json || [];
+    const sourceWithOptions = source
+      ? [
+        source,
+        batch.questions?.some((q: any) => q.question_type === 'SUMMARY_COMPLETION_OPTIONS') && sharedOptions.length
+          ? sharedOptions.map((option: string, index: number) => `${String.fromCharCode(65 + index)}. ${option}`).join('\n')
+          : '',
+      ].filter(Boolean).join('\n\n')
+      : '';
+    const rows = sourceWithOptions || batch.questions?.map((q: any) => {
       const text = String(q.question_text || `Question ${q.question_number}`)
         .replace(/\[blank\]/g, `${q.question_number}........`)
         .trim();
