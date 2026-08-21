@@ -353,7 +353,7 @@ export default function ReadingPracticeList({
       {/* Card Grid */}
       <div 
         ref={gridRef}
-        className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 ${
+        className={`mt-8 grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 ${
         showAllCards 
           ? 'max-h-[calc(100vh-400px)] overflow-y-auto pr-2 pb-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200' 
           : ''
@@ -367,7 +367,7 @@ export default function ReadingPracticeList({
             return (
               <div
                 key={card.id}
-                className="flex h-[360px] w-full flex-col justify-between rounded-[20px] border border-[#FEF3C7] bg-gradient-to-b from-[#FFFDF5] to-[#FFF9E6] p-[20px] shadow-[0_4px_16px_rgba(251,191,36,0.1)] transition-transform hover:-translate-y-1"
+                className="flex min-h-[410px] w-full flex-col justify-between rounded-[20px] border border-[#FEF3C7] bg-gradient-to-b from-[#FFFDF5] to-[#FFF9E6] p-[20px] shadow-[0_4px_16px_rgba(251,191,36,0.1)] transition-transform hover:-translate-y-1"
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="mb-[16px] flex items-center gap-2 text-[13px] font-bold tracking-wider text-amber-600 uppercase">
@@ -378,14 +378,14 @@ export default function ReadingPracticeList({
                     🏆
                   </div>
                   
-                  <h3 className="mb-[16px] text-[15px] font-bold leading-relaxed text-[#0F172A]">
-                    3 Passages. {card.questionCount} Questions.<br/>Real IELTS test experience.
+                  <h3 className="mb-[16px] line-clamp-3 min-h-[72px] text-[18px] font-black leading-snug text-[#0F172A]">
+                    {card.title || 'Complete Reading Test'}
                   </h3>
                   
                   <div className="flex flex-col items-center gap-2.5 text-[13px] font-medium text-slate-600">
                     <span className="flex items-center gap-2"><BookOpen className="h-4 w-4"/> 3 Passages</span>
-                    <span className="flex items-center gap-2"><ClipboardList className="h-4 w-4"/> {card.questionCount} Questions</span>
-                    <span className="flex items-center gap-2"><Clock className="h-4 w-4"/> {card.duration} Minutes</span>
+                    <span className="flex items-center gap-2"><ClipboardList className="h-4 w-4"/> 40 Questions</span>
+                    <span className="flex items-center gap-2"><Clock className="h-4 w-4"/> 60 Minutes</span>
                   </div>
                 </div>
 

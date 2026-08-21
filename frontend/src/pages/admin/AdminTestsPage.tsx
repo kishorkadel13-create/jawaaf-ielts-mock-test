@@ -77,6 +77,44 @@ export default function AdminTestsPage() {
     { key: 'writing_task_2', label: 'Writing Task 2' }
   ];
 
+  const PRACTICE_TEMPLATE_OPTIONS = [
+    { key: 'reading' as SectionTemplate, title: 'Reading Practice (Full)', note: 'Shows under Complete Set', icon: BookOpen, durationValue: 60 },
+    { key: 'reading_passage_1' as SectionTemplate, title: 'Reading Passage 1', note: 'Shows under Passage 1', icon: BookOpen, durationValue: 20 },
+    { key: 'reading_passage_2' as SectionTemplate, title: 'Reading Passage 2', note: 'Shows under Passage 2', icon: BookOpen, durationValue: 20 },
+    { key: 'reading_passage_3' as SectionTemplate, title: 'Reading Passage 3', note: 'Shows under Passage 3', icon: BookOpen, durationValue: 20 },
+    { key: 'listening' as SectionTemplate, title: 'Listening Practice', note: 'Single listening section', icon: Award, durationValue: 30 },
+    { key: 'writing' as SectionTemplate, title: 'Writing Practice (Full)', note: 'Task 1 + Task 2', icon: PenLine, durationValue: 60 },
+    { key: 'writing_task_1' as SectionTemplate, title: 'Writing Task 1 Practice', note: 'Task 1 only', icon: PenLine, durationValue: 30 },
+    { key: 'writing_task_2' as SectionTemplate, title: 'Writing Task 2 Practice', note: 'Task 2 only', icon: PenLine, durationValue: 50 },
+  ];
+
+  const getDefaultDurationForTemplate = (template: SectionTemplate) => (
+    template === 'full_mock' ? 150
+      : template.startsWith('reading_passage_') ? 20
+      : template === 'listening' ? 30
+      : template === 'writing_task_1' ? 30
+      : template === 'writing_task_2' ? 50
+      : 60
+  );
+
+  const getEditablePracticeTemplates = () => {
+    if (sectionTemplate.startsWith('reading')) {
+      return PRACTICE_TEMPLATE_OPTIONS.filter(template => template.key.startsWith('reading'));
+    }
+    if (sectionTemplate === 'listening') {
+      return PRACTICE_TEMPLATE_OPTIONS.filter(template => template.key === 'listening');
+    }
+    if (sectionTemplate.startsWith('writing')) {
+      return PRACTICE_TEMPLATE_OPTIONS.filter(template => template.key.startsWith('writing'));
+    }
+    return PRACTICE_TEMPLATE_OPTIONS;
+  };
+
+  const selectSectionTemplate = (template: SectionTemplate, durationValue = getDefaultDurationForTemplate(template)) => {
+    setSectionTemplate(template);
+    setDuration(durationValue);
+  };
+
   const fetchTests = async () => {
     if (authLoading) return;
 
@@ -126,14 +164,7 @@ export default function AdminTestsPage() {
     setIsDemo(false);
     setIsPublished(false);
     setSectionTemplate(template);
-    setDuration(
-      template === 'full_mock' ? 150
-        : template.startsWith('reading_passage_') ? 20
-        : template === 'listening' ? 30
-        : template === 'writing_task_1' ? 30
-        : template === 'writing_task_2' ? 50
-        : 60
-    );
+    setDuration(getDefaultDurationForTemplate(template));
     setIsModalOpen(true);
   };
 
@@ -667,14 +698,7 @@ export default function AdminTestsPage() {
                       <div className="mt-5 grid gap-3">
                       {[
                         { key: 'full_mock' as SectionTemplate, title: 'Full Mock', note: 'Listening + Reading + Writing', icon: BookOpen, durationValue: 150 },
-                        { key: 'reading' as SectionTemplate, title: 'Reading Practice', note: 'Single reading section', icon: BookOpen, durationValue: 60 },
-                        { key: 'reading_passage_1' as SectionTemplate, title: 'Reading Passage 1', note: 'Passage 1 practice set • 20 minutes', icon: BookOpen, durationValue: 20 },
-                        { key: 'reading_passage_2' as SectionTemplate, title: 'Reading Passage 2', note: 'Passage 2 practice set • 20 minutes', icon: BookOpen, durationValue: 20 },
-                        { key: 'reading_passage_3' as SectionTemplate, title: 'Reading Passage 3', note: 'Passage 3 practice set • 20 minutes', icon: BookOpen, durationValue: 20 },
-                        { key: 'listening' as SectionTemplate, title: 'Listening Practice', note: 'Single listening section', icon: Award, durationValue: 30 },
-                        { key: 'writing' as SectionTemplate, title: 'Writing Practice', note: 'Task 1 + Task 2', icon: PenLine, durationValue: 60 },
-                        { key: 'writing_task_1' as SectionTemplate, title: 'Writing Task 1 Practice', note: 'Task 1 only • 30 minutes', icon: PenLine, durationValue: 30 },
-                        { key: 'writing_task_2' as SectionTemplate, title: 'Writing Task 2 Practice', note: 'Task 2 only • 50 minutes', icon: PenLine, durationValue: 50 },
+                        ...PRACTICE_TEMPLATE_OPTIONS,
                       ]
                         .filter(template => createContext === 'mock' ? template.key === 'full_mock' : template.key !== 'full_mock')
                         .map((template) => {
@@ -685,7 +709,7 @@ export default function AdminTestsPage() {
                           <button
                             key={template.key}
                             type="button"
-                            onClick={() => { setSectionTemplate(template.key); setDuration(template.durationValue); }}
+                            onClick={() => selectSectionTemplate(template.key, template.durationValue)}
                             className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all sm:gap-4 sm:p-4 ${
                               isSelected
                                 ? 'border-[#1E3A6E] bg-[#EFF4FB] text-[#1E3A6E]'
@@ -707,6 +731,44 @@ export default function AdminTestsPage() {
                   )}
 
                   <div className="flex flex-col gap-4 p-4 sm:p-6 lg:p-7">
+                  {modalMode === 'edit' && createContext === 'practice' && (
+                    <div className="rounded-2xl border border-[#1E3A6E]/15 bg-[#F8FAFC] p-4">
+                      <div className="mb-3">
+                        <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider">Practice Destination</label>
+                        <p className="mt-1 text-[12px] font-semibold text-slate-500">
+                          Move this practice test to the correct student tab.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {getEditablePracticeTemplates().map((template) => {
+                          const Icon = template.icon;
+                          const isSelected = sectionTemplate === template.key;
+
+                          return (
+                            <button
+                              key={template.key}
+                              type="button"
+                              onClick={() => selectSectionTemplate(template.key, template.durationValue)}
+                              className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                                isSelected
+                                  ? 'border-[#1E3A6E] bg-white text-[#1E3A6E] shadow-sm'
+                                  : 'border-slate-200 bg-white text-slate-500 hover:border-[#1E3A6E]/30 hover:bg-[#EFF4FB]'
+                              }`}
+                            >
+                              <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${isSelected ? 'bg-[#EFF4FB] text-[#1E3A6E]' : 'bg-slate-50 text-slate-500'}`}>
+                                <Icon className="h-5 w-5" />
+                              </span>
+                              <span>
+                                <span className="block text-[13px] font-black">{template.title}</span>
+                                <span className="mt-0.5 block text-[11px] font-bold">{template.note}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-2">
                     <label className="text-[12px] font-bold text-[#05162E] uppercase tracking-wider">Test Title</label>
                     <input
