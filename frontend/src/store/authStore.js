@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabase.js';
 
+let authSubscription = null;
+
 const getAppUrl = () => {
   const configuredUrl = import.meta.env.VITE_APP_URL;
   if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
@@ -42,6 +44,37 @@ export const useAuthStore = create((set, get) => ({
   error: null,
   pendingVerificationEmail: null,
 
+  bindAuthListener: () => {
+    if (authSubscription) return;
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        if (!session) return;
+        set({
+          user: session.user,
+          token: session.access_token,
+          isAuthenticated: true,
+          hasInitialized: true,
+          error: null
+        });
+      }
+
+      if (event === 'SIGNED_OUT') {
+        set({
+          user: null,
+          profile: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          hasInitialized: true,
+          error: null
+        });
+      }
+    });
+
+    authSubscription = data?.subscription || null;
+  },
+
   isEmailVerified: () => {
     const user = get().user;
     return Boolean(user?.email_confirmed_at || user?.confirmed_at);
@@ -49,6 +82,8 @@ export const useAuthStore = create((set, get) => ({
 
   // Initialize session and set auth states
   initializeAuth: async (force = false) => {
+    get().bindAuthListener();
+
     const current = get();
     if (!force && current.hasInitialized) {
       return;
@@ -104,6 +139,38 @@ export const useAuthStore = create((set, get) => ({
     } catch (err) {
       console.error('initializeAuth Exception:', err);
       set({ error: err.message, isLoading: false, hasInitialized: true });
+    }
+  },
+
+  ensureFreshSession: async (minValiditySeconds = 120) => {
+    try {
+      get().bindAuthListener();
+
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!session) return null;
+
+      const expiresAtMs = Number(session.expires_at || 0) * 1000;
+      const shouldRefresh = !expiresAtMs || expiresAtMs - Date.now() < minValiditySeconds * 1000;
+      const activeSession = shouldRefresh
+        ? (await supabase.auth.refreshSession()).data.session
+        : session;
+
+      if (!activeSession?.access_token) return null;
+
+      set({
+        user: activeSession.user,
+        token: activeSession.access_token,
+        isAuthenticated: true,
+        hasInitialized: true,
+        error: null
+      });
+
+      return activeSession;
+    } catch (err) {
+      console.error('Session refresh failed:', err);
+      set({ error: err.message || 'Session refresh failed' });
+      return null;
     }
   },
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExamStore } from '../store/examStore';
+import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import { QuestionRenderer } from '../components/QuestionRenderer';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../components/SummaryCompletionGroup';
@@ -11,7 +12,7 @@ import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
 import { resolveListeningAudioUrl } from '../utils/audioUrl';
-import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2, ChevronUp } from 'lucide-react';
+import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2, ChevronUp, RefreshCw, WifiOff } from 'lucide-react';
 
 type OrderedQuestionBlock = {
   id: string;
@@ -131,12 +132,16 @@ export default function ExamInterface() {
   } = useExamStore();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [activeWritingTaskIndex, setActiveWritingTaskIndex] = useState(0);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [sectionSecondsRemaining, setSectionSecondsRemaining] = useState<number | null>(null);
   const [clipboardMessage, setClipboardMessage] = useState('');
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectMessage, setReconnectMessage] = useState('');
   const internalClipboardRef = useRef<{ text: string; taskId: string | null } | null>(null);
+  const ensureFreshSession = useAuthStore((state) => state.ensureFreshSession);
   
   useEffect(() => {
     if (activeQuestionId) {
@@ -166,6 +171,7 @@ export default function ExamInterface() {
     const fetchExamDetails = async () => {
       try {
         setLoading(true);
+        setLoadError('');
         // 1. Fetch active attempt
         const { data: attempt } = await api.get(`/attempts/${id}/review`).catch(async () => {
           // If no review exists, it means the attempt is in progress. Fetching current active attempt state.
@@ -201,6 +207,7 @@ export default function ExamInterface() {
         setLoading(false);
       } catch (err) {
         console.error('Failed to initialize exam interface:', err);
+        setLoadError('Could not load the exam because the connection or session was interrupted.');
         setLoading(false);
       }
     };
@@ -512,6 +519,28 @@ export default function ExamInterface() {
     }
   };
 
+  const handleReconnectAndSave = async () => {
+    try {
+      setIsReconnecting(true);
+      setReconnectMessage('');
+
+      const session = await ensureFreshSession(300);
+      if (!session?.access_token) {
+        setReconnectMessage('Please sign in again in another tab, then return here and press Reconnect.');
+        return;
+      }
+
+      await autosave();
+      setReconnectMessage('Connection restored. Your latest answers are saved.');
+      window.setTimeout(() => setReconnectMessage(''), 3000);
+    } catch (err) {
+      console.error('Reconnect failed:', err);
+      setReconnectMessage('Reconnect failed. Keep this tab open; your answers are still saved on this device.');
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+
   useEffect(() => {
     if (!activeSection) return;
     setSectionSecondsRemaining(getSectionDurationMinutes(activeSection) * 60);
@@ -590,6 +619,30 @@ export default function ExamInterface() {
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-slate-800 border-t-[#1E3A6E] rounded-full animate-spin"></div>
         <p className="mt-4 text-xs text-slate-400 font-medium">Loading IELTS Mock Exam Environment...</p>
+      </div>
+    );
+  }
+
+  if (!activeTest) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] px-5 py-10 text-[#05162E]">
+        <div className="mx-auto flex max-w-lg flex-col items-center rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-sm">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+            <WifiOff className="h-7 w-7" />
+          </div>
+          <h1 className="mt-5 text-[22px] font-black">Exam session needs reconnecting</h1>
+          <p className="mt-3 text-[13px] font-semibold leading-6 text-slate-500">
+            {loadError || 'Your exam could not be loaded. Keep this tab open and reconnect your session.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-6 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#294b77] px-5 text-[12px] font-black text-white shadow-sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reload Exam
+          </button>
+        </div>
       </div>
     );
   }
@@ -917,6 +970,31 @@ export default function ExamInterface() {
 
         </div>
       </header>
+
+      {(autosaveStatus === 'error' || reconnectMessage) && (
+        <div className="z-20 flex shrink-0 flex-col gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-[#05162E] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-start gap-2">
+            <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+            <div>
+              <p className="text-[12px] font-black">
+                {autosaveStatus === 'error' ? 'Connection/session needs attention' : 'Exam recovery status'}
+              </p>
+              <p className="mt-0.5 text-[11px] font-bold text-amber-800">
+                {reconnectMessage || 'Do not refresh or close this tab. Your answers are saved locally on this device while we reconnect.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleReconnectAndSave}
+            disabled={isReconnecting}
+            className="flex min-h-9 items-center justify-center gap-2 rounded-xl bg-[#294b77] px-4 text-[11px] font-black text-white shadow-sm disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isReconnecting ? 'animate-spin' : ''}`} />
+            {isReconnecting ? 'Reconnecting...' : 'Reconnect & Save'}
+          </button>
+        </div>
+      )}
 
       {/* 2. Main CBT Split Screen Layout */}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:flex-row lg:overflow-hidden lg:pb-0">

@@ -2,6 +2,22 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore.js';
 
 const apiURL = import.meta.env.VITE_API_URL || '/api';
+let refreshPromise = null;
+
+const isExamRoute = () => (
+  typeof window !== 'undefined' && /^\/attempts\/[^/]+\/exam/.test(window.location.pathname)
+);
+
+const refreshSessionOnce = async () => {
+  if (!refreshPromise) {
+    refreshPromise = useAuthStore.getState().ensureFreshSession(300)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+};
 
 export const api = axios.create({
   baseURL: apiURL,
@@ -12,11 +28,20 @@ export const api = axios.create({
 
 // Request Interceptor: Injects active JWT session tokens
 api.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore.getState().token;
+  async (config) => {
+    const authState = useAuthStore.getState();
+    let token = authState.token;
+
     if (token) {
+      const session = await authState.ensureFreshSession(120);
+      token = session?.access_token || useAuthStore.getState().token;
+    }
+
+    if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => {
@@ -24,20 +49,31 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Standardizes error actions (auto-logout on token expiration)
+// Response Interceptor: refreshes expired JWTs before falling back to logout.
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response ? error.response.status : null;
     const responseData = error.response?.data;
     const serverMessage = responseData && typeof responseData === 'object' ? responseData.message : null;
     const serverError = responseData && typeof responseData === 'object' ? responseData.error : null;
+    const originalRequest = error.config;
     
-    if (status === 401) {
-      console.warn('Session expired or unauthorized. Clearing session...');
-      // Quietly log out in case of token expiration
-      const { logout } = useAuthStore.getState();
-      logout();
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshedSession = await refreshSessionOnce();
+
+      if (refreshedSession?.access_token) {
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${refreshedSession.access_token}`;
+        return api(originalRequest);
+      }
+
+      if (!isExamRoute()) {
+        console.warn('Session expired or unauthorized. Clearing session...');
+        const { logout } = useAuthStore.getState();
+        await logout();
+      }
     }
     
     // Normalize server error responses
