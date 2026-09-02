@@ -6,14 +6,13 @@ import StudentSidebar from '../components/StudentSidebar';
 import {
   Monitor, Headphones, BookOpen, History, Award,
   Settings, LogOut, Lock, CheckSquare, Calendar,
-  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu, X, ExternalLink
+  ChevronRight, TrendingUp, Users, Crown, User, FileText, Star, Play, PenLine, Target, Search, Heart, CheckCircle2, Flame, ChevronLeft, ArrowRight, Menu
 } from 'lucide-react';
 import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import NotificationBell from '../components/NotificationBell';
 import VisaGrantedNotices, { VisaGrantNotice } from '../components/dashboard/VisaGrantedNotices';
-import { normalizeImageUrl } from '../utils/imageUrl';
 import {
   STREAK_UPDATED_EVENT,
   addDaysToDateKey,
@@ -85,21 +84,6 @@ interface CourseSectionPreview {
   completedCount: number;
 }
 
-interface VisaPromotion {
-  id: string;
-  title: string;
-  description?: string | null;
-  image_url?: string | null;
-  country_name?: string | null;
-  country_flag?: string | null;
-  student_quote?: string | null;
-  institute_name?: string | null;
-  cta_label?: string | null;
-  cta_url?: string | null;
-  updated_at?: string | null;
-  created_at?: string | null;
-}
-
 const courseSectionIcon = (slug: string) => {
   if (slug === 'listening') return Headphones;
   if (slug.startsWith('writing-task')) return PenLine;
@@ -123,9 +107,7 @@ export default function DashboardPage() {
   const [courseSections, setCourseSections] = useState<CourseSectionPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [visaPromotion, setVisaPromotion] = useState<VisaPromotion | null>(null);
   const [visaGrantNotices, setVisaGrantNotices] = useState<VisaGrantNotice[]>([]);
-  const [showVisaPromotion, setShowVisaPromotion] = useState(false);
   const navigate = useNavigate();
 
   const [streakData, setStreakData] = useState<{ activeDates: string[], currentStreak: number }>({ activeDates: [], currentStreak: 0 });
@@ -281,53 +263,6 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    let isMounted = true;
-
-    const loadVisaPromotion = async () => {
-      try {
-        const { data } = await api.get('/visa-promotions/active').catch(() => ({ data: null }));
-        if (!isMounted || !data?.id) return;
-
-        const promotionVersion = data.updated_at || data.created_at || data.id;
-        const storageKey = `visa_promotion_closed_until_${profile.id}_${data.id}_${promotionVersion}`;
-        const closedUntil = Number(window.localStorage.getItem(storageKey) || 0);
-
-        setVisaPromotion(data);
-        setShowVisaPromotion(!closedUntil || closedUntil <= Date.now());
-      } catch {
-        if (isMounted) {
-          setVisaPromotion(null);
-          setShowVisaPromotion(false);
-        }
-      }
-    };
-
-    loadVisaPromotion();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.id]);
-
-  const closeVisaPromotion = () => {
-    setShowVisaPromotion(false);
-  };
-
-  const closeVisaPromotionFor24Hours = () => {
-    if (profile?.id && visaPromotion?.id) {
-      const promotionVersion = visaPromotion.updated_at || visaPromotion.created_at || visaPromotion.id;
-      const storageKey = `visa_promotion_closed_until_${profile.id}_${visaPromotion.id}_${promotionVersion}`;
-      try {
-        window.localStorage.setItem(storageKey, String(Date.now() + 24 * 60 * 60 * 1000));
-      } catch {}
-    }
-    setShowVisaPromotion(false);
-  };
-  const visaPromotionImageUrl = normalizeImageUrl(visaPromotion?.image_url);
-
   const handleStartTest = async (testId: string) => {
     try {
       const { data } = await api.post(`/attempts/start`, { mock_test_id: testId });
@@ -362,84 +297,6 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] pb-24 font-sans lg:flex-row lg:pb-0" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
 
       <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-
-      {showVisaPromotion && visaPromotion && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#05162E]/60 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
-          <div className="relative w-full max-w-[min(94vw,640px)] overflow-hidden rounded-[24px] bg-white shadow-2xl">
-            <button
-              type="button"
-              onClick={closeVisaPromotion}
-              className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-500 shadow-lg transition-colors hover:text-[#05162E]"
-              aria-label="Close visa promotion"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            {visaPromotionImageUrl ? (
-              <div className="flex justify-center bg-[#EFF4FB] p-3 sm:p-4">
-                <img src={visaPromotionImageUrl} alt={visaPromotion.title} className="block max-h-[52vh] max-w-full rounded-[30px] object-contain [clip-path:inset(0_round_30px)] [@media(max-height:820px)]:max-h-[44vh] [@media(max-height:720px)]:max-h-[38vh]" />
-              </div>
-            ) : (
-              <div className="grid aspect-[16/9] place-items-center bg-[#EFF4FB] p-3 text-center sm:p-4 [@media(max-height:720px)]:aspect-[2/1]">
-                <div>
-                  <Crown className="mx-auto h-12 w-12 text-[#F59E24]" />
-                  <p className="mt-3 text-[12px] font-black uppercase tracking-[0.18em] text-[#294b77]">Jawaaf Visa Support</p>
-                </div>
-              </div>
-            )}
-
-            <div className="p-5 sm:p-6 [@media(max-height:820px)]:p-4">
-              {(visaPromotion.country_name || visaPromotion.country_flag) && (
-                <div className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#F59E24]/12 px-3 py-1 text-[12px] font-black uppercase tracking-[0.08em] text-[#C46A00] [@media(max-height:720px)]:mb-2 [@media(max-height:720px)]:min-h-8">
-                  {visaPromotion.country_flag && <span className="text-[18px] leading-none">{visaPromotion.country_flag}</span>}
-                  <span>{visaPromotion.country_name || 'Visa destination'}</span>
-                </div>
-              )}
-              <h2 className="break-words text-[24px] font-black leading-tight text-[#05162E] sm:text-[28px] [@media(max-height:720px)]:text-[22px]">{visaPromotion.title}</h2>
-              {visaPromotion.institute_name && (
-                <div className="mt-3 inline-flex min-h-9 items-center rounded-full bg-[#EFF4FB] px-3 py-1 text-[12px] font-black text-[#294b77] [@media(max-height:720px)]:mt-2 [@media(max-height:720px)]:min-h-8">
-                  {visaPromotion.institute_name}
-                </div>
-              )}
-              {visaPromotion.description && (
-                <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-6 text-slate-600 sm:text-[15px] [@media(max-height:720px)]:mt-2 [@media(max-height:720px)]:text-[13px] [@media(max-height:720px)]:leading-5">
-                  {visaPromotion.description}
-                </p>
-              )}
-              {visaPromotion.student_quote && (
-                <blockquote className="mt-4 rounded-2xl border border-[#F59E24]/20 bg-[#FFF8ED] px-4 py-3 text-[14px] font-bold leading-6 text-[#4B5563] [@media(max-height:820px)]:mt-3 [@media(max-height:720px)]:px-3 [@media(max-height:720px)]:py-2 [@media(max-height:720px)]:text-[12px] [@media(max-height:720px)]:leading-5">
-                  "{visaPromotion.student_quote}"
-                </blockquote>
-              )}
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] [@media(max-height:820px)]:mt-4 [@media(max-height:720px)]:mt-3">
-                {visaPromotion.cta_url ? (
-                  <a
-                    href={visaPromotion.cta_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#294b77] px-5 py-3 text-center text-[14px] font-black text-white shadow-lg shadow-[#294b77]/20"
-                  >
-                    {visaPromotion.cta_label || 'Learn More'}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                ) : (
-                  <button type="button" onClick={closeVisaPromotion} className="min-h-12 rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white">
-                    Got it
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={closeVisaPromotionFor24Hours}
-                  className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-black text-slate-600 transition-colors hover:border-[#294b77] hover:text-[#294b77]"
-                >
-                  Close for 24 hours
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex min-w-0 flex-grow flex-col 2xl:flex-row">

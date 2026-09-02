@@ -79,32 +79,7 @@ const buildPromotionPayload = (body, userId) => {
 };
 
 export const getActiveVisaPromotion = async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('visa_promotions')
-      .select('*')
-      .eq('is_active', true)
-      .eq('display_type', 'grant_notice')
-      .order('updated_at', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      if (isMissingVisaPromotionSchemaError(error)) {
-        return res.status(200).json(null);
-      }
-      throw error;
-    }
-
-    res.status(200).json(data || null);
-  } catch (err) {
-    console.error('getActiveVisaPromotion Error:', err);
-    res.status(500).json({
-      error: 'VisaPromotionLoadError',
-      message: err.message || 'Failed to load visa promotion.'
-    });
-  }
+  res.status(200).json(null);
 };
 
 export const getActiveVisaGrantNotices = async (req, res) => {
