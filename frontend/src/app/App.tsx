@@ -19,6 +19,18 @@ export default function App() {
   const { initializeAuth, isAuthenticated, profile } = useAuthStore();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const isRecoveryRedirect =
+      window.location.pathname === '/' &&
+      params.has('access_token') &&
+      (!params.has('type') || params.get('type') === 'recovery');
+
+    if (isRecoveryRedirect) {
+      window.location.replace(`/reset-password${window.location.hash}`);
+    }
+  }, []);
+
+  useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 

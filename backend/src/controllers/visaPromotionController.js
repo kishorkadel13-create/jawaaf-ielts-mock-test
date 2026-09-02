@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase.js';
 
-const VISA_PROMOTION_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260818_add_visa_promotions.sql and backend/src/config/migrations/20260819_add_visa_promotion_details.sql in Supabase, then reload the API schema cache.';
+const VISA_PROMOTION_MIGRATION_MESSAGE = 'Database migration required: run backend/src/config/migrations/20260818_add_visa_promotions.sql, backend/src/config/migrations/20260819_add_visa_promotion_details.sql, and backend/src/config/migrations/20260901_add_visa_grant_notice_fields.sql in Supabase, then reload the API schema cache.';
 
 const isMissingVisaPromotionSchemaError = (error) => {
   const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
@@ -23,27 +23,56 @@ const cleanUrl = (value) => {
   }
 };
 
+const cleanImageUrl = (value) => {
+  const raw = cleanUrl(value);
+  if (!raw) return null;
+
+  const url = new URL(raw);
+  const isGoogleDrive = url.hostname === 'drive.google.com' || url.hostname.endsWith('.drive.google.com');
+
+  if (isGoogleDrive) {
+    const fileId = raw.match(/\/file\/d\/([^/]+)/i)?.[1] || url.searchParams.get('id');
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w1200`;
+    }
+  }
+
+  return raw;
+};
+
 const buildPromotionPayload = (body, userId) => {
   const title = String(body.title || '').trim();
   const description = String(body.description || '').trim();
-  const imageUrl = cleanUrl(body.image_url);
+  const imageUrl = cleanImageUrl(body.image_url);
+  const displayType = ['popup', 'grant_notice'].includes(body.display_type) ? body.display_type : 'popup';
+  const studentName = String(body.student_name || '').trim();
+  const programName = String(body.program_name || '').trim();
+  const visaType = String(body.visa_type || '').trim();
+  const grantedLabel = String(body.granted_label || '').trim();
   const countryName = String(body.country_name || '').trim();
   const countryFlag = String(body.country_flag || '').trim();
   const studentQuote = String(body.student_quote || '').trim();
   const instituteName = String(body.institute_name || '').trim();
   const ctaLabel = String(body.cta_label || '').trim();
   const ctaUrl = cleanUrl(body.cta_url);
+  const displayOrder = Number(body.display_order);
 
   return {
     title,
     description: description || null,
     image_url: imageUrl,
+    display_type: displayType,
+    student_name: studentName || title,
+    program_name: programName || null,
+    visa_type: visaType || null,
+    granted_label: grantedLabel || null,
     country_name: countryName || null,
     country_flag: countryFlag || null,
     student_quote: studentQuote || null,
     institute_name: instituteName || null,
     cta_label: ctaLabel || null,
     cta_url: ctaUrl,
+    display_order: Number.isFinite(displayOrder) ? displayOrder : 0,
     is_active: Boolean(body.is_active),
     ...(userId ? { created_by: userId } : {})
   };
@@ -55,6 +84,7 @@ export const getActiveVisaPromotion = async (req, res) => {
       .from('visa_promotions')
       .select('id, title, description, image_url, country_name, country_flag, student_quote, institute_name, cta_label, cta_url, updated_at, created_at')
       .eq('is_active', true)
+      .or('display_type.eq.popup,display_type.is.null')
       .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1)
@@ -73,6 +103,34 @@ export const getActiveVisaPromotion = async (req, res) => {
     res.status(500).json({
       error: 'VisaPromotionLoadError',
       message: err.message || 'Failed to load visa promotion.'
+    });
+  }
+};
+
+export const getActiveVisaGrantNotices = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('visa_promotions')
+      .select('id, title, description, image_url, student_name, program_name, visa_type, granted_label, country_name, country_flag, student_quote, institute_name, cta_label, cta_url, display_order, updated_at, created_at')
+      .eq('is_active', true)
+      .eq('display_type', 'grant_notice')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(16);
+
+    if (error) {
+      if (isMissingVisaPromotionSchemaError(error)) {
+        return res.status(200).json([]);
+      }
+      throw error;
+    }
+
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error('getActiveVisaGrantNotices Error:', err);
+    res.status(500).json({
+      error: 'VisaGrantNoticeLoadError',
+      message: err.message || 'Failed to load visa grant notices.'
     });
   }
 };

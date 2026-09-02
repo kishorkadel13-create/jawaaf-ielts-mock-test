@@ -122,7 +122,7 @@ export default function AdminSidebar({ activeTab, onAddTeacherClick, isOpen = fa
 
         <p className="px-4 pt-7 pb-2 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">Marketing</p>
         <Link to="/admin/visa-promotions" onClick={onClose} className={getLinkClass('visa-promotions')}>
-          <Megaphone className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Visa Popup</span>
+          <Megaphone className="h-5 w-5 shrink-0" /> <span className="min-w-0 truncate">Visa Notices</span>
         </Link>
 
         <p className="px-4 pt-7 pb-2 text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">User Management</p>
