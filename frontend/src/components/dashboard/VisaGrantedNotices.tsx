@@ -26,58 +26,9 @@ interface VisaGrantedNoticesProps {
 export default function VisaGrantedNotices({ notices }: VisaGrantedNoticesProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const displayNotices = notices.length
-    ? notices
-    : [
-        {
-          id: 'preview-australia',
-          title: 'Student Visa Granted',
-          student_name: 'Pragya Karki',
-          program_name: 'Masters in IT',
-          visa_type: 'Student Visa',
-          institute_name: 'Sydney Global University',
-          student_quote: 'Jawaaf helped me choose the right course and complete my visa process confidently.',
-          granted_label: 'Add from admin',
-          country_name: 'Australia',
-          country_flag: '🇦🇺',
-        },
-        {
-          id: 'preview-canada',
-          title: 'Student Visa Granted',
-          student_name: 'Sujan Timilsina',
-          program_name: 'Diploma in Business',
-          visa_type: 'Student Visa',
-          institute_name: 'Toronto Business College',
-          student_quote: 'The guidance was clear from start to finish, and I felt supported at every step.',
-          granted_label: 'Add from admin',
-          country_name: 'Canada',
-          country_flag: '🇨🇦',
-        },
-        {
-          id: 'preview-uk',
-          title: 'Student Visa Granted',
-          student_name: 'Anisha Rai',
-          program_name: 'MBA',
-          visa_type: 'Student Visa',
-          institute_name: 'London Metropolitan University',
-          student_quote: 'My documentation and interview preparation became much easier with the team.',
-          granted_label: 'Add from admin',
-          country_name: 'UK',
-          country_flag: '🇬🇧',
-        },
-        {
-          id: 'preview-japan',
-          title: 'Student Visa Granted',
-          student_name: 'Bikash Gurung',
-          program_name: 'Language Program',
-          visa_type: 'Student Visa',
-          institute_name: 'Tokyo Language Academy',
-          student_quote: 'I am grateful for the counselling and timely updates throughout my application.',
-          granted_label: 'Add from admin',
-          country_name: 'Japan',
-          country_flag: '🇯🇵',
-        },
-      ];
+  if (!notices.length) return null;
+
+  const displayNotices = notices;
   const scrollingNotices = displayNotices.length < 6
     ? [...displayNotices, ...displayNotices]
     : displayNotices;
@@ -200,7 +151,7 @@ export default function VisaGrantedNotices({ notices }: VisaGrantedNoticesProps)
             return (
               <article
                 key={`${notice.id}-${index}`}
-                className={`min-h-[236px] w-[320px] shrink-0 rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-[360px] ${notices.length ? '' : 'opacity-90'}`}
+                className="min-h-[236px] w-[320px] shrink-0 rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-[360px]"
               >
                 <div className="mb-3 flex items-center gap-2">
                   <span className="text-[16px] leading-none">{notice.country_flag || ''}</span>

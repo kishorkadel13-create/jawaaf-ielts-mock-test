@@ -111,7 +111,7 @@ export const getActiveVisaGrantNotices = async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('visa_promotions')
-      .select('id, title, description, image_url, student_name, program_name, visa_type, granted_label, country_name, country_flag, student_quote, institute_name, cta_label, cta_url, display_order, updated_at, created_at')
+      .select('*')
       .eq('is_active', true)
       .eq('display_type', 'grant_notice')
       .order('display_order', { ascending: true })
