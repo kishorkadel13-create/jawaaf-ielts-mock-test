@@ -82,9 +82,9 @@ export const getActiveVisaPromotion = async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('visa_promotions')
-      .select('id, title, description, image_url, country_name, country_flag, student_quote, institute_name, cta_label, cta_url, updated_at, created_at')
+      .select('*')
       .eq('is_active', true)
-      .or('display_type.eq.popup,display_type.is.null')
+      .eq('display_type', 'grant_notice')
       .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1)
