@@ -26,7 +26,6 @@ interface VisaGrantedNoticesProps {
 export default function VisaGrantedNotices({ notices }: VisaGrantedNoticesProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  if (!notices.length) return null;
 
   const displayNotices = notices;
   const scrollingNotices = displayNotices.length < 6
@@ -76,6 +75,8 @@ export default function VisaGrantedNotices({ notices }: VisaGrantedNoticesProps)
       behavior: 'smooth',
     });
   };
+
+  if (!notices.length) return null;
 
   return (
     <section className="relative overflow-hidden rounded-[20px] border border-[#8DB5FF]/70 bg-[#F7FBFF] p-3 shadow-[0_8px_22px_rgba(31,85,214,0.12)] sm:p-4">
