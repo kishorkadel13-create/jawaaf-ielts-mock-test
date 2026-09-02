@@ -127,7 +127,7 @@ export default function AccessRequestPage() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-1 overflow-x-hidden bg-[#f7fbff] px-4 pb-28 pt-5 text-[#294b77] sm:px-6 sm:py-7 md:px-12 lg:px-16 lg:pb-7"
+      className="relative flex min-h-screen flex-1 overflow-x-hidden overflow-y-auto bg-[#f7fbff] px-4 pb-28 pt-5 text-[#294b77] sm:px-6 sm:py-7 md:px-12 lg:px-16 lg:pb-7 [@media(max-height:720px)]:pt-3"
       style={{
         backgroundImage: `url('${assets.premiumAccess.background}')`,
         backgroundSize: '100% 100%',
@@ -142,26 +142,26 @@ export default function AccessRequestPage() {
           <JawaafLogo className="w-[165px] md:w-[205px]" />
         </div>
 
-        <section className="relative mx-auto mt-5 grid w-full max-w-[960px] overflow-hidden rounded-[28px] border border-white/85 bg-white/92 p-5 shadow-[0_18px_40px_rgba(41,75,119,0.12)] backdrop-blur-sm sm:mt-6 sm:p-7 md:mt-9 md:p-10 lg:max-h-[calc(100vh-118px)] lg:grid-cols-[0.94fr_0.78fr] lg:rounded-[34px] lg:p-11">
+        <section className="relative mx-auto mt-5 grid w-full max-w-[960px] overflow-hidden rounded-[28px] border border-white/85 bg-white/92 p-5 shadow-[0_18px_40px_rgba(41,75,119,0.12)] backdrop-blur-sm sm:mt-6 sm:p-7 md:mt-9 md:p-10 lg:grid-cols-[0.94fr_0.78fr] lg:rounded-[34px] lg:p-11 [@media(max-height:720px)]:mt-3 [@media(max-height:720px)]:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_18%,rgba(255,255,255,0.86),transparent_34%),radial-gradient(circle_at_82%_24%,rgba(41,75,119,0.012),transparent_30%)]"></div>
           <div className="relative z-10 flex flex-col justify-center lg:pr-2">
-            <div className="mb-5 inline-flex w-fit items-center gap-3 rounded-full px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.04em] text-white shadow-[0_12px_24px_rgba(239,95,85,0.2)] sm:mb-8 sm:px-5" style={{ background: 'linear-gradient(to right, #ef5f55 0%, #ef5f55 100%)' }}>
+            <div className="mb-5 inline-flex w-fit items-center gap-3 rounded-full px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.04em] text-white shadow-[0_12px_24px_rgba(239,95,85,0.2)] sm:mb-8 sm:px-5 [@media(max-height:720px)]:mb-4 [@media(max-height:720px)]:py-2" style={{ background: 'linear-gradient(to right, #ef5f55 0%, #ef5f55 100%)' }}>
               <Crown className="h-4 w-4" />
               {hasAccess ? 'Premium Active' : 'Premium Access'}
             </div>
 
-            <h1 className="max-w-[480px] break-words text-[36px] font-black leading-[0.98] tracking-tight text-[#173963] sm:text-[42px] md:text-[58px]" style={{ fontFamily: 'var(--font-league-spartan)' }}>
+            <h1 className="max-w-[480px] break-words text-[36px] font-black leading-[0.98] tracking-tight text-[#173963] sm:text-[42px] md:text-[58px] [@media(max-height:720px)]:text-[46px]" style={{ fontFamily: 'var(--font-league-spartan)' }}>
               {hasAccess ? 'Your Premium Access Is' : 'Unlock Your'}
               <span className="mt-2 block text-[#ef5f55]">
                 {hasAccess ? 'Active' : 'Full Potential'}
               </span>
             </h1>
 
-            <p className="mt-6 max-w-[470px] text-[15px] font-semibold leading-[1.75] text-[#6d7f9e]">
+            <p className="mt-6 max-w-[470px] text-[15px] font-semibold leading-[1.75] text-[#6d7f9e] [@media(max-height:720px)]:mt-4 [@media(max-height:720px)]:leading-6">
               Get complete access to all full-length Academic IELTS Listening and Reading mock tests, detailed band analytics, and review platforms.
             </p>
 
-            <div className="mt-7 grid gap-x-9 gap-y-4 text-[13px] font-bold text-[#7183a0] sm:mt-9 sm:grid-cols-2 sm:gap-y-5">
+            <div className="mt-7 grid gap-x-9 gap-y-4 text-[13px] font-bold text-[#7183a0] sm:mt-9 sm:grid-cols-2 sm:gap-y-5 [@media(max-height:720px)]:mt-5 [@media(max-height:720px)]:gap-y-3">
               {features.map(feature => (
                 <div key={feature} className="flex items-center gap-3">
                   <CheckCircle className="h-6 w-6 shrink-0 text-[#294b77]" />
@@ -171,14 +171,14 @@ export default function AccessRequestPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mt-7 flex min-h-[220px] items-end justify-center overflow-hidden sm:min-h-[320px] lg:mt-0">
+          <div className="relative z-10 mt-7 flex min-h-[220px] items-end justify-center overflow-hidden sm:min-h-[320px] lg:mt-0 [@media(max-height:720px)]:min-h-[250px]">
             <div className="absolute inset-y-0 left-0 z-20 hidden w-20 bg-gradient-to-r from-white/92 via-white/70 to-transparent sm:block"></div>
             <div className="absolute inset-y-8 right-4 z-0 w-[78%] rounded-[34px] bg-white/75 blur-xl"></div>
             <img
               src={assets.premiumAccess.active}
               alt="Jawaaf premium access mascot"
               loading="lazy"
-              className="relative z-10 h-auto max-h-[300px] w-full max-w-sm object-contain drop-shadow-[0_16px_22px_rgba(41,75,119,0.11)] md:max-h-[420px] lg:-mr-10 lg:h-[470px] lg:w-auto lg:max-w-none"
+              className="relative z-10 h-auto max-h-[300px] w-full max-w-sm object-contain drop-shadow-[0_16px_22px_rgba(41,75,119,0.11)] md:max-h-[420px] lg:-mr-10 lg:h-[470px] lg:w-auto lg:max-w-none [@media(max-height:720px)]:h-[330px]"
               style={{
                 clipPath: 'inset(0 18px 0 0)',
                 WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, #000 8%, #000 91%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 7%, #000 93%, transparent 100%)',
@@ -189,7 +189,7 @@ export default function AccessRequestPage() {
             />
           </div>
 
-          <div className="relative z-20 mt-8 lg:col-span-2">
+          <div className="relative z-20 mt-8 lg:col-span-2 [@media(max-height:720px)]:mt-5">
             {requestStatus === 'rejected' && (
               <p className="mb-4 flex items-center justify-center gap-2 text-[13px] font-bold text-[#ef5f55]">
                 <ShieldAlert className="h-4 w-4" /> Your previous request was declined. You can submit a new one.

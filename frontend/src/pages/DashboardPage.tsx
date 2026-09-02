@@ -12,6 +12,8 @@ import { getVideoThumbnailUrl } from '../utils/videoEmbed';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import NotificationBell from '../components/NotificationBell';
+import VisaGrantedNotices, { VisaGrantNotice } from '../components/dashboard/VisaGrantedNotices';
+import { normalizeImageUrl } from '../utils/imageUrl';
 import {
   STREAK_UPDATED_EVENT,
   addDaysToDateKey,
@@ -122,6 +124,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [visaPromotion, setVisaPromotion] = useState<VisaPromotion | null>(null);
+  const [visaGrantNotices, setVisaGrantNotices] = useState<VisaGrantNotice[]>([]);
   const [showVisaPromotion, setShowVisaPromotion] = useState(false);
   const navigate = useNavigate();
 
@@ -165,6 +168,9 @@ export default function DashboardPage() {
       // Load available tests
       const { data: tests } = await api.get('/tests').catch(() => ({ data: [] }));
       setAvailableTests(tests.filter((test: MockTest) => (test.sections?.length || 0) > 1).slice(0, 3));
+
+      const { data: notices } = await api.get('/visa-promotions/notices').catch(() => ({ data: [] }));
+      setVisaGrantNotices(Array.isArray(notices) ? notices : []);
 
       const { data: courses } = await api.get('/courses').catch(() => ({ data: [] }));
       const rawSections = courses || [];
@@ -320,6 +326,7 @@ export default function DashboardPage() {
     }
     setShowVisaPromotion(false);
   };
+  const visaPromotionImageUrl = normalizeImageUrl(visaPromotion?.image_url);
 
   const handleStartTest = async (testId: string) => {
     try {
@@ -368,9 +375,9 @@ export default function DashboardPage() {
               <X className="h-5 w-5" />
             </button>
 
-            {visaPromotion.image_url ? (
+            {visaPromotionImageUrl ? (
               <div className="flex justify-center bg-[#EFF4FB] p-3 sm:p-4">
-                <img src={visaPromotion.image_url} alt={visaPromotion.title} className="block max-h-[52vh] max-w-full rounded-[30px] object-contain [clip-path:inset(0_round_30px)] [@media(max-height:820px)]:max-h-[44vh] [@media(max-height:720px)]:max-h-[38vh]" />
+                <img src={visaPromotionImageUrl} alt={visaPromotion.title} className="block max-h-[52vh] max-w-full rounded-[30px] object-contain [clip-path:inset(0_round_30px)] [@media(max-height:820px)]:max-h-[44vh] [@media(max-height:720px)]:max-h-[38vh]" />
               </div>
             ) : (
               <div className="grid aspect-[16/9] place-items-center bg-[#EFF4FB] p-3 text-center sm:p-4 [@media(max-height:720px)]:aspect-[2/1]">
@@ -614,6 +621,9 @@ export default function DashboardPage() {
             </div>
 
           </div>
+
+          <VisaGrantedNotices notices={visaGrantNotices} />
+
           {/* Quick Links / Course Types */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
             <Link to="/courses" className="group relative flex w-full flex-col overflow-hidden rounded-[24px] border border-slate-50 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-7">

@@ -46,12 +46,18 @@ CREATE TABLE IF NOT EXISTS visa_promotions (
     title TEXT NOT NULL,
     description TEXT,
     image_url TEXT,
+    display_type TEXT NOT NULL DEFAULT 'popup' CHECK (display_type IN ('popup', 'grant_notice')),
+    student_name TEXT,
+    program_name TEXT,
+    visa_type TEXT,
+    granted_label TEXT,
     country_name TEXT,
     country_flag TEXT,
     student_quote TEXT,
     institute_name TEXT,
     cta_label TEXT,
     cta_url TEXT,
+    display_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -62,6 +68,9 @@ ALTER TABLE visa_promotions ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_visa_promotions_active_created
 ON visa_promotions(is_active, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_visa_promotions_grant_notices
+ON visa_promotions(is_active, display_type, display_order, created_at DESC);
 
 -- 2. MOCK TESTS TABLE
 CREATE TABLE IF NOT EXISTS mock_tests (

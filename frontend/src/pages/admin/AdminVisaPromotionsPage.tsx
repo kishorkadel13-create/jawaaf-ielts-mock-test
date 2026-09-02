@@ -4,33 +4,46 @@ import { ArrowLeft, Edit3, ExternalLink, Image as ImageIcon, Loader2, Megaphone,
 import JawaafLogo from '../../components/JawaafLogo';
 import { api } from '../../services/api';
 import { supabase } from '../../services/supabase';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 
 type VisaPromotion = {
   id: string;
   title: string;
   description?: string | null;
   image_url?: string | null;
+  display_type?: 'popup' | 'grant_notice';
+  student_name?: string | null;
+  program_name?: string | null;
+  visa_type?: string | null;
+  granted_label?: string | null;
   country_name?: string | null;
   country_flag?: string | null;
   student_quote?: string | null;
   institute_name?: string | null;
   cta_label?: string | null;
   cta_url?: string | null;
+  display_order?: number | null;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
 };
 
 const emptyPromotion = {
-  title: '',
+  title: 'Student Visa Granted',
+  student_name: '',
+  program_name: '',
+  visa_type: 'Student Visa',
+  granted_label: '',
   description: '',
   image_url: '',
+  display_type: 'grant_notice',
   country_name: '',
   country_flag: '',
   student_quote: '',
   institute_name: '',
-  cta_label: 'Learn More',
+  cta_label: 'View Story',
   cta_url: '',
+  display_order: 0,
   is_active: true
 };
 
@@ -69,7 +82,7 @@ export default function AdminVisaPromotionsPage() {
     try {
       setLoading(true);
       const { data } = await api.get('/admin/visa-promotions');
-      setPromotions(Array.isArray(data) ? data : []);
+      setPromotions(Array.isArray(data) ? data.filter((item: VisaPromotion) => (item.display_type || 'popup') === 'grant_notice') : []);
     } catch (err: any) {
       alert(getErrorMessage(err, 'Failed to load visa promotions.'));
     } finally {
@@ -89,15 +102,21 @@ export default function AdminVisaPromotionsPage() {
   const editPromotion = (promotion: VisaPromotion) => {
     setPromotionForm({
       id: promotion.id,
-      title: promotion.title || '',
+      title: promotion.title || 'Student Visa Granted',
+      student_name: promotion.student_name || promotion.title || '',
+      program_name: promotion.program_name || '',
+      visa_type: promotion.visa_type || 'Student Visa',
+      granted_label: promotion.granted_label || '',
       description: promotion.description || '',
       image_url: promotion.image_url || '',
+      display_type: 'grant_notice',
       country_name: promotion.country_name || '',
       country_flag: promotion.country_flag || '',
       student_quote: promotion.student_quote || '',
       institute_name: promotion.institute_name || '',
       cta_label: promotion.cta_label || 'Learn More',
       cta_url: promotion.cta_url || '',
+      display_order: promotion.display_order || 0,
       is_active: Boolean(promotion.is_active)
     });
     setShowForm(true);
@@ -146,24 +165,34 @@ export default function AdminVisaPromotionsPage() {
     }));
   };
 
+  const updateImageUrl = (value: string) => {
+    setPromotionForm((current: any) => ({ ...current, image_url: value }));
+  };
+
   const savePromotion = async () => {
-    if (!promotionForm.title.trim()) {
-      alert('Promotion title is required.');
+    if (!promotionForm.student_name.trim()) {
+      alert('Student name is required.');
       return;
     }
 
     try {
       setSaving(true);
       const payload = {
-        title: promotionForm.title.trim(),
+        title: promotionForm.title.trim() || `${promotionForm.student_name.trim()} Visa Granted`,
+        display_type: 'grant_notice',
+        student_name: promotionForm.student_name.trim(),
+        program_name: promotionForm.program_name.trim(),
+        visa_type: promotionForm.visa_type.trim(),
+        granted_label: promotionForm.granted_label.trim(),
         description: promotionForm.description.trim(),
-        image_url: promotionForm.image_url.trim(),
+        image_url: normalizeImageUrl(promotionForm.image_url),
         country_name: promotionForm.country_name.trim(),
         country_flag: promotionForm.country_flag.trim(),
         student_quote: promotionForm.student_quote.trim(),
         institute_name: promotionForm.institute_name.trim(),
         cta_label: promotionForm.cta_label.trim(),
         cta_url: promotionForm.cta_url.trim(),
+        display_order: Number(promotionForm.display_order) || 0,
         is_active: Boolean(promotionForm.is_active)
       };
 
@@ -186,6 +215,11 @@ export default function AdminVisaPromotionsPage() {
     try {
       await api.put(`/admin/visa-promotions/${promotion.id}`, {
         title: promotion.title,
+        display_type: 'grant_notice',
+        student_name: promotion.student_name || promotion.title,
+        program_name: promotion.program_name || '',
+        visa_type: promotion.visa_type || '',
+        granted_label: promotion.granted_label || '',
         description: promotion.description || '',
         image_url: promotion.image_url || '',
         country_name: promotion.country_name || '',
@@ -194,6 +228,7 @@ export default function AdminVisaPromotionsPage() {
         institute_name: promotion.institute_name || '',
         cta_label: promotion.cta_label || '',
         cta_url: promotion.cta_url || '',
+        display_order: promotion.display_order || 0,
         is_active: !promotion.is_active
       });
       await loadPromotions();
@@ -203,7 +238,7 @@ export default function AdminVisaPromotionsPage() {
   };
 
   const deletePromotion = async (promotion: VisaPromotion) => {
-    if (!confirm('Delete this visa promotion popup?')) return;
+    if (!confirm('Delete this visa granted notice?')) return;
     try {
       await api.delete(`/admin/visa-promotions/${promotion.id}`);
       await loadPromotions();
@@ -211,6 +246,7 @@ export default function AdminVisaPromotionsPage() {
       alert(getErrorMessage(err, 'Failed to delete visa promotion.'));
     }
   };
+  const formImageUrl = normalizeImageUrl(promotionForm.image_url);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-[#05162E]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -221,12 +257,12 @@ export default function AdminVisaPromotionsPage() {
           </Link>
           <JawaafLogo className="hidden h-9 w-auto sm:block" />
           <div className="min-w-0">
-            <h1 className="truncate text-[20px] font-black sm:text-[22px]">Visa Promotion Popup</h1>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 sm:text-[12px]">Manage student dashboard marketing popups</p>
+            <h1 className="truncate text-[20px] font-black sm:text-[22px]">Visa Granted Notices</h1>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 sm:text-[12px]">Manage scrolling student dashboard achievements</p>
           </div>
         </div>
         <button onClick={startCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#294b77] px-4 py-3 text-[13px] font-black text-white">
-          <Plus className="h-4 w-4" /> Add Popup
+          <Plus className="h-4 w-4" /> Add Notice
         </button>
       </header>
 
@@ -234,8 +270,8 @@ export default function AdminVisaPromotionsPage() {
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between gap-4 border-b border-slate-100 p-5">
             <div>
-              <h2 className="text-[18px] font-black">Popup Library</h2>
-              <p className="text-[12px] font-semibold text-slate-400">Students see the latest active popup after login.</p>
+              <h2 className="text-[18px] font-black">Notice Library</h2>
+              <p className="text-[12px] font-semibold text-slate-400">Active notices appear in the student dashboard carousel.</p>
             </div>
             {loading && <Loader2 className="h-5 w-5 animate-spin text-slate-400" />}
           </div>
@@ -244,23 +280,26 @@ export default function AdminVisaPromotionsPage() {
             {!loading && promotions.length === 0 && (
               <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center sm:p-10">
                 <Megaphone className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-[15px] font-black text-slate-500">No visa popup added yet.</p>
-                <button onClick={startCreate} className="mt-4 rounded-xl bg-[#294b77] px-4 py-3 text-[13px] font-black text-white">Create first popup</button>
+                <p className="mt-3 text-[15px] font-black text-slate-500">No visa granted notice added yet.</p>
+                <button onClick={startCreate} className="mt-4 rounded-xl bg-[#294b77] px-4 py-3 text-[13px] font-black text-white">Create first notice</button>
               </div>
             )}
 
-            {promotions.map(promotion => (
-              <div key={promotion.id} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[160px_minmax(0,1fr)]">
-                <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#EFF4FB]">
-                  {promotion.image_url ? (
-                    <img src={promotion.image_url} alt={promotion.title} className="h-full w-full object-contain" />
-                  ) : (
-                    <div className="grid h-full place-items-center text-slate-300">
-                      <ImageIcon className="h-10 w-10" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0">
+            {promotions.map(promotion => {
+              const promotionImageUrl = normalizeImageUrl(promotion.image_url);
+
+              return (
+                <div key={promotion.id} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[160px_minmax(0,1fr)]">
+                  <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#EFF4FB]">
+                    {promotionImageUrl ? (
+                      <img src={promotionImageUrl} alt={promotion.title} className="h-full w-full object-contain" />
+                    ) : (
+                      <div className="grid h-full place-items-center text-slate-300">
+                        <ImageIcon className="h-10 w-10" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -269,8 +308,8 @@ export default function AdminVisaPromotionsPage() {
                         </span>
                         <span className="text-[11px] font-black text-slate-400">{new Date(promotion.created_at).toLocaleDateString()}</span>
                       </div>
-                      <h3 className="mt-3 break-words text-[18px] font-black">{promotion.title}</h3>
-                      {(promotion.country_name || promotion.country_flag || promotion.institute_name) && (
+                      <h3 className="mt-3 break-words text-[18px] font-black">{promotion.student_name || promotion.title}</h3>
+                      {(promotion.country_name || promotion.country_flag || promotion.institute_name || promotion.visa_type) && (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {(promotion.country_name || promotion.country_flag) && (
                             <span className="rounded-lg bg-[#F59E24]/12 px-2.5 py-1 text-[11px] font-black text-[#C46A00]">
@@ -279,6 +318,12 @@ export default function AdminVisaPromotionsPage() {
                           )}
                           {promotion.institute_name && (
                             <span className="rounded-lg bg-[#EFF4FB] px-2.5 py-1 text-[11px] font-black text-[#294b77]">{promotion.institute_name}</span>
+                          )}
+                          {promotion.visa_type && (
+                            <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">{promotion.visa_type}</span>
+                          )}
+                          {promotion.program_name && (
+                            <span className="rounded-lg bg-violet-50 px-2.5 py-1 text-[11px] font-black text-violet-700">{promotion.program_name}</span>
                           )}
                         </div>
                       )}
@@ -296,7 +341,7 @@ export default function AdminVisaPromotionsPage() {
                   {promotion.student_quote && <p className="mt-2 line-clamp-2 text-[12px] font-bold italic leading-5 text-slate-500">"{promotion.student_quote}"</p>}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <button onClick={() => togglePromotion(promotion)} className={`rounded-xl px-3 py-2 text-[12px] font-black ${promotion.is_active ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                      {promotion.is_active ? 'Deactivate' : 'Activate'}
+                      {promotion.is_active ? 'Hide from dashboard' : 'Show on dashboard'}
                     </button>
                     {promotion.cta_url && (
                       <a href={promotion.cta_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-xl bg-slate-50 px-3 py-2 text-[12px] font-black text-slate-600 hover:text-[#294b77]">
@@ -306,15 +351,16 @@ export default function AdminVisaPromotionsPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[18px] font-black">{showForm ? promotionForm.id ? 'Edit Popup' : 'Add Popup' : 'Popup Editor'}</h2>
-              <p className="text-[12px] font-semibold text-slate-400">Use clear copy and one strong action link.</p>
+              <h2 className="text-[18px] font-black">{showForm ? promotionForm.id ? 'Edit Notice' : 'Add Notice' : 'Notice Editor'}</h2>
+              <p className="text-[12px] font-semibold text-slate-400">These cards scroll inside the student dashboard.</p>
             </div>
             {showForm && <button onClick={() => setShowForm(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button>}
           </div>
@@ -325,8 +371,8 @@ export default function AdminVisaPromotionsPage() {
                 <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Image</span>
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#F8FAFC]">
                   <div className="aspect-[4/3]">
-                    {promotionForm.image_url ? (
-                      <img src={promotionForm.image_url} alt="Promotion preview" className="h-full w-full object-contain" />
+                    {formImageUrl ? (
+                      <img src={formImageUrl} alt="Promotion preview" className="h-full w-full object-contain" />
                     ) : (
                       <div className="grid h-full place-items-center text-center text-slate-400">
                         <span>
@@ -348,11 +394,18 @@ export default function AdminVisaPromotionsPage() {
 
               <label className="grid gap-2">
                 <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Image URL</span>
-                <input value={promotionForm.image_url} onChange={event => setPromotionForm({ ...promotionForm, image_url: event.target.value })} placeholder="https://..." className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                <input value={promotionForm.image_url} onChange={event => updateImageUrl(event.target.value)} onBlur={event => updateImageUrl(normalizeImageUrl(event.target.value) || event.target.value.trim())} placeholder="Paste Google Drive share link or image URL" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                {promotionForm.image_url && !normalizeImageUrl(promotionForm.image_url) && (
+                  <span className="text-[11px] font-bold text-rose-500">Use a valid http/https image link. For Google Drive, make the file shared publicly.</span>
+                )}
               </label>
               <label className="grid gap-2">
-                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Title</span>
-                <input value={promotionForm.title} onChange={event => setPromotionForm({ ...promotionForm, title: event.target.value })} placeholder="Study abroad visa support" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Student Name</span>
+                <input value={promotionForm.student_name} onChange={event => setPromotionForm({ ...promotionForm, student_name: event.target.value })} placeholder="Pragya Karki" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Card Title</span>
+                <input value={promotionForm.title} onChange={event => setPromotionForm({ ...promotionForm, title: event.target.value })} placeholder="Student Visa Granted" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
               </label>
               <label className="grid gap-2">
                 <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Visa Country</span>
@@ -370,12 +423,32 @@ export default function AdminVisaPromotionsPage() {
                 )}
               </label>
               <label className="grid gap-2">
-                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Institute Name</span>
-                <input value={promotionForm.institute_name} onChange={event => setPromotionForm({ ...promotionForm, institute_name: event.target.value })} placeholder="Jawaaf Consulting Academy" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">University Name</span>
+                <input value={promotionForm.institute_name} onChange={event => setPromotionForm({ ...promotionForm, institute_name: event.target.value })} placeholder="Calvin University" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
               </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Visa Type</span>
+                  <input value={promotionForm.visa_type} onChange={event => setPromotionForm({ ...promotionForm, visa_type: event.target.value })} placeholder="Student Visa" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Program</span>
+                  <input value={promotionForm.program_name} onChange={event => setPromotionForm({ ...promotionForm, program_name: event.target.value })} placeholder="Masters in IT" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                </label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Order</span>
+                  <input type="number" value={promotionForm.display_order} onChange={event => setPromotionForm({ ...promotionForm, display_order: event.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Granted Time Label</span>
+                  <input value={promotionForm.granted_label} onChange={event => setPromotionForm({ ...promotionForm, granted_label: event.target.value })} placeholder="2 hours ago / 1 day ago / Sep 1, 2026" className="rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-bold outline-none focus:border-[#294b77]" />
+                </label>
+              </div>
               <label className="grid gap-2">
-                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Description</span>
-                <textarea value={promotionForm.description} onChange={event => setPromotionForm({ ...promotionForm, description: event.target.value })} placeholder="Announce consultancy offers, deadlines, and counselling options." className="min-h-[110px] rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#294b77]" />
+                <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Short Description</span>
+                <textarea value={promotionForm.description} onChange={event => setPromotionForm({ ...promotionForm, description: event.target.value })} placeholder="A short success note for the dashboard card." className="min-h-[110px] rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-semibold outline-none focus:border-[#294b77]" />
               </label>
               <label className="grid gap-2">
                 <span className="text-[12px] font-black uppercase tracking-wider text-slate-500">Student Quote</span>
@@ -393,18 +466,18 @@ export default function AdminVisaPromotionsPage() {
               </div>
               <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-black">
                 <input type="checkbox" checked={promotionForm.is_active} onChange={event => setPromotionForm({ ...promotionForm, is_active: event.target.checked })} />
-                Active on student dashboard
+                Active on student dashboard carousel
               </label>
               <button onClick={savePromotion} disabled={saving || uploading} className="rounded-xl bg-[#294b77] px-5 py-3 text-[14px] font-black text-white disabled:opacity-60">
                 {saving ? <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> : <Save className="mr-2 inline h-4 w-4" />}
-                Save Popup
+                Save Notice
               </button>
             </div>
           ) : (
             <button onClick={startCreate} className="grid min-h-[260px] w-full place-items-center rounded-2xl border border-dashed border-slate-200 bg-[#F8FAFC] text-center text-slate-500 hover:border-[#294b77] hover:text-[#294b77]">
               <span>
                 <Plus className="mx-auto h-8 w-8" />
-                <span className="mt-2 block text-[14px] font-black">Create or edit a visa popup</span>
+                <span className="mt-2 block text-[14px] font-black">Create or edit a visa granted notice</span>
               </span>
             </button>
           )}

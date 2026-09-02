@@ -3,10 +3,31 @@ import { supabase } from '../services/supabase.js';
 
 let authSubscription = null;
 
+const isLocalhostUrl = (url) => {
+  try {
+    const { hostname } = new URL(url);
+    return ['localhost', '127.0.0.1', '::1'].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
 const getAppUrl = () => {
   const configuredUrl = import.meta.env.VITE_APP_URL;
-  if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
-  if (typeof window !== 'undefined') return window.location.origin;
+  const browserOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+
+  if (configuredUrl) {
+    const normalizedUrl = configuredUrl.replace(/\/+$/, '');
+    const shouldUseBrowserOrigin =
+      import.meta.env.PROD &&
+      browserOrigin &&
+      !isLocalhostUrl(browserOrigin) &&
+      isLocalhostUrl(normalizedUrl);
+
+    return shouldUseBrowserOrigin ? browserOrigin : normalizedUrl;
+  }
+
+  if (browserOrigin) return browserOrigin;
   return 'http://localhost:5173';
 };
 
