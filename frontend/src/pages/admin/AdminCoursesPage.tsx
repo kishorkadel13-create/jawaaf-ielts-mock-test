@@ -5,6 +5,7 @@ import {
   BookOpen,
   CheckCircle2,
   Edit3,
+  ExternalLink,
   Eye,
   FileText,
   Headphones,
@@ -327,14 +328,32 @@ export default function AdminCoursesPage() {
         is_published: Boolean(lessonForm.is_published)
       };
 
+      let savedLessonId = activeLesson?.id;
       if (activeLesson) {
         await api.put(`/admin/course-lessons/${activeLesson.id}`, payload);
       } else {
         const { data } = await api.post('/admin/course-lessons', payload);
+        savedLessonId = data.id;
         setActiveLessonId(data.id);
       }
 
+      // If a Drive link or PDF URL is filled in the Notes Attachments form, save it automatically!
+      if (resourceForm.resource_url.trim() && savedLessonId) {
+        await api.post('/admin/lesson-resources', {
+          lesson_id: savedLessonId,
+          title: resourceForm.title.trim() || 'Lesson Notes',
+          resource_url: resourceForm.resource_url.trim(),
+          resource_file: '',
+          order_no: (activeLesson?.resources?.length || 0) + 1
+        });
+        setResourceForm({ title: '', resource_url: '' });
+      }
+
       await loadCourses();
+      if (savedLessonId) {
+        setActiveLessonId(savedLessonId);
+      }
+      alert('Lesson saved successfully.');
     } catch (err: any) {
       alert(getErrorMessage(err, 'Failed to save lesson.'));
     } finally {
@@ -351,7 +370,7 @@ export default function AdminCoursesPage() {
 
   const addResource = async (file?: File | null) => {
     if (!activeLesson) {
-      alert('Save the lesson before adding resources.');
+      alert('Please save the lesson first before adding attachments, or paste the Drive URL and click "Save Lesson" above.');
       return;
     }
     if (!file && !resourceForm.resource_url.trim()) {
@@ -362,17 +381,18 @@ export default function AdminCoursesPage() {
     try {
       setUploading(true);
       const resourceFile = file ? await signedUpload(file, 'resources') : '';
-      const title = resourceForm.title || file?.name || 'Lesson resource';
+      const title = resourceForm.title.trim() || file?.name || 'Lesson Notes';
       await api.post('/admin/lesson-resources', {
         lesson_id: activeLesson.id,
         title,
-        resource_url: file ? '' : resourceForm.resource_url,
+        resource_url: file ? '' : resourceForm.resource_url.trim(),
         resource_file: resourceFile,
         order_no: (activeLesson.resources?.length || 0) + 1
       });
       setResourceForm({ title: '', resource_url: '' });
       await loadCourses();
       setActiveLessonId(activeLesson.id);
+      alert('Notes attachment added successfully!');
     } catch (err: any) {
       alert(getErrorMessage(err, 'Failed to add resource.'));
     } finally {
@@ -661,25 +681,71 @@ export default function AdminCoursesPage() {
                 Save Lesson
               </button>
 
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <div className="mb-3 flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-slate-500">
-                  <FileText className="h-4 w-4" /> Notes Attachments
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-slate-500">
+                    <FileText className="h-4 w-4 text-[#294b77]" /> Notes Attachments
+                  </div>
+                  {activeLesson?.resources?.length ? (
+                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-black text-[#294b77]">
+                      {activeLesson.resources.length} {activeLesson.resources.length === 1 ? 'attachment' : 'attachments'}
+                    </span>
+                  ) : null}
                 </div>
-                <div className="grid gap-2 md:grid-cols-[150px_1fr_auto_auto]">
-                  <input value={resourceForm.title} onChange={event => setResourceForm({ ...resourceForm, title: event.target.value })} placeholder="Notes title" className="rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-semibold outline-none" />
-                  <input value={resourceForm.resource_url} onChange={event => setResourceForm({ ...resourceForm, resource_url: event.target.value })} placeholder="Paste Drive notes/PDF URL" className="rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-semibold outline-none" />
-                  <button onClick={() => addResource()} disabled={!activeLesson || !resourceForm.resource_url.trim()} className="rounded-xl bg-slate-100 px-3 py-2 text-[12px] font-black text-[#294b77] disabled:cursor-not-allowed disabled:opacity-50">Add URL</button>
-                  <label className="rounded-xl bg-[#294b77] px-3 py-2 text-center text-[12px] font-black text-white cursor-pointer">
+                <div className="grid gap-2 md:grid-cols-[160px_1fr_auto_auto]">
+                  <input
+                    value={resourceForm.title}
+                    onChange={event => setResourceForm({ ...resourceForm, title: event.target.value })}
+                    placeholder="Title (e.g. Class Notes)"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-semibold outline-none focus:border-[#294b77]"
+                  />
+                  <input
+                    value={resourceForm.resource_url}
+                    onChange={event => setResourceForm({ ...resourceForm, resource_url: event.target.value })}
+                    placeholder="Paste Drive notes/PDF URL"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-semibold outline-none focus:border-[#294b77]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addResource()}
+                    disabled={uploading || !resourceForm.resource_url.trim()}
+                    className="rounded-xl bg-[#294b77] px-4 py-2 text-[12px] font-black text-white hover:bg-[#1f3a5d] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  >
+                    Add URL
+                  </button>
+                  <label className="rounded-xl bg-slate-100 px-3 py-2 text-center text-[12px] font-black text-[#294b77] hover:bg-slate-200 cursor-pointer transition-colors">
                     Upload
                     <input className="hidden" type="file" onChange={event => addResource(event.target.files?.[0])} />
                   </label>
                 </div>
-                <p className="mt-2 text-[12px] font-bold text-slate-500">Save the lesson first, then add Drive notes or uploaded files. These appear under the student's Notes tab.</p>
+                <p className="mt-2 text-[12px] font-bold text-slate-500">
+                  Paste Google Drive link (PDF, Doc, Folder) or upload a file. You can click <strong>Add URL</strong> or simply click <strong>Save Lesson</strong> above to save.
+                </p>
                 <div className="mt-3 grid gap-2">
                   {activeLesson?.resources?.map(resource => (
-                    <div key={resource.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
-                      <span className="text-[13px] font-bold">{resource.title}</span>
-                      <button onClick={() => deleteResource(resource.id)} className="text-rose-500"><Trash2 className="h-4 w-4" /></button>
+                    <div key={resource.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-[#294b77] shrink-0" />
+                        <span className="text-[13px] font-bold truncate text-[#05162E]">{resource.title}</span>
+                        {resource.resource_url && (
+                          <a href={resource.resource_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline shrink-0">
+                            (Open Drive Link <ExternalLink className="h-3 w-3" />)
+                          </a>
+                        )}
+                        {resource.resource_file && (
+                          <span className="text-[11px] font-bold text-emerald-600 shrink-0">
+                            (Uploaded File)
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteResource(resource.id)}
+                        className="rounded-lg p-1 text-rose-500 hover:bg-rose-50 transition-colors"
+                        title="Delete attachment"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   ))}
                 </div>

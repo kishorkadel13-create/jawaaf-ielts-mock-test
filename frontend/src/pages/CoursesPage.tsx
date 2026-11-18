@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, ExternalLink, Eye, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -10,7 +10,7 @@ import NotificationBell from '../components/NotificationBell';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { assets } from '../config/assets';
 import { resolveStorageUrl } from '../utils/storageUrl';
-import { getEmbeddableVideoUrl, getVideoThumbnailUrl, shouldUseVideoIframe } from '../utils/videoEmbed';
+import { getEmbeddableVideoUrl, getVideoThumbnailUrl, shouldUseVideoIframe, getEmbeddableResourceUrl, isDriveOrDocsUrl } from '../utils/videoEmbed';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
@@ -261,7 +261,88 @@ const VintageCinemaTicketCard = ({
   );
 };
 
-const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceId: string; token?: string | null }) => {
+const renderTextWithLinks = (text?: string | null) => {
+  if (!text) return null;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noreferrer"
+          className="font-bold underline text-[#294b77] hover:text-[#193252] inline-flex items-center gap-0.5 break-all"
+        >
+          {part} <ExternalLink className="inline h-3 w-3 shrink-0 ml-0.5" />
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
+const NotesDriveViewer = ({ title, url, isCinema }: { title: string; url: string; isCinema?: boolean }) => {
+  const embedUrl = getEmbeddableResourceUrl(url);
+
+  return (
+    <div 
+      className={`overflow-hidden rounded-2xl border select-none ${isCinema ? 'border-[#E1C79A] bg-white shadow-sm' : 'border-slate-200 bg-white shadow-sm'}`}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div className={`flex flex-wrap items-center justify-between border-b px-5 py-3.5 gap-3 ${isCinema ? 'border-[#E1C79A]/60 bg-[#FFF9EE]' : 'border-slate-100 bg-slate-50'}`}>
+        <div className="min-w-0">
+          <p className={`text-[11px] font-black uppercase tracking-wider ${isCinema ? 'text-[#8C6A3B]' : 'text-slate-400'}`}>
+            Lesson Notes Attachment
+          </p>
+          <h3 className={`truncate text-[16px] font-black ${isCinema ? 'text-[#2D1A10]' : 'text-[#05162E]'}`}>
+            {title}
+          </h3>
+        </div>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black ${isCinema ? 'bg-[#F2DEC0] text-[#5F3B20]' : 'bg-slate-200/80 text-slate-700'}`}>
+          <Lock className="h-3 w-3" /> View Only
+        </span>
+      </div>
+      <div className="relative w-full aspect-[4/3] min-h-[520px] max-h-[750px] bg-slate-100 select-none">
+        {/* Transparent shield over top-right corner to intercept and block clicking the Google Drive pop-out / download icon */}
+        <div
+          className="absolute top-0 right-0 w-16 h-14 z-20 cursor-default bg-transparent"
+          title="Protected view - direct download disabled"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        />
+        {embedUrl ? (
+          <iframe
+            src={embedUrl}
+            className="w-full h-full border-0 select-none"
+            title={title}
+            sandbox="allow-scripts allow-same-origin allow-forms"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <p className="text-[14px] font-bold text-slate-600 mb-1">Notes are available in view-only mode inside this player.</p>
+            <p className="text-[12px] font-medium text-slate-400">If the document does not display, please inform your instructor.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NotesPdfReader = ({
+  title,
+  resourceId,
+  token,
+  resource,
+  isCinema
+}: {
+  title: string;
+  resourceId: string;
+  token?: string | null;
+  resource?: { id: string; title: string; resource_url?: string; resource_file?: string } | null;
+  isCinema?: boolean;
+}) => {
   const [pages, setPages] = useState<Array<{ pageNumber: number; src: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -300,7 +381,7 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
 
         await loadingTask.destroy();
       } catch (err) {
-        if (!cancelled) setError('Notes could not be rendered inside the reader. Please upload a PDF file or use a public Drive PDF link.');
+        if (!cancelled) setError('Notes could not be rendered inside the reader.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -314,26 +395,36 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
   }, [resourceId, token]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div 
+      className={`overflow-hidden rounded-2xl border select-none ${isCinema ? 'border-[#E1C79A] bg-white shadow-sm' : 'border-slate-200 bg-white shadow-sm'}`}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div className={`flex flex-wrap items-center justify-between border-b px-5 py-4 gap-3 ${isCinema ? 'border-[#E1C79A]/60 bg-[#FFF9EE]' : 'border-slate-100 bg-white'}`}>
         <div className="min-w-0">
-          <p className="text-[12px] font-black uppercase tracking-wider text-slate-400">Viewing Notes</p>
-          <h3 className="truncate text-[16px] font-black">{title}</h3>
+          <p className={`text-[12px] font-black uppercase tracking-wider ${isCinema ? 'text-[#8C6A3B]' : 'text-slate-400'}`}>Viewing Notes</p>
+          <h3 className={`truncate text-[16px] font-black ${isCinema ? 'text-[#2D1A10]' : 'text-[#05162E]'}`}>{title}</h3>
         </div>
-        {pages.length > 0 && <p className="text-[12px] font-black text-slate-400">{pages.length} pages</p>}
+        <div className="flex items-center gap-3">
+          {pages.length > 0 && <p className="text-[12px] font-black text-slate-400">{pages.length} pages</p>}
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black ${isCinema ? 'bg-[#F2DEC0] text-[#5F3B20]' : 'bg-slate-200/80 text-slate-700'}`}>
+            <Lock className="h-3 w-3" /> View Only
+          </span>
+        </div>
       </div>
-      <div className="max-h-[720px] overflow-y-auto bg-[#F3F6FB] px-4 py-6">
+      <div className="max-h-[720px] overflow-y-auto bg-[#F3F6FB] px-4 py-6 select-none" onContextMenu={(e) => e.preventDefault()}>
         {loading && !pages.length && (
           <div className="grid min-h-[320px] place-items-center text-[14px] font-bold text-slate-500">Preparing notes reader...</div>
         )}
         {error && (
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-[14px] font-bold text-rose-600">{error}</div>
+          <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-[14px] font-bold text-rose-600">
+            <p>{error}</p>
+          </div>
         )}
-        <div className="mx-auto grid max-w-4xl gap-5">
+        <div className="mx-auto grid max-w-4xl gap-5 select-none" style={{ userSelect: 'none' }}>
           {pages.map(page => (
-            <figure key={page.pageNumber} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
-              <img src={page.src} alt={`${title} page ${page.pageNumber}`} className="w-full select-none bg-white" draggable={false} />
-              <figcaption className="border-t border-slate-100 px-4 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">
+            <figure key={page.pageNumber} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)] select-none">
+              <img src={page.src} alt={`${title} page ${page.pageNumber}`} className="w-full select-none bg-white pointer-events-none" draggable={false} onContextMenu={(e) => e.preventDefault()} />
+              <figcaption className="border-t border-slate-100 px-4 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400 select-none">
                 Page {page.pageNumber}
               </figcaption>
             </figure>
@@ -341,6 +432,31 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
         </div>
       </div>
     </div>
+  );
+};
+
+const LessonResourceViewer = ({
+  resource,
+  token,
+  isCinema = false
+}: {
+  resource?: { id: string; title: string; resource_url?: string; resource_file?: string } | null;
+  token?: string | null;
+  isCinema?: boolean;
+}) => {
+  if (!resource) return null;
+  if (resource.resource_url && isDriveOrDocsUrl(resource.resource_url)) {
+    return <NotesDriveViewer title={resource.title} url={resource.resource_url} isCinema={isCinema} />;
+  }
+
+  return (
+    <NotesPdfReader
+      title={resource.title}
+      resourceId={resource.id}
+      token={token}
+      resource={resource}
+      isCinema={isCinema}
+    />
   );
 };
 
@@ -891,7 +1007,9 @@ export default function CoursesPage() {
                             <div id="notes" className="grid gap-4">
                               <h3 className="flex items-center gap-2 text-[18px] font-black text-[#2D1A10]"><FileText className="h-5 w-5" /> Lesson Notes</h3>
                               {activeLesson.notes ? (
-                                <div className="rounded-[14px] border border-[#E1C79A] bg-[#FFF4DF] p-5 whitespace-pre-wrap text-[14px] font-semibold leading-7 text-[#5F4630]">{activeLesson.notes}</div>
+                                <div className="rounded-[14px] border border-[#E1C79A] bg-[#FFF4DF] p-5 whitespace-pre-wrap text-[14px] font-semibold leading-7 text-[#5F4630]">
+                                  {renderTextWithLinks(activeLesson.notes)}
+                                </div>
                               ) : !activeLesson.resources?.length ? (
                                 <p className="text-[14px] font-semibold text-[#73563A]">No written notes added yet.</p>
                               ) : null}
@@ -913,7 +1031,7 @@ export default function CoursesPage() {
                                   )}
 
                                   {activeResource && (
-                                    <NotesPdfReader title={activeResource.title} resourceId={activeResource.id} token={token} />
+                                    <LessonResourceViewer resource={activeResource} token={token} isCinema={true} />
                                   )}
                                 </div>
                               ) : null}
@@ -1066,21 +1184,28 @@ export default function CoursesPage() {
                       <FileText className="h-4.5 w-4.5" /> Resources
                     </h3>
                     <div className="grid gap-1.5">
-                      {activeLesson.resources?.length ? activeLesson.resources.map(resource => {
-                        const href = resolveStorageUrl(resource.resource_file || resource.resource_url, 'uploads');
-                        return (
-                          <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="cinema-button-paper flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20] hover:border-[#A23A24]">
-                            {resource.title}
-                            <Download className="h-4 w-4" />
-                          </a>
-                        );
-                      }) : (
+                      {activeLesson.resources?.length ? activeLesson.resources.map(resource => (
+                        <button
+                          key={resource.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('notes');
+                            setActiveResourceId(resource.id);
+                            const el = document.getElementById('notes');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="cinema-button-paper flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20] hover:border-[#A23A24] text-left w-full transition-colors"
+                        >
+                          <span className="truncate">{resource.title}</span>
+                          <Eye className="h-4 w-4 shrink-0 text-[#294b77]" />
+                        </button>
+                      )) : (
                         <>
                           <p className="cinema-button-paper flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20]">
-                            <Download className="h-4 w-4" /> Download worksheet
+                            <FileText className="h-4 w-4" /> Lesson Worksheet
                           </p>
                           <p className="cinema-button-paper flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20]">
-                            <FileText className="h-4 w-4" /> Lesson transcript
+                            <FileText className="h-4 w-4" /> Lesson Notes
                           </p>
                         </>
                       )}
@@ -1359,9 +1484,11 @@ export default function CoursesPage() {
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                       <h3 className="mb-3 flex items-center gap-2 text-[17px] font-black"><FileText className="h-5 w-5 text-[#294b77]" /> Lesson Notes</h3>
                       {activeLesson?.notes ? (
-                        <div className="mb-5 rounded-2xl bg-[#F8FAFC] p-5 whitespace-pre-wrap text-[14px] font-semibold leading-7 text-slate-600">{activeLesson?.notes}</div>
+                        <div className="mb-5 rounded-2xl bg-[#F8FAFC] p-5 whitespace-pre-wrap text-[14px] font-semibold leading-7 text-slate-600">
+                          {renderTextWithLinks(activeLesson?.notes)}
+                        </div>
                       ) : !activeLesson?.resources?.length ? (
-                        <p className="text-[14px] font-semibold text-slate-500">No written notes added yet. Admin can add them from Written Notes and save the lesson.</p>
+                        <p className="text-[14px] font-semibold text-slate-500">No written notes added yet. Admin can add them from Written Notes or Notes Attachments.</p>
                       ) : null}
 
                       {activeLesson?.resources?.length ? (
@@ -1380,8 +1507,8 @@ export default function CoursesPage() {
                             </div>
                           )}
 
-                          {activeResource?.id && (
-                            <NotesPdfReader title={activeResource?.title || ''} resourceId={activeResource?.id || ''} token={token} />
+                          {activeResource && (
+                            <LessonResourceViewer resource={activeResource} token={token} isCinema={false} />
                           )}
                         </div>
                       ) : null}
@@ -1701,17 +1828,24 @@ export default function CoursesPage() {
 
                     {Boolean(activeLesson.resources?.length) && (
                       <div id="files" className="rounded-2xl border border-slate-200 p-5">
-                        <h3 className="mb-3 text-[15px] font-black">Downloadable Materials</h3>
+                        <h3 className="mb-3 text-[15px] font-black">Lesson Materials (View Only)</h3>
                         <div className="grid gap-2">
-                          {activeLesson.resources?.map(resource => {
-                            const href = resolveStorageUrl(resource.resource_file || resource.resource_url, 'uploads');
-                            return (
-                              <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-[13px] font-black text-[#294b77] hover:bg-[#EFF4FB]">
-                                {resource.title}
-                                <Download className="h-4 w-4" />
-                              </a>
-                            );
-                          })}
+                          {activeLesson.resources?.map(resource => (
+                            <button
+                              key={resource.id}
+                              type="button"
+                              onClick={() => {
+                                setActiveTab('notes');
+                                setActiveResourceId(resource.id);
+                                const el = document.getElementById('notes');
+                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-[13px] font-black text-[#294b77] hover:bg-[#EFF4FB] text-left w-full transition-colors"
+                            >
+                              <span>{resource.title}</span>
+                              <Eye className="h-4 w-4 text-[#294b77]" />
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}

@@ -44,16 +44,26 @@ export const getVideoThumbnailUrl = (videoValue?: string, thumbnailValue?: strin
   return '';
 };
 
+export const isDriveOrDocsUrl = (value?: string) => {
+  const raw = String(value || '').trim();
+  return /drive\.google\.com|docs\.google\.com/i.test(raw);
+};
+
 export const getEmbeddableResourceUrl = (value?: string) => {
   const raw = String(value || '').trim();
   if (!raw) return '';
 
-  const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/i) || raw.match(/[?&]id=([^&]+)/i);
+  const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/?&#]+)/i) || raw.match(/drive\.google\.com\/open\?id=([^&#]+)/i) || raw.match(/[?&]id=([^&#]+)/i);
   if (raw.includes('drive.google.com') && driveMatch?.[1]) {
     return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
   }
 
-  const docsMatch = raw.match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([^/]+)/i);
+  const folderMatch = raw.match(/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([^/?&#]+)/i);
+  if (folderMatch?.[1]) {
+    return `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#grid`;
+  }
+
+  const docsMatch = raw.match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([^/?&#]+)/i);
   if (docsMatch?.[1] && docsMatch?.[2]) {
     return `https://docs.google.com/${docsMatch[1]}/d/${docsMatch[2]}/preview`;
   }

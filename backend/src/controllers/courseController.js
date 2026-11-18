@@ -499,6 +499,9 @@ export const getLessonResourceContent = async (req, res) => {
       contentType = fileData.type || contentType;
       buffer = Buffer.from(await fileData.arrayBuffer());
     } else if (resource.resource_url) {
+      if (/drive\.google\.com|docs\.google\.com/i.test(resource.resource_url)) {
+        return res.redirect(resource.resource_url);
+      }
       const sourceUrl = getDriveDownloadUrl(resource.resource_url);
       const upstream = await fetch(sourceUrl, {
         headers: {

@@ -1353,7 +1353,7 @@ export default function MockTestsPage() {
                         countClass: 'bg-[#FFF1D9] text-[#C26300]',
                         image: readingAssets.tfng,
                         icon: readingAssets.tfngFocus,
-                        typeKey: 'true_false_not_given' as ReadingQuestionTypeKey,
+                        typeKey: 'tfng' as ReadingQuestionTypeKey,
                         panelClass: 'border-amber-200 bg-gradient-to-br from-white via-[#FFF9EE] to-[#FFF3D8]',
                         textClass: 'text-[#D88600]',
                         buttonClass: 'bg-[#E59A16] text-white hover:bg-[#C97F00]'
@@ -1409,10 +1409,10 @@ export default function MockTestsPage() {
                               </p>
                               <button
                                 type="button"
-                                disabled={card.typeKey !== 'true_false_not_given' && (!masteryCard || startingTestId === masteryCard.test.id)}
+                                disabled={card.typeKey !== 'tfng' && (!masteryCard || startingTestId === masteryCard.test.id)}
                                 onClick={() => {
                                   setReadingQuestionType(card.typeKey);
-                                  if (card.typeKey === 'true_false_not_given') {
+                                  if (card.typeKey === 'tfng') {
                                     navigate('/mastery/tfng');
                                     return;
                                   }
