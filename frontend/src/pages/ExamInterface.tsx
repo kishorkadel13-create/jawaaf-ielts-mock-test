@@ -1207,13 +1207,13 @@ export default function ExamInterface() {
           <div className="w-full lg:w-[44%] xl:w-[40%] flex-shrink-0 flex flex-col p-4 lg:p-6 lg:pr-3">
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between h-auto lg:h-[calc(100vh-140px)] sticky top-4">
               {/* Top Navy Banner */}
-              <div className="bg-[#0B1E48] text-white px-5 py-4 flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                  <Headphones className="h-5 w-5 text-white" />
+              <div className="bg-[#0B1E48] text-white px-5 py-3.5 flex items-center gap-3.5 shrink-0">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <Headphones className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[15px] text-white leading-tight">Listen and Answer</h3>
-                  <p className="text-[12px] text-blue-200/80 mt-0.5">You will hear a recording. Answer the questions on the right.</p>
+                  <h3 className="font-bold text-[14px] text-white leading-tight">Listen and Answer</h3>
+                  <p className="text-[11px] text-blue-200/80 mt-0.5">You will hear a recording. Answer the questions on the right.</p>
                 </div>
               </div>
 
@@ -1247,13 +1247,13 @@ export default function ExamInterface() {
                 className="hidden"
               />
 
-              {/* Center Player Widget */}
-              <div className="flex-1 flex flex-col items-center justify-center py-6 px-6 text-center">
-                <div className="relative flex items-center justify-center my-4">
+              {/* Center Player Widget (Compact ~40% height) */}
+              <div className="px-5 pt-3 pb-2 flex flex-col items-center justify-center text-center shrink-0">
+                <div className="relative flex items-center justify-center my-2">
                   {/* Outer Pulsing Ring */}
-                  <div className={`w-44 h-44 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
+                  <div className={`w-32 h-32 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
                     {/* Middle Ring */}
-                    <div className="w-32 h-32 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
                       {/* Status / Play Button (Locked: Cannot Pause) */}
                       <button
                         type="button"
@@ -1262,54 +1262,54 @@ export default function ExamInterface() {
                             startLockedAudio();
                           }
                         }}
-                        className={`w-20 h-20 rounded-full bg-[#0D224A] text-white shadow-xl flex items-center justify-center transition-transform ${
+                        className={`w-16 h-16 rounded-full bg-[#0D224A] text-white shadow-lg flex items-center justify-center transition-transform ${
                           !audioPlaying ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'
                         }`}
                         title={audioPlaying ? 'Audio Playing (Locked)' : 'Click to Start Audio'}
                       >
                         {audioPlaying ? (
-                          <Volume2 className="h-8 w-8 text-white animate-pulse" />
+                          <Volume2 className="h-7 w-7 text-white animate-pulse" />
                         ) : (
-                          <Play className="h-8 w-8 text-white fill-current ml-1" />
+                          <Play className="h-7 w-7 text-white fill-current ml-1" />
                         )}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <p className="mt-2 text-[16px] font-bold text-[#0D224A] tracking-tight">
+                <p className="mt-1 text-[14px] font-bold text-[#0D224A] tracking-tight">
                   {audioPlaying ? 'Audio Playing...' : audioAutoplayBlocked ? 'Click to Start Audio' : 'Audio Ready'}
                 </p>
 
                 {/* Scrubber Progress Bar (Read-only: Cannot Seek or Rewind) */}
-                <div className="w-full max-w-sm mt-5 space-y-1.5 select-none">
-                  <div className="relative w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
+                <div className="w-full max-w-xs mt-3 space-y-1 select-none">
+                  <div className="relative w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
                     <div
                       style={{ width: `${audioProgress}%` }}
                       className="absolute h-full bg-[#0D224A] rounded-full transition-all duration-300"
                     />
                   </div>
-                  <div className="flex items-center justify-between text-[12px] font-semibold text-slate-500 font-mono">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 font-mono">
                     <span>{formatTime(audioCurrentTime)}</span>
                     <span>- {formatTime(Math.max(0, (audioDuration || 0) - audioCurrentTime))}</span>
                   </div>
                 </div>
 
                 {/* Notice Alert Banner */}
-                <div className="w-full max-w-sm mt-4 bg-[#EFF6FF] border border-blue-200/70 rounded-xl p-3 flex items-start gap-2.5 text-left">
-                  <Info className="h-4 w-4 text-[#2563EB] shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-slate-600 leading-snug">
+                <div className="w-full max-w-xs mt-2.5 bg-[#EFF6FF] border border-blue-200/70 rounded-xl px-3 py-2 flex items-start gap-2 text-left">
+                  <Info className="h-3.5 w-3.5 text-[#2563EB] shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-slate-600 leading-tight">
                     The audio will play automatically. You cannot pause, rewind or fast-forward.
                   </p>
                 </div>
               </div>
 
-              {/* Bottom Landmark Illustration Banner (Full, unclipped) */}
-              <div className="w-full mt-auto px-4 pb-3 pt-2 border-t border-slate-100 bg-[#F8FAFC]/50 flex items-center justify-center">
+              {/* Bottom Landmark Illustration Banner (Expanded ~60% height, full-bleed, seamless) */}
+              <div className="flex-1 w-full flex items-end justify-center overflow-hidden min-h-[190px] pointer-events-none select-none">
                 <img
                   src="/banner-asset.png"
                   alt="Landmarks Banner"
-                  className="w-full max-h-36 object-contain pointer-events-none select-none"
+                  className="w-full max-h-full object-contain object-bottom"
                 />
               </div>
             </div>
