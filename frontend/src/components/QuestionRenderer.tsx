@@ -10,7 +10,7 @@ interface QuestionRendererProps {
   onPasteText?: (event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => string | null;
 }
 
-export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onPasteText }: QuestionRendererProps) => {
+export const QuestionRenderer = ({ question, value, onChange, mode = 'light', onPasteText }: QuestionRendererProps) => {
   const { question_type, question_text, options_json } = question;
   const options = options_json || [];
   const isLight = mode === 'light';
@@ -316,19 +316,25 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
   if (question_type === 'SINGLE_MCQ') {
     return (
       <div className="flex flex-col gap-4">
-        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-mcq`)}</div>
-        <div className="flex flex-col gap-2">
+        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+          {renderQuestionText(`question-${question.id}-mcq`)}
+        </div>
+        <div className="flex flex-col gap-2.5">
           {options.map((opt: string, idx: number) => {
             const isSelected = value === opt;
             const letter = String.fromCharCode(65 + idx);
             return (
               <label 
                 key={idx} 
-                className={`flex min-h-11 cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all ${optionClass(isSelected)}`}
+                className={`flex min-h-12 cursor-pointer items-center gap-3.5 rounded-xl border-2 px-4 py-3 transition-all ${
+                  isSelected
+                    ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E] shadow-sm font-medium'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-[#F8FAFC]'
+                }`}
               >
-                <div className="pt-0.5">
+                <div className="shrink-0 flex items-center justify-center">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    isSelected ? 'border-emerald-500 bg-emerald-500' : isLight ? 'border-slate-300' : 'border-slate-600'
+                    isSelected ? 'border-[#1E3A6E] bg-[#1E3A6E]' : 'border-slate-300 bg-white'
                   }`}>
                     {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
                   </div>
@@ -341,9 +347,9 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1">
-                  <span className="font-bold mr-2 text-[13px]">{letter}.</span>
-                  <span className="text-[14px] leading-snug">{opt}</span>
+                <div className="flex-1 text-[14px] leading-snug">
+                  <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
+                  <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
               </label>
             );
@@ -374,8 +380,10 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
 
     return (
       <div className="flex flex-col gap-4">
-        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-multi`)}</div>
-        <div className="flex flex-col gap-2">
+        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+          {renderQuestionText(`question-${question.id}-multi`)}
+        </div>
+        <div className="flex flex-col gap-2.5">
           {options.map((opt: string, idx: number) => {
             const isSelected = selectedValues.includes(opt);
             const isDisabled = !isSelected && selectedValues.length >= maxSelections;
@@ -383,13 +391,17 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
             return (
               <label 
                 key={idx} 
-                className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl border-2 transition-all ${
                   isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                } ${optionClass(isSelected)}`}
+                } ${
+                  isSelected
+                    ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E] shadow-sm font-medium'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-[#F8FAFC]'
+                }`}
               >
-                <div className="pt-0.5">
+                <div className="shrink-0 flex items-center justify-center">
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                    isSelected ? 'border-emerald-500 bg-emerald-500' : isLight ? 'border-slate-300' : 'border-slate-600'
+                    isSelected ? 'border-[#1E3A6E] bg-[#1E3A6E]' : 'border-slate-300 bg-white'
                   }`}>
                     {isSelected && <span className="text-white text-[10px] font-bold">✓</span>}
                   </div>
@@ -401,9 +413,9 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'dark', onP
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1">
-                  <span className="font-bold mr-2 text-[13px]">{letter}.</span>
-                  <span className="text-[14px] leading-snug">{opt}</span>
+                <div className="flex-1 text-[14px] leading-snug">
+                  <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
+                  <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
               </label>
             );

@@ -802,8 +802,9 @@ export default function ExamInterface() {
   };
 
   const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
+    const totalSecs = Math.max(0, Math.floor(Number(secs) || 0));
+    const mins = Math.floor(totalSecs / 60);
+    const remainingSecs = totalSecs % 60;
     return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
@@ -1253,15 +1254,21 @@ export default function ExamInterface() {
                   <div className={`w-44 h-44 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
                     {/* Middle Ring */}
                     <div className="w-32 h-32 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
-                      {/* Play / Pause Circular Button */}
+                      {/* Status / Play Button (Locked: Cannot Pause) */}
                       <button
                         type="button"
-                        onClick={toggleAudioPlayback}
-                        className="w-20 h-20 rounded-full bg-[#0D224A] text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-                        title={audioPlaying ? 'Pause Audio' : 'Play Audio'}
+                        onClick={() => {
+                          if (!audioPlaying) {
+                            startLockedAudio();
+                          }
+                        }}
+                        className={`w-20 h-20 rounded-full bg-[#0D224A] text-white shadow-xl flex items-center justify-center transition-transform ${
+                          !audioPlaying ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'
+                        }`}
+                        title={audioPlaying ? 'Audio Playing (Locked)' : 'Click to Start Audio'}
                       >
                         {audioPlaying ? (
-                          <Pause className="h-8 w-8 text-white fill-current" />
+                          <Volume2 className="h-8 w-8 text-white animate-pulse" />
                         ) : (
                           <Play className="h-8 w-8 text-white fill-current ml-1" />
                         )}
@@ -1271,18 +1278,15 @@ export default function ExamInterface() {
                 </div>
 
                 <p className="mt-2 text-[16px] font-bold text-[#0D224A] tracking-tight">
-                  {audioPlaying ? 'Audio Playing...' : audioAutoplayBlocked ? 'Click to Start Audio' : 'Audio Paused'}
+                  {audioPlaying ? 'Audio Playing...' : audioAutoplayBlocked ? 'Click to Start Audio' : 'Audio Ready'}
                 </p>
 
-                {/* Scrubber Progress Bar */}
-                <div className="w-full max-w-sm mt-5 space-y-1.5">
-                  <div
-                    onClick={handleAudioSeek}
-                    className="relative w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden cursor-pointer"
-                  >
+                {/* Scrubber Progress Bar (Read-only: Cannot Seek or Rewind) */}
+                <div className="w-full max-w-sm mt-5 space-y-1.5 select-none">
+                  <div className="relative w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
                     <div
                       style={{ width: `${audioProgress}%` }}
-                      className="absolute h-full bg-[#0D224A] rounded-full transition-all duration-200"
+                      className="absolute h-full bg-[#0D224A] rounded-full transition-all duration-300"
                     />
                   </div>
                   <div className="flex items-center justify-between text-[12px] font-semibold text-slate-500 font-mono">
@@ -1300,12 +1304,12 @@ export default function ExamInterface() {
                 </div>
               </div>
 
-              {/* Bottom Landmark Illustration Banner */}
-              <div className="w-full overflow-hidden mt-auto border-t border-slate-100 bg-[#F8FAFC]/50">
+              {/* Bottom Landmark Illustration Banner (Full, unclipped) */}
+              <div className="w-full mt-auto px-4 pb-3 pt-2 border-t border-slate-100 bg-[#F8FAFC]/50 flex items-center justify-center">
                 <img
                   src="/banner-asset.png"
-                  alt="Landmarks"
-                  className="w-full object-cover object-bottom h-28 opacity-85 pointer-events-none select-none"
+                  alt="Landmarks Banner"
+                  className="w-full max-h-36 object-contain pointer-events-none select-none"
                 />
               </div>
             </div>
@@ -1411,6 +1415,7 @@ export default function ExamInterface() {
                                         question={question}
                                         value={answers[question.id]}
                                         onChange={(val) => setAnswer(question.id, val)}
+                                        mode="light"
                                       />
                                     </div>
                                   </div>
