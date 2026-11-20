@@ -13,10 +13,10 @@ import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHead
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
 import { resolveListeningAudioUrl } from '../utils/audioUrl';
 import JawaafLogo from '../components/JawaafLogo';
-import { 
-  Award, Timer, Flag, Save, CheckCircle2, Play, Pause, Headphones, Volume2, 
-  PenLine, ClipboardX, Loader2, ChevronUp, ChevronDown, ChevronRight, 
-  RefreshCw, WifiOff, Maximize2, Minimize2, LogOut, Info, FileText, Clock 
+import {
+  Award, Timer, Flag, Save, CheckCircle2, Play, Pause, Headphones, Volume2,
+  PenLine, ClipboardX, Loader2, ChevronUp, ChevronDown, ChevronRight,
+  RefreshCw, WifiOff, Maximize2, Minimize2, LogOut, Info, FileText, Clock
 } from 'lucide-react';
 
 type OrderedQuestionBlock = {
@@ -121,7 +121,7 @@ const PassageIntroCard = ({ title, instruction }: { title: string; instruction?:
 export default function ExamInterface() {
   const { id } = useParams(); // attempt_id
   const navigate = useNavigate();
-  
+
   const {
     activeTest,
     attemptId,
@@ -155,7 +155,7 @@ export default function ExamInterface() {
   const [reconnectMessage, setReconnectMessage] = useState('');
   const internalClipboardRef = useRef<{ text: string; taskId: string | null } | null>(null);
   const ensureFreshSession = useAuthStore((state) => state.ensureFreshSession);
-  
+
   useEffect(() => {
     if (activeQuestionId) {
       const el = document.getElementById(`question-${activeQuestionId}`);
@@ -218,7 +218,7 @@ export default function ExamInterface() {
 
         // 2. Fetch full test details
         const { data: test } = await api.get(`/tests/${attempt.attempt.mock_test_id}`);
-        
+
         // Map DB types back to UI 13-types for student view
         if (test.sections) {
           test.sections.forEach((sec: any) => {
@@ -276,13 +276,13 @@ export default function ExamInterface() {
   const passageRef = useRef<HTMLDivElement>(null);
   const highlightTargetRef = useRef<HighlightTarget | null>(null);
   const selectedPassageTextRef = useRef('');
-  const [highlightCoords, setHighlightCoords] = useState<{top: number, left: number} | null>(null);
+  const [highlightCoords, setHighlightCoords] = useState<{ top: number, left: number } | null>(null);
   const [highlightedPassages, setHighlightedPassages] = useState<Record<string, string>>({});
 
   const handleSelection = () => {
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return;
-    
+
     const text = selection.toString().trim();
     const anchorNode = selection.anchorNode;
     const focusNode = selection.focusNode;
@@ -314,7 +314,7 @@ export default function ExamInterface() {
       const rect = range.getBoundingClientRect();
       highlightTargetRef.current = target;
       selectedPassageTextRef.current = text;
-      
+
       setHighlightCoords({
         top: Math.max(72, rect.top - 42),
         left: Math.max(16, rect.left + rect.width / 2 - 42),
@@ -335,7 +335,7 @@ export default function ExamInterface() {
     if (!target) return;
 
     const passageEl = passageRef.current?.querySelector<HTMLElement>(`[data-passage-id="${target.passageId}"]`);
-    
+
     try {
       if (passageEl && applyHighlightTarget(target, passageEl)) {
         setHighlightedPassages((current) => ({
@@ -348,7 +348,7 @@ export default function ExamInterface() {
     } catch (e) {
       console.warn('Text selection highlight could not be applied.', e);
     }
-    
+
     highlightTargetRef.current = null;
     selectedPassageTextRef.current = '';
     setHighlightCoords(null);
@@ -494,8 +494,8 @@ export default function ExamInterface() {
   const sectionQuestions = activeGroups.flatMap((g: any) => g.questions || []).sort((a: any, b: any) => a.question_number - b.question_number);
   const writingTasks = activeSection?.type === 'writing'
     ? sectionQuestions
-        .filter((question: any) => question.question_type === 'WRITING_TASK')
-        .sort((a: any, b: any) => (Number(a.order_no) || 0) - (Number(b.order_no) || 0))
+      .filter((question: any) => question.question_type === 'WRITING_TASK')
+      .sort((a: any, b: any) => (Number(a.order_no) || 0) - (Number(b.order_no) || 0))
     : [];
   const activeWritingTask = writingTasks[activeWritingTaskIndex] || writingTasks[0] || null;
   const activeWritingGroup = activeSection?.type === 'writing'
@@ -698,7 +698,7 @@ export default function ExamInterface() {
       </div>
     );
   }
-  
+
   // Audio playback is intentionally locked for IELTS-style listening.
   const startLockedAudio = () => {
     if (!audioRef.current) return;
@@ -795,9 +795,9 @@ export default function ExamInterface() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { });
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => { });
     }
   };
 
@@ -834,8 +834,8 @@ export default function ExamInterface() {
   const submitButtonLabel = !isLastSection
     ? `Submit ${activeSection?.type || 'Section'}`
     : isFullMock
-    ? 'Final Submit'
-    : 'Submit Test';
+      ? 'Final Submit'
+      : 'Submit Test';
 
   return (
     <div
@@ -884,9 +884,8 @@ export default function ExamInterface() {
                         {audioLoadError || (listeningAudioUrl ? audioLoadingMessage : 'Listening audio has not been uploaded.')}
                       </p>
                     </div>
-                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      audioReady ? 'bg-[#EFF4FB] text-[#2C4B78]' : audioLoadError ? 'bg-[#FFF3F2] text-[#EE6055]' : 'bg-[#EFF4FB] text-[#1E3A6E]'
-                    }`}>
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${audioReady ? 'bg-[#EFF4FB] text-[#2C4B78]' : audioLoadError ? 'bg-[#FFF3F2] text-[#EE6055]' : 'bg-[#EFF4FB] text-[#1E3A6E]'
+                      }`}>
                       {listeningAudioUrl && !audioReady && !audioLoadError && <Loader2 className="h-4 w-4 animate-spin" />}
                       {audioReady && <CheckCircle2 className="h-5 w-5" />}
                       {audioLoadError && <ClipboardX className="h-5 w-5" />}
@@ -908,8 +907,8 @@ export default function ExamInterface() {
                         {audioCheckPlaying
                           ? 'Playing a 15-second audio sample...'
                           : audioCheckComplete
-                          ? 'Audio check complete. You can start the exam.'
-                          : 'Play a short sample before starting the exam.'}
+                            ? 'Audio check complete. You can start the exam.'
+                            : 'Play a short sample before starting the exam.'}
                       </p>
                     </div>
                     <button
@@ -981,7 +980,7 @@ export default function ExamInterface() {
           </div>
         </div>
       )}
-      
+
       {/* 1. Header Toolbar */}
       {activeSection?.type === 'listening' ? (
         <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-[#0B1528] px-4 py-2.5 sm:px-6 shadow-md text-slate-200">
@@ -1035,9 +1034,8 @@ export default function ExamInterface() {
                           }
                           setIsPartDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
-                          currentListeningGroupIndex === gIdx ? 'bg-blue-600/40 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
-                        }`}
+                        className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${currentListeningGroupIndex === gIdx ? 'bg-blue-600/40 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
+                          }`}
                       >
                         <span>Part {gIdx + 1}</span>
                         {qRange && <span className="text-[11px] text-slate-400">{qRange}</span>}
@@ -1113,11 +1111,10 @@ export default function ExamInterface() {
                 <button
                   key={task.id}
                   onClick={() => setActiveWritingTaskIndex(idx)}
-                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                    activeWritingTaskIndex === idx
-                      ? 'bg-[#1E3A6E] text-white'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${activeWritingTaskIndex === idx
+                    ? 'bg-[#1E3A6E] text-white'
+                    : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   {task.extra_data_json?.task_type || `Task ${idx + 1}`}
                 </button>
@@ -1131,13 +1128,12 @@ export default function ExamInterface() {
                   onClick={() => {
                     if (!isFullMock) setActiveSection(idx);
                   }}
-                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                    activeSectionIndex === idx
-                      ? 'bg-[#1E3A6E] text-white'
-                      : isFullMock
+                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${activeSectionIndex === idx
+                    ? 'bg-[#1E3A6E] text-white'
+                    : isFullMock
                       ? 'text-slate-600'
                       : 'text-slate-400 hover:text-white'
-                  }`}
+                    }`}
                 >
                   {sec.title}
                 </button>
@@ -1151,14 +1147,13 @@ export default function ExamInterface() {
               <Save className={`h-3.5 w-3.5 ${autosaveStatus === 'saving' ? 'animate-spin text-[#1E3A6E]' : ''}`} />
               <span>
                 {autosaveStatus === 'saving' ? 'Saving progress...' :
-                 autosaveStatus === 'saved' ? 'Progress autosaved' :
-                 autosaveStatus === 'error' ? 'Connection dropped!' : 'Exam Active'}
+                  autosaveStatus === 'saved' ? 'Progress autosaved' :
+                    autosaveStatus === 'error' ? 'Connection dropped!' : 'Exam Active'}
               </span>
             </div>
 
-            <div className={`px-4 py-1.5 bg-slate-950 border rounded-xl flex items-center gap-2 font-mono text-sm font-bold ${
-              (isFullMock ? (sectionSecondsRemaining || 0) : secondsRemaining) < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
-            }`}>
+            <div className={`px-4 py-1.5 bg-slate-950 border rounded-xl flex items-center gap-2 font-mono text-sm font-bold ${(isFullMock ? (sectionSecondsRemaining || 0) : secondsRemaining) < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
+              }`}>
               <Timer className="h-4 w-4 animate-pulse" />
               <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
             </div>
@@ -1218,7 +1213,7 @@ export default function ExamInterface() {
               </div>
 
               {/* Hidden HTML5 Audio Element */}
-              <audio 
+              <audio
                 ref={audioRef}
                 src={listeningAudioUrl}
                 preload="auto"
@@ -1247,13 +1242,13 @@ export default function ExamInterface() {
                 className="hidden"
               />
 
-              {/* Center Player Widget (Compact ~40% height) */}
-              <div className="px-5 pt-3 pb-2 flex flex-col items-center justify-center text-center shrink-0">
+              {/* Center Player Widget */}
+              <div className="flex-1 px-5 pt-4 pb-2 flex flex-col items-center justify-center text-center">
                 <div className="relative flex items-center justify-center my-2">
                   {/* Outer Pulsing Ring */}
-                  <div className={`w-32 h-32 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
+                  <div className={`w-36 h-36 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
                     {/* Middle Ring */}
-                    <div className="w-24 h-24 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
+                    <div className="w-28 h-28 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
                       {/* Status / Play Button (Locked: Cannot Pause) */}
                       <button
                         type="button"
@@ -1262,7 +1257,7 @@ export default function ExamInterface() {
                             startLockedAudio();
                           }
                         }}
-                        className={`w-16 h-16 rounded-full bg-[#0D224A] text-white shadow-lg flex items-center justify-center transition-transform ${
+                        className={`w-18 h-18 rounded-full bg-[#0D224A] text-white shadow-lg flex items-center justify-center transition-transform ${
                           !audioPlaying ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'
                         }`}
                         title={audioPlaying ? 'Audio Playing (Locked)' : 'Click to Start Audio'}
@@ -1277,12 +1272,12 @@ export default function ExamInterface() {
                   </div>
                 </div>
 
-                <p className="mt-1 text-[14px] font-bold text-[#0D224A] tracking-tight">
+                <p className="mt-1.5 text-[15px] font-bold text-[#0D224A] tracking-tight">
                   {audioPlaying ? 'Audio Playing...' : audioAutoplayBlocked ? 'Click to Start Audio' : 'Audio Ready'}
                 </p>
 
                 {/* Scrubber Progress Bar (Read-only: Cannot Seek or Rewind) */}
-                <div className="w-full max-w-xs mt-3 space-y-1 select-none">
+                <div className="w-full max-w-xs mt-3.5 space-y-1.5 select-none">
                   <div className="relative w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
                     <div
                       style={{ width: `${audioProgress}%` }}
@@ -1296,7 +1291,7 @@ export default function ExamInterface() {
                 </div>
 
                 {/* Notice Alert Banner */}
-                <div className="w-full max-w-xs mt-2.5 bg-[#EFF6FF] border border-blue-200/70 rounded-xl px-3 py-2 flex items-start gap-2 text-left">
+                <div className="w-full max-w-xs mt-3 bg-[#EFF6FF] border border-blue-200/70 rounded-xl px-3.5 py-2.5 flex items-start gap-2 text-left">
                   <Info className="h-3.5 w-3.5 text-[#2563EB] shrink-0 mt-0.5" />
                   <p className="text-[11px] text-slate-600 leading-tight">
                     The audio will play automatically. You cannot pause, rewind or fast-forward.
@@ -1304,13 +1299,15 @@ export default function ExamInterface() {
                 </div>
               </div>
 
-              {/* Bottom Landmark Illustration Banner (Expanded ~60% height, full-bleed, seamless) */}
-              <div className="flex-1 w-full flex items-end justify-center overflow-hidden min-h-[190px] pointer-events-none select-none">
+              {/* Bottom Landmark Illustration Banner (Seamless natural fit) */}
+              <div className="relative w-full h-44 sm:h-48 md:h-52 lg:h-56 xl:h-60 overflow-hidden shrink-0 mt-auto select-none pointer-events-none">
                 <img
                   src="/banner-asset.png"
                   alt="Landmarks Banner"
-                  className="w-full max-h-full object-contain object-bottom"
+                  className="w-full h-full object-cover object-bottom block"
                 />
+                {/* Soft gradient to seamlessly blend the top of illustration into white card background */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white via-white/50 to-transparent" />
               </div>
             </div>
           </div>
@@ -1397,14 +1394,13 @@ export default function ExamInterface() {
                               <>
                                 <QuestionInstructionCard instruction={block.instruction} />
                                 {block.questions.map((question: any) => (
-                                  <div 
-                                    key={question.id} 
+                                  <div
+                                    key={question.id}
                                     id={`question-${question.id}`}
-                                    className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${
-                                      activeQuestionId === question.id 
-                                        ? 'border-[#0D224A]/60 ring-1 ring-[#0D224A]/20' 
-                                        : 'border-slate-200'
-                                    }`}
+                                    className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${activeQuestionId === question.id
+                                      ? 'border-[#0D224A]/60 ring-1 ring-[#0D224A]/20'
+                                      : 'border-slate-200'
+                                      }`}
                                     onClick={() => setActiveQuestionId(question.id)}
                                   >
                                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0D224A] text-[13px] font-black text-white shadow-md">
@@ -1434,411 +1430,407 @@ export default function ExamInterface() {
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:flex-row lg:overflow-hidden lg:pb-0">
-        
-        {/* Highlighter Tooltip overlay */}
-        {highlightCoords && (
+
+          {/* Highlighter Tooltip overlay */}
+          {highlightCoords && (
+            <div
+              style={{ top: highlightCoords.top, left: highlightCoords.left }}
+              className="fixed z-50 flex overflow-hidden rounded-lg border border-slate-900/10 bg-slate-950 text-xs font-black text-white shadow-lg"
+            >
+              <button
+                type="button"
+                onPointerDown={copySelectedPassageText}
+                onMouseDown={copySelectedPassageText}
+                className="px-3 py-1.5 hover:bg-[#294b77] transition-colors"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onPointerDown={applyHighlight}
+                onMouseDown={applyHighlight}
+                className="border-l border-white/15 bg-yellow-300 px-3 py-1.5 text-slate-950 hover:bg-yellow-200 transition-colors"
+              >
+                Highlight
+              </button>
+            </div>
+          )}
+
+          {/* LEFT COLUMN: Passage (Reading) or Audio Deck (Listening) */}
           <div
-            style={{ top: highlightCoords.top, left: highlightCoords.left }}
-            className="fixed z-50 flex overflow-hidden rounded-lg border border-slate-900/10 bg-slate-950 text-xs font-black text-white shadow-lg"
+            className="relative min-h-0 w-full shrink-0 overflow-y-visible border-b border-slate-200 bg-[#fbfbfa] px-4 py-5 sm:px-6 sm:py-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:border-b-0 lg:border-r lg:px-8 lg:py-7"
+            onMouseUp={handleSelection}
+            onKeyUp={handleSelection}
           >
-            <button
-              type="button"
-              onPointerDown={copySelectedPassageText}
-              onMouseDown={copySelectedPassageText}
-              className="px-3 py-1.5 hover:bg-[#294b77] transition-colors"
-            >
-              Copy
-            </button>
-            <button
-              type="button"
-              onPointerDown={applyHighlight}
-              onMouseDown={applyHighlight}
-              className="border-l border-white/15 bg-yellow-300 px-3 py-1.5 text-slate-950 hover:bg-yellow-200 transition-colors"
-            >
-              Highlight
-            </button>
-          </div>
-        )}
+            {activeSection?.type === 'listening' ? (
+              /* Premium Listening Audio Interface */
+              <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-6 py-8 text-center lg:gap-8 lg:py-12">
+                <div className="w-24 h-24 rounded-full bg-[#1E3A6E]/10 border border-[#1E3A6E]/20 text-[#1E3A6E] flex items-center justify-center animate-pulse">
+                  <Headphones className="h-10 w-10" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-extrabold text-[#05162E] font-serif">Simulated Listening Session</h2>
+                  <p className="text-sm text-slate-500 leading-relaxed mt-2">
+                    The full listening audio plays as one locked track. Continue answering the questions on the right as the recording progresses.
+                  </p>
+                </div>
 
-        {/* LEFT COLUMN: Passage (Reading) or Audio Deck (Listening) */}
-        <div 
-          className="relative min-h-0 w-full shrink-0 overflow-y-visible border-b border-slate-200 bg-[#fbfbfa] px-4 py-5 sm:px-6 sm:py-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:border-b-0 lg:border-r lg:px-8 lg:py-7"
-          onMouseUp={handleSelection}
-          onKeyUp={handleSelection}
-        >
-          {activeSection?.type === 'listening' ? (
-            /* Premium Listening Audio Interface */
-            <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-6 py-8 text-center lg:gap-8 lg:py-12">
-              <div className="w-24 h-24 rounded-full bg-[#1E3A6E]/10 border border-[#1E3A6E]/20 text-[#1E3A6E] flex items-center justify-center animate-pulse">
-                <Headphones className="h-10 w-10" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-extrabold text-[#05162E] font-serif">Simulated Listening Session</h2>
-                <p className="text-sm text-slate-500 leading-relaxed mt-2">
-                  The full listening audio plays as one locked track. Continue answering the questions on the right as the recording progresses.
-                </p>
-              </div>
-
-              {/* Listening Audio Track Element */}
-              {listeningAudioUrl ? (
-                <div className="sticky top-0 z-20 flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:p-5 lg:static">
-                  <div className="w-12 h-12 rounded-full bg-[#1E3A6E] text-white flex items-center justify-center shrink-0 shadow-md">
-                    {audioPlaying ? <Volume2 className="h-5 w-5" /> : <Play className="h-5 w-5 ml-1 fill-current" />}
-                  </div>
-                  <div className="flex-1 text-left space-y-2">
-                    <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest block">
-                      {audioAutoplayBlocked ? 'Browser blocked autoplay' : 'Audio playing automatically'}
-                    </span>
-                    <audio 
-                      ref={audioRef}
-                      src={listeningAudioUrl}
-                      preload="auto"
-                      controls={false}
-                      controlsList="nodownload noplaybackrate noremoteplayback"
-                      onCanPlayThrough={handleAudioReady}
-                      onProgress={handleAudioReady}
-                      onLoadedData={handleAudioReady}
-                      onWaiting={() => setAudioLoadingMessage('Buffering listening audio...')}
-                      onError={() => {
-                        setAudioLoadError('Listening audio could not be loaded. Ask the admin to upload the file again.');
-                        setAudioReady(false);
-                      }}
-                      onTimeUpdate={updateAudioProgress}
-                      onEnded={() => setAudioPlaying(false)}
-                      onRateChange={() => {
-                        if (audioRef.current && audioRef.current.playbackRate !== 1) {
-                          audioRef.current.playbackRate = 1;
-                        }
-                      }}
-                      onPause={() => {
-                        if (examStartedByStudent && !audioRef.current?.ended && !isFinished) {
-                          audioRef.current?.play().catch(() => setAudioAutoplayBlocked(true));
-                        }
-                      }}
-                      className="hidden"
-                    />
-                    <div className="relative w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        style={{ width: `${audioProgress}%` }}
-                        className="absolute h-full bg-[#1E3A6E] rounded-full transition-all duration-300"
-                      ></div>
+                {/* Listening Audio Track Element */}
+                {listeningAudioUrl ? (
+                  <div className="sticky top-0 z-20 flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:p-5 lg:static">
+                    <div className="w-12 h-12 rounded-full bg-[#1E3A6E] text-white flex items-center justify-center shrink-0 shadow-md">
+                      {audioPlaying ? <Volume2 className="h-5 w-5" /> : <Play className="h-5 w-5 ml-1 fill-current" />}
                     </div>
-                  </div>
-                  {audioAutoplayBlocked && (
-                    <button
-                      type="button"
-                      onClick={startLockedAudio}
-                      className="px-3 py-2 bg-[#1E3A6E] hover:bg-[#162d57] text-white rounded-xl text-[11px] font-black flex items-center gap-2 shrink-0"
-                    >
-                      <Volume2 className="h-4 w-4" /> Start
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="w-full bg-amber-50 border border-amber-100 p-5 rounded-2xl text-[13px] font-bold text-amber-800">
-                  Listening audio has not been uploaded for this section yet.
-                </div>
-              )}
-            </div>
-          ) : activeSection?.type === 'writing' ? (
-            <div className="flex flex-1 flex-col gap-5 py-2 sm:gap-6 sm:py-6">
-              {activeWritingTask ? (
-                <>
-                  <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-                    <div className="min-w-0">
-                      <span className="px-2.5 py-1 bg-[#EFF4FB] text-[#1E3A6E] text-[10px] font-black uppercase tracking-wider rounded-md">
-                        {activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
+                    <div className="flex-1 text-left space-y-2">
+                      <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest block">
+                        {audioAutoplayBlocked ? 'Browser blocked autoplay' : 'Audio playing automatically'}
                       </span>
-                      <h2 className="mt-3 break-words text-xl font-extrabold leading-tight text-[#05162E] sm:text-2xl">
-                        {activeWritingTask.extra_data_json?.task_title || activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
-                      </h2>
-                      <p className="text-[12px] font-bold text-slate-500 mt-2">
-                        Recommendation: {activeWritingTask.extra_data_json?.suggested_minutes || 40} minutes • Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words
-                      </p>
-                    </div>
-                    <PenLine className="h-7 w-7 text-[#1E3A6E] shrink-0" />
-                  </div>
-
-                  {activeWritingTask.instruction && (
-                    <div className="bg-[#EFF4FB] border border-[#1E3A6E]/10 rounded-2xl p-5 text-[13px] font-semibold text-[#1E3A6E] leading-relaxed">
-                      {activeWritingTask.instruction}
-                    </div>
-                  )}
-
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Prompt</h3>
-                    <div className="text-[15px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap">
-                      {renderFormattedBlockText(activeWritingTask.question_text, `writing-prompt-${activeWritingTask.id}`)}
-                    </div>
-                  </div>
-
-                  {activeWritingTask.extra_data_json?.task_type === 'Task 1' && activeWritingGroup?.image_url && (
-                    <img
-                      src={activeWritingGroup.image_url}
-                      alt="Task 1 visual"
-                      loading="lazy"
-                      className="w-full max-h-[420px] object-contain bg-white border border-slate-200 rounded-2xl shadow-sm"
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400">
-                  <PenLine className="h-14 w-14 mb-4 text-slate-300" />
-                  <h2 className="text-xl font-black text-[#05162E]">Writing tasks are not ready</h2>
-                  <p className="text-sm font-semibold mt-2">Ask the admin to create Task 1 and Task 2 before publishing this test.</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Reading Passage HTML Render */
-            <div ref={passageRef} className="ielts-passage-shell mb-12">
-              <h2 className="ielts-passage-title text-[#05162E] border-b border-slate-200 pb-4">{activeSection?.title || 'Reading Passage'}</h2>
-              <div className="space-y-10">
-                {activePassages.length > 0 ? activePassages.map((group: any, index: number) => (
-                  <section key={group.id || index} className="scroll-mt-6">
-                    <PassageIntroCard
-                      title={group.title || `Reading Passage ${index + 1}`}
-                      instruction={group.instruction}
-                    />
-                    {group.image_url && (
-                      <img
-                        src={group.image_url}
-                        alt={`${group.title || 'Reading passage'} reference`}
-                        loading="lazy"
-                        className="mx-auto mb-6 h-auto w-full max-w-2xl rounded-xl border border-slate-200 shadow-sm"
+                      <audio
+                        ref={audioRef}
+                        src={listeningAudioUrl}
+                        preload="auto"
+                        controls={false}
+                        controlsList="nodownload noplaybackrate noremoteplayback"
+                        onCanPlayThrough={handleAudioReady}
+                        onProgress={handleAudioReady}
+                        onLoadedData={handleAudioReady}
+                        onWaiting={() => setAudioLoadingMessage('Buffering listening audio...')}
+                        onError={() => {
+                          setAudioLoadError('Listening audio could not be loaded. Ask the admin to upload the file again.');
+                          setAudioReady(false);
+                        }}
+                        onTimeUpdate={updateAudioProgress}
+                        onEnded={() => setAudioPlaying(false)}
+                        onRateChange={() => {
+                          if (audioRef.current && audioRef.current.playbackRate !== 1) {
+                            audioRef.current.playbackRate = 1;
+                          }
+                        }}
+                        onPause={() => {
+                          if (examStartedByStudent && !audioRef.current?.ended && !isFinished) {
+                            audioRef.current?.play().catch(() => setAudioAutoplayBlocked(true));
+                          }
+                        }}
+                        className="hidden"
                       />
+                      <div className="relative w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${audioProgress}%` }}
+                          className="absolute h-full bg-[#1E3A6E] rounded-full transition-all duration-300"
+                        ></div>
+                      </div>
+                    </div>
+                    {audioAutoplayBlocked && (
+                      <button
+                        type="button"
+                        onClick={startLockedAudio}
+                        className="px-3 py-2 bg-[#1E3A6E] hover:bg-[#162d57] text-white rounded-xl text-[11px] font-black flex items-center gap-2 shrink-0"
+                      >
+                        <Volume2 className="h-4 w-4" /> Start
+                      </button>
                     )}
-                    {group.normalizedPassage ? (
-                      <div 
-                        data-passage-id={group.id || `active-passage-${index}`}
-                        className="ielts-passage focus:outline-none select-text"
-                        dangerouslySetInnerHTML={{ __html: highlightedPassages[group.id] ?? group.normalizedPassage }}
-                      />
-                    ) : (
-                      <p className="text-[14px] font-semibold text-slate-400">No passage text uploaded for this group yet.</p>
-                    )}
-                  </section>
-                )) : (
-                  <p className="text-[14px] font-semibold text-slate-400">No reading passage uploaded.</p>
+                  </div>
+                ) : (
+                  <div className="w-full bg-amber-50 border border-amber-100 p-5 rounded-2xl text-[13px] font-bold text-amber-800">
+                    Listening audio has not been uploaded for this section yet.
+                  </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: Interactive Questions column */}
-        <div
-          className="min-h-0 w-full min-w-0 bg-[#F8FAFC] p-4 sm:p-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:p-8"
-        >
-          <div style={{ display: 'none' }} aria-hidden="true" data-reading-layout-marker="split-scroll-active" />
-          {activeSection?.type === 'writing' ? (
-            <div className="flex h-full flex-col gap-5">
-              <div className="sticky top-0 z-20 flex gap-2 rounded-2xl bg-[#F8FAFC]/95 py-2 backdrop-blur lg:static lg:bg-transparent lg:py-0">
-                {writingTasks.map((task: any, idx: number) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => setActiveWritingTaskIndex(idx)}
-                    className={`min-h-11 flex-1 rounded-xl border py-3 text-[13px] font-black transition-all ${
-                      activeWritingTaskIndex === idx
-                        ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    {task.extra_data_json?.task_type || `Task ${idx + 1}`}
-                  </button>
-                ))}
-              </div>
-
-              {activeWritingTask ? (
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
-	                  <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-	                    <div>
-	                      <h3 className="font-black text-[15px] text-[#05162E]">Writing Editor</h3>
-	                      <p className="text-[11px] font-bold text-slate-400 mt-1">
-	                        Internal copy, cut, and paste are allowed. External paste is blocked.
-	                      </p>
-	                    </div>
-                    <div className={`px-3 py-1.5 rounded-xl text-[12px] font-black ${
-                      activeWritingWordCount >= (activeWritingTask.extra_data_json?.minimum_words || 250)
-                        ? 'bg-emerald-50 text-emerald-600'
-                        : 'bg-amber-50 text-amber-700'
-                    }`}>
-	                      {activeWritingWordCount} words
-	                    </div>
-	                  </div>
-	                  {clipboardMessage && (
-	                    <div className="mx-5 mt-4 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055]">
-	                      <ClipboardX className="h-4 w-4 shrink-0" />
-	                      {clipboardMessage}
-	                    </div>
-	                  )}
-	                  <textarea
-	                    value={activeWritingAnswer}
-	                    onChange={(event) => setAnswer(activeWritingTask.id, event.target.value)}
-	                    onCopy={(event) => handleWritingCopy(event, activeWritingTask.id)}
-	                    onCut={(event) => handleWritingCut(event, activeWritingTask.id)}
-	                    onPaste={(event) => handleWritingPaste(event, activeWritingTask.id)}
-	                    onDrop={handleWritingDrop}
-	                    onContextMenu={(event) => event.preventDefault()}
-	                    placeholder="Write your answer here..."
-	                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    data-gramm="false"
-                    data-gramm_editor="false"
-                    data-enable-grammarly="false"
-	                    className="min-h-[50vh] w-full flex-1 resize-none select-text bg-white p-4 text-[15px] leading-7 text-[#05162E] outline-none sm:min-h-[420px] sm:p-6"
-                  />
-                  <div className="sticky bottom-0 z-10 flex items-center justify-between border-t border-slate-100 bg-white px-5 py-3 text-[11px] font-bold text-slate-400">
-                    <span>Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words</span>
-                    <span>{autosaveStatus === 'saving' ? 'Saving...' : autosaveStatus === 'saved' ? 'Autosaved' : 'Autosave active'}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 font-bold">
-                  No writing tasks available.
-                </div>
-              )}
-            </div>
-          ) : (
-          <div className="space-y-10">
-            {activeSection?.type === 'reading' && clipboardMessage && (
-              <div className="sticky top-0 z-20 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055] shadow-sm">
-                <ClipboardX className="h-4 w-4 shrink-0" />
-                {clipboardMessage}
-              </div>
-            )}
-            {activeGroups.map((group: any) => (
-              <div key={group.id} className="space-y-6 mb-10">
-                {/* Group instruction banner */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-extrabold text-[16px] text-[#05162E]">{group.title}</h3>
-                  {group.instruction && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-[13px] font-medium">
-                      <p>{renderFormattedText(group.instruction)}</p>
+            ) : activeSection?.type === 'writing' ? (
+              <div className="flex flex-1 flex-col gap-5 py-2 sm:gap-6 sm:py-6">
+                {activeWritingTask ? (
+                  <>
+                    <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
+                      <div className="min-w-0">
+                        <span className="px-2.5 py-1 bg-[#EFF4FB] text-[#1E3A6E] text-[10px] font-black uppercase tracking-wider rounded-md">
+                          {activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
+                        </span>
+                        <h2 className="mt-3 break-words text-xl font-extrabold leading-tight text-[#05162E] sm:text-2xl">
+                          {activeWritingTask.extra_data_json?.task_title || activeWritingTask.extra_data_json?.task_type || 'Writing Task'}
+                        </h2>
+                        <p className="text-[12px] font-bold text-slate-500 mt-2">
+                          Recommendation: {activeWritingTask.extra_data_json?.suggested_minutes || 40} minutes • Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words
+                        </p>
+                      </div>
+                      <PenLine className="h-7 w-7 text-[#1E3A6E] shrink-0" />
                     </div>
+
+                    {activeWritingTask.instruction && (
+                      <div className="bg-[#EFF4FB] border border-[#1E3A6E]/10 rounded-2xl p-5 text-[13px] font-semibold text-[#1E3A6E] leading-relaxed">
+                        {activeWritingTask.instruction}
+                      </div>
+                    )}
+
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                      <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Prompt</h3>
+                      <div className="text-[15px] font-semibold text-[#05162E] leading-relaxed whitespace-pre-wrap">
+                        {renderFormattedBlockText(activeWritingTask.question_text, `writing-prompt-${activeWritingTask.id}`)}
+                      </div>
+                    </div>
+
+                    {activeWritingTask.extra_data_json?.task_type === 'Task 1' && activeWritingGroup?.image_url && (
+                      <img
+                        src={activeWritingGroup.image_url}
+                        alt="Task 1 visual"
+                        loading="lazy"
+                        className="w-full max-h-[420px] object-contain bg-white border border-slate-200 rounded-2xl shadow-sm"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400">
+                    <PenLine className="h-14 w-14 mb-4 text-slate-300" />
+                    <h2 className="text-xl font-black text-[#05162E]">Writing tasks are not ready</h2>
+                    <p className="text-sm font-semibold mt-2">Ask the admin to create Task 1 and Task 2 before publishing this test.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Reading Passage HTML Render */
+              <div ref={passageRef} className="ielts-passage-shell mb-12">
+                <h2 className="ielts-passage-title text-[#05162E] border-b border-slate-200 pb-4">{activeSection?.title || 'Reading Passage'}</h2>
+                <div className="space-y-10">
+                  {activePassages.length > 0 ? activePassages.map((group: any, index: number) => (
+                    <section key={group.id || index} className="scroll-mt-6">
+                      <PassageIntroCard
+                        title={group.title || `Reading Passage ${index + 1}`}
+                        instruction={group.instruction}
+                      />
+                      {group.image_url && (
+                        <img
+                          src={group.image_url}
+                          alt={`${group.title || 'Reading passage'} reference`}
+                          loading="lazy"
+                          className="mx-auto mb-6 h-auto w-full max-w-2xl rounded-xl border border-slate-200 shadow-sm"
+                        />
+                      )}
+                      {group.normalizedPassage ? (
+                        <div
+                          data-passage-id={group.id || `active-passage-${index}`}
+                          className="ielts-passage focus:outline-none select-text"
+                          dangerouslySetInnerHTML={{ __html: highlightedPassages[group.id] ?? group.normalizedPassage }}
+                        />
+                      ) : (
+                        <p className="text-[14px] font-semibold text-slate-400">No passage text uploaded for this group yet.</p>
+                      )}
+                    </section>
+                  )) : (
+                    <p className="text-[14px] font-semibold text-slate-400">No reading passage uploaded.</p>
                   )}
                 </div>
-
-                {/* Render questions inside group */}
-                <div className="space-y-6">
-                  {buildOrderedQuestionBlocks(group.questions || [], group.instruction || '', activeSection?.type).map((block) => {
-                    if (block.kind === 'matching') {
-                      const headingQuestion = getMatchingHeadingQuestion(block.questions, block.instruction || group.instruction || '');
-                      if (headingQuestion) {
-                        return (
-                          <MatchingHeadingsGroup
-                            key={block.id}
-                            questions={block.questions}
-                            instruction={block.instruction || group.instruction || ''}
-                            answers={answers}
-                            onAnswer={setAnswer}
-                            onActivateQuestion={setActiveQuestionId}
-                          />
-                        );
-                      }
-                      // Fall through to standard rendering if options are missing
-                    }
-
-                    if (block.kind === 'summary') {
-                      return (
-                        <SummaryCompletionGroup
-                          key={block.id}
-                          questions={block.questions}
-                          values={answers}
-                          onChange={setAnswer}
-                          mode="light"
-                          onActivateQuestion={setActiveQuestionId}
-                          groupInstruction={group.instruction || ''}
-                          onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
-                        />
-                      );
-                    }
-
-                    if (block.kind === 'listening-matching' || (activeSection?.type === 'listening' && isListeningMatchingTextBlock(block.questions))) {
-                      return (
-                        <ListeningMatchingTextGroup
-                          key={block.id}
-                          questions={block.questions}
-                          instruction={block.instruction}
-                          values={answers}
-                          onChange={setAnswer}
-                          onActivateQuestion={setActiveQuestionId}
-                        />
-                      );
-                    }
-
-                    return (
-                      <div key={block.id} className="space-y-4">
-                        {isMultiSelectAnswerGroup(block.questions) ? (
-                          <MultiSelectAnswerGroup
-                            questions={block.questions}
-                            instruction={block.instruction}
-                            values={answers}
-                            onChange={setAnswer}
-                            onActivateQuestion={setActiveQuestionId}
-                          />
-                        ) : (
-                          <>
-                            <QuestionInstructionCard instruction={block.instruction} />
-                        {block.questions.map((question: any) => (
-                          <div 
-                            key={question.id} 
-                            id={`question-${question.id}`}
-                            className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${
-                              activeQuestionId === question.id 
-                                ? 'border-[#1E3A6E]/50' 
-                                : 'border-slate-200'
-                            }`}
-                            onClick={() => setActiveQuestionId(question.id)}
-                          >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A6E] text-[13px] font-black text-white shadow-md">
-                              {question.question_number}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex justify-end mb-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFlag(question.id);
-                                  }}
-                                  className={`p-1.5 rounded-lg transition-colors ${
-                                    flaggedQuestions.includes(question.id)
-                                      ? 'text-amber-500 bg-amber-500/10'
-                                      : 'text-slate-400 hover:text-[#1E3A6E] hover:bg-[#EFF4FB]'
-                                  }`}
-                                  title="Flag for review"
-                                >
-                                  <Flag className="h-4 w-4 fill-current" />
-                                </button>
-                              </div>
-
-                              <QuestionRenderer 
-                                question={question} 
-                                value={answers[question.id]} 
-                                onChange={(val) => setAnswer(question.id, val)}
-                                mode="light"
-                                onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
-            ))}
+            )}
           </div>
-          )}
-        </div>
 
-      </div>
+          {/* RIGHT COLUMN: Interactive Questions column */}
+          <div
+            className="min-h-0 w-full min-w-0 bg-[#F8FAFC] p-4 sm:p-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:p-8"
+          >
+            <div style={{ display: 'none' }} aria-hidden="true" data-reading-layout-marker="split-scroll-active" />
+            {activeSection?.type === 'writing' ? (
+              <div className="flex h-full flex-col gap-5">
+                <div className="sticky top-0 z-20 flex gap-2 rounded-2xl bg-[#F8FAFC]/95 py-2 backdrop-blur lg:static lg:bg-transparent lg:py-0">
+                  {writingTasks.map((task: any, idx: number) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => setActiveWritingTaskIndex(idx)}
+                      className={`min-h-11 flex-1 rounded-xl border py-3 text-[13px] font-black transition-all ${activeWritingTaskIndex === idx
+                        ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                        }`}
+                    >
+                      {task.extra_data_json?.task_type || `Task ${idx + 1}`}
+                    </button>
+                  ))}
+                </div>
+
+                {activeWritingTask ? (
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-black text-[15px] text-[#05162E]">Writing Editor</h3>
+                        <p className="text-[11px] font-bold text-slate-400 mt-1">
+                          Internal copy, cut, and paste are allowed. External paste is blocked.
+                        </p>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-xl text-[12px] font-black ${activeWritingWordCount >= (activeWritingTask.extra_data_json?.minimum_words || 250)
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-amber-50 text-amber-700'
+                        }`}>
+                        {activeWritingWordCount} words
+                      </div>
+                    </div>
+                    {clipboardMessage && (
+                      <div className="mx-5 mt-4 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055]">
+                        <ClipboardX className="h-4 w-4 shrink-0" />
+                        {clipboardMessage}
+                      </div>
+                    )}
+                    <textarea
+                      value={activeWritingAnswer}
+                      onChange={(event) => setAnswer(activeWritingTask.id, event.target.value)}
+                      onCopy={(event) => handleWritingCopy(event, activeWritingTask.id)}
+                      onCut={(event) => handleWritingCut(event, activeWritingTask.id)}
+                      onPaste={(event) => handleWritingPaste(event, activeWritingTask.id)}
+                      onDrop={handleWritingDrop}
+                      onContextMenu={(event) => event.preventDefault()}
+                      placeholder="Write your answer here..."
+                      spellCheck={false}
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      autoComplete="off"
+                      data-gramm="false"
+                      data-gramm_editor="false"
+                      data-enable-grammarly="false"
+                      className="min-h-[50vh] w-full flex-1 resize-none select-text bg-white p-4 text-[15px] leading-7 text-[#05162E] outline-none sm:min-h-[420px] sm:p-6"
+                    />
+                    <div className="sticky bottom-0 z-10 flex items-center justify-between border-t border-slate-100 bg-white px-5 py-3 text-[11px] font-bold text-slate-400">
+                      <span>Minimum {activeWritingTask.extra_data_json?.minimum_words || 250} words</span>
+                      <span>{autosaveStatus === 'saving' ? 'Saving...' : autosaveStatus === 'saved' ? 'Autosaved' : 'Autosave active'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 font-bold">
+                    No writing tasks available.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {activeSection?.type === 'reading' && clipboardMessage && (
+                  <div className="sticky top-0 z-20 flex items-center gap-2 rounded-xl border border-[#EE6055]/20 bg-[#FFF3F2] px-4 py-3 text-[12px] font-black text-[#EE6055] shadow-sm">
+                    <ClipboardX className="h-4 w-4 shrink-0" />
+                    {clipboardMessage}
+                  </div>
+                )}
+                {activeGroups.map((group: any) => (
+                  <div key={group.id} className="space-y-6 mb-10">
+                    {/* Group instruction banner */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                      <h3 className="font-extrabold text-[16px] text-[#05162E]">{group.title}</h3>
+                      {group.instruction && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-[13px] font-medium">
+                          <p>{renderFormattedText(group.instruction)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Render questions inside group */}
+                    <div className="space-y-6">
+                      {buildOrderedQuestionBlocks(group.questions || [], group.instruction || '', activeSection?.type).map((block) => {
+                        if (block.kind === 'matching') {
+                          const headingQuestion = getMatchingHeadingQuestion(block.questions, block.instruction || group.instruction || '');
+                          if (headingQuestion) {
+                            return (
+                              <MatchingHeadingsGroup
+                                key={block.id}
+                                questions={block.questions}
+                                instruction={block.instruction || group.instruction || ''}
+                                answers={answers}
+                                onAnswer={setAnswer}
+                                onActivateQuestion={setActiveQuestionId}
+                              />
+                            );
+                          }
+                          // Fall through to standard rendering if options are missing
+                        }
+
+                        if (block.kind === 'summary') {
+                          return (
+                            <SummaryCompletionGroup
+                              key={block.id}
+                              questions={block.questions}
+                              values={answers}
+                              onChange={setAnswer}
+                              mode="light"
+                              onActivateQuestion={setActiveQuestionId}
+                              groupInstruction={group.instruction || ''}
+                              onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
+                            />
+                          );
+                        }
+
+                        if (block.kind === 'listening-matching' || (activeSection?.type === 'listening' && isListeningMatchingTextBlock(block.questions))) {
+                          return (
+                            <ListeningMatchingTextGroup
+                              key={block.id}
+                              questions={block.questions}
+                              instruction={block.instruction}
+                              values={answers}
+                              onChange={setAnswer}
+                              onActivateQuestion={setActiveQuestionId}
+                            />
+                          );
+                        }
+
+                        return (
+                          <div key={block.id} className="space-y-4">
+                            {isMultiSelectAnswerGroup(block.questions) ? (
+                              <MultiSelectAnswerGroup
+                                questions={block.questions}
+                                instruction={block.instruction}
+                                values={answers}
+                                onChange={setAnswer}
+                                onActivateQuestion={setActiveQuestionId}
+                              />
+                            ) : (
+                              <>
+                                <QuestionInstructionCard instruction={block.instruction} />
+                                {block.questions.map((question: any) => (
+                                  <div
+                                    key={question.id}
+                                    id={`question-${question.id}`}
+                                    className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${activeQuestionId === question.id
+                                      ? 'border-[#1E3A6E]/50'
+                                      : 'border-slate-200'
+                                      }`}
+                                    onClick={() => setActiveQuestionId(question.id)}
+                                  >
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A6E] text-[13px] font-black text-white shadow-md">
+                                      {question.question_number}
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex justify-end mb-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleFlag(question.id);
+                                          }}
+                                          className={`p-1.5 rounded-lg transition-colors ${flaggedQuestions.includes(question.id)
+                                            ? 'text-amber-500 bg-amber-500/10'
+                                            : 'text-slate-400 hover:text-[#1E3A6E] hover:bg-[#EFF4FB]'
+                                            }`}
+                                          title="Flag for review"
+                                        >
+                                          <Flag className="h-4 w-4 fill-current" />
+                                        </button>
+                                      </div>
+
+                                      <QuestionRenderer
+                                        question={question}
+                                        value={answers[question.id]}
+                                        onChange={(val) => setAnswer(question.id, val)}
+                                        mode="light"
+                                        onPasteText={activeSection?.type === 'reading' ? handleReadingAnswerPaste : undefined}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
       )}
 
       {/* 3. Bottom Palette Navigation Dock */}
@@ -1858,15 +1850,14 @@ export default function ExamInterface() {
                     key={q.id}
                     type="button"
                     onClick={() => setActiveQuestionId(q.id)}
-                    className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${
-                      isActiveQ
-                        ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
-                        : isFlagged
+                    className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${isActiveQ
+                      ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
+                      : isFlagged
                         ? 'bg-[#F59E0B] text-white'
                         : isAnswered
-                        ? 'bg-[#0D224A] text-white'
-                        : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
-                    }`}
+                          ? 'bg-[#0D224A] text-white'
+                          : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                      }`}
                   >
                     {q.question_number}
                   </button>
@@ -1887,15 +1878,14 @@ export default function ExamInterface() {
                       key={q.id}
                       type="button"
                       onClick={() => setActiveQuestionId(q.id)}
-                      className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${
-                        isActiveQ
-                          ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
-                          : isFlagged
+                      className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${isActiveQ
+                        ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
+                        : isFlagged
                           ? 'bg-[#F59E0B] text-white'
                           : isAnswered
-                          ? 'bg-[#0D224A] text-white'
-                          : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
-                      }`}
+                            ? 'bg-[#0D224A] text-white'
+                            : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                        }`}
                     >
                       {q.question_number}
                     </button>
@@ -1930,11 +1920,10 @@ export default function ExamInterface() {
                 onClick={() => {
                   if (activeQuestionId) toggleFlag(activeQuestionId);
                 }}
-                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                  activeQuestionId && flaggedQuestions.includes(activeQuestionId)
-                    ? 'bg-amber-50 border-amber-300 text-amber-800'
-                    : 'border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${activeQuestionId && flaggedQuestions.includes(activeQuestionId)
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                  }`}
               >
                 <Flag className="h-3.5 w-3.5 text-slate-500" />
                 <span>Flag</span>
@@ -1958,9 +1947,8 @@ export default function ExamInterface() {
           </div>
         </footer>
       ) : (
-        <footer className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] shrink-0 select-none flex-col gap-4 overflow-hidden border-t border-slate-200 bg-white px-4 pb-4 pt-2 text-slate-500 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:flex-row lg:items-center lg:justify-between lg:overflow-visible lg:px-6 lg:py-4 ${
-          isPaletteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'
-        }`}>
+        <footer className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] shrink-0 select-none flex-col gap-4 overflow-hidden border-t border-slate-200 bg-white px-4 pb-4 pt-2 text-slate-500 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:flex-row lg:items-center lg:justify-between lg:overflow-visible lg:px-6 lg:py-4 ${isPaletteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'
+          }`}>
           <button
             type="button"
             onClick={() => setIsPaletteOpen(current => !current)}
@@ -1988,15 +1976,13 @@ export default function ExamInterface() {
                     }
                     setIsPaletteOpen(false);
                   }}
-                  className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} flex h-9 min-w-9 items-center justify-center rounded-xl text-[13px] font-bold transition-all ${
-                    isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
-                  } ${
-                    isFlagged 
-                      ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' 
-                      : isAnswered 
-                      ? 'bg-[#1E3A6E] text-white hover:bg-[#162d57]' 
-                      : 'bg-white border border-slate-300 text-slate-500 hover:bg-[#F8FAFC]'
-                  }`}
+                  className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} flex h-9 min-w-9 items-center justify-center rounded-xl text-[13px] font-bold transition-all ${isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
+                    } ${isFlagged
+                      ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
+                      : isAnswered
+                        ? 'bg-[#1E3A6E] text-white hover:bg-[#162d57]'
+                        : 'bg-white border border-slate-300 text-slate-500 hover:bg-[#F8FAFC]'
+                    }`}
                 >
                   {activeSection?.type === 'writing' ? (q.extra_data_json?.task_type || `Task ${idx + 1}`) : q.question_number}
                 </button>
@@ -2019,7 +2005,7 @@ export default function ExamInterface() {
               <span>Unanswered</span>
             </div>
           </div>
-          
+
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
