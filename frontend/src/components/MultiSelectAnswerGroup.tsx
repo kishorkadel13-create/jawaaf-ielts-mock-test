@@ -61,33 +61,33 @@ export const MultiSelectAnswerGroup = ({
     : `${orderedQuestions[0].question_number}-${orderedQuestions[orderedQuestions.length - 1].question_number}`;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 font-times">
       {instruction && (
-        <div className="mb-6 text-[16px] leading-8 text-[#05162E]">
+        <div className="mb-5 text-[13px] leading-relaxed text-[#05162E]">
           {renderFormattedBlockText(instruction, `multi-select-instruction-${firstQuestion?.id || 'group'}`)}
         </div>
       )}
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {orderedQuestions.map((question) => (
           <span
             key={question.id}
-            className="inline-flex h-9 min-w-9 items-center justify-center rounded-full bg-[#1E3A6E] px-3 text-[13px] font-black text-white"
+            className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#1E3A6E] px-2.5 text-[12px] font-bold text-white font-sans"
             onClick={() => onActivateQuestion?.(question.id)}
           >
             {question.question_number}
           </span>
         ))}
-        <span className="text-[12px] font-black uppercase tracking-wider text-slate-400">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 font-sans">
           Choose {maxSelections} answers for Questions {rangeLabel}
         </span>
       </div>
 
-      <div className="mb-5 text-[16px] font-black leading-7 text-[#05162E]">
+      <div className="mb-4 text-[13.5px] font-bold leading-relaxed text-[#05162E]">
         {renderFormattedText(firstQuestion?.question_text || '', `multi-select-question-${firstQuestion?.id || 'group'}`)}
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-2.5">
         {options.map((option: string, index: number) => {
           const isSelected = selectedValues.includes(option);
           const isDisabled = !isSelected && selectedValues.length >= maxSelections;
@@ -98,7 +98,7 @@ export const MultiSelectAnswerGroup = ({
               type="button"
               disabled={disabled || isDisabled}
               onClick={() => toggleOption(option)}
-              className={`grid min-h-14 grid-cols-[40px_1fr] items-center gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+              className={`grid min-h-12 grid-cols-[36px_1fr] items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all ${
                 isSelected
                   ? 'border-[#1E3A6E] bg-[#EFF4FB] text-[#05162E]'
                   : isDisabled
@@ -106,12 +106,12 @@ export const MultiSelectAnswerGroup = ({
                   : 'border-slate-200 bg-white text-slate-700 hover:border-[#1E3A6E]/40 hover:bg-[#F8FAFC]'
               }`}
             >
-              <span className={`flex h-6 w-6 items-center justify-center rounded border-2 text-[12px] font-black ${
+              <span className={`flex h-5 w-5 items-center justify-center rounded border-2 text-[11px] font-bold ${
                 isSelected ? 'border-[#1E3A6E] bg-[#1E3A6E] text-white' : 'border-slate-300 bg-white text-[#1E3A6E]'
               }`}>
                 {isSelected ? '✓' : optionLetter(index)}
               </span>
-              <span className="text-[15px] leading-snug">{renderFormattedText(option, `multi-select-option-${index}`)}</span>
+              <span className="text-[13px] leading-snug font-medium">{renderFormattedText(option, `multi-select-option-${index}`)}</span>
             </button>
           );
         })}

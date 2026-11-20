@@ -28,7 +28,7 @@ export const renderFormattedBlockText = (text: string, keyPrefix = 'formatted-bl
 
     if (headingMatch) {
       return (
-        <h4 key={`${keyPrefix}-${index}`} className="text-[20px] font-black leading-snug text-inherit mb-3">
+        <h4 key={`${keyPrefix}-${index}`} className="text-[15px] font-bold leading-snug text-inherit mb-2">
           {renderFormattedText(headingMatch[1], `${keyPrefix}-heading-${index}`)}
         </h4>
       );

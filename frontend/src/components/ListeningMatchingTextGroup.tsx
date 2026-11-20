@@ -122,22 +122,22 @@ export const ListeningMatchingTextGroup = ({
   const { boxTitle, options } = getParsedOptionsAndBoxTitle(orderedQuestions);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 font-times">
       {instruction && (
-        <div className="mb-6 text-[16px] leading-8 text-[#05162E]">
+        <div className="mb-5 text-[13px] leading-relaxed text-[#05162E]">
           {renderFormattedBlockText(instruction, `listening-matching-instruction-${orderedQuestions[0]?.id || 'group'}`)}
         </div>
       )}
 
       {options.length > 0 && (
-        <div className="mb-8 max-w-2xl rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
+        <div className="mb-7 max-w-2xl rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
           {boxTitle && (
-            <h4 className="mb-3 text-center text-[15px] font-black text-[#05162E]">{boxTitle}</h4>
+            <h4 className="mb-3 text-center text-[15px] font-bold text-[#05162E]">{boxTitle}</h4>
           )}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {options.map((option: string, index: number) => (
-              <div key={`${option}-${index}`} className="flex items-start gap-4 text-[15px] leading-relaxed text-[#05162E]">
-                <span className="w-5 font-black shrink-0 text-[#05162E]">{optionLetter(index)}</span>
+              <div key={`${option}-${index}`} className="flex items-start gap-3.5 text-[13px] leading-relaxed text-[#05162E]">
+                <span className="w-5 font-bold shrink-0 text-[#05162E]">{optionLetter(index)}</span>
                 <span className="font-medium text-[#1E293B]">
                   {renderFormattedText(option, `listening-matching-option-${index}`)}
                 </span>
@@ -156,22 +156,22 @@ export const ListeningMatchingTextGroup = ({
           return (
             <React.Fragment key={answerKey}>
               {heading && (
-                <div className="pt-7 pb-3 border-b-0 first:pt-2">
-                  <h4 className="text-[16px] font-black text-[#05162E] tracking-tight">
+                <div className="pt-6 pb-2.5 border-b-0 first:pt-2">
+                  <h4 className="text-[15px] font-bold text-[#05162E] tracking-tight">
                     {renderFormattedText(heading, `heading-${answerKey}`)}
                   </h4>
                 </div>
               )}
               <div
                 id={`question-${answerKey}`}
-                className="flex items-center justify-between gap-4 py-3.5"
+                className="flex items-center justify-between gap-4 py-3"
                 onClick={() => onActivateQuestion?.(answerKey)}
               >
                 <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                  <span className="text-[17px] font-black text-[#05162E] w-7 shrink-0">
+                  <span className="text-[14px] font-bold text-[#05162E] w-6 shrink-0">
                     {question.question_number}
                   </span>
-                  <span className="text-[15px] font-medium leading-relaxed text-[#1E293B]">
+                  <span className="text-[13px] font-medium leading-relaxed text-[#1E293B]">
                     {renderFormattedText(cleanText, `listening-matching-question-${answerKey}`)}
                   </span>
                 </div>
@@ -182,7 +182,7 @@ export const ListeningMatchingTextGroup = ({
                     onFocus={() => onActivateQuestion?.(answerKey)}
                     onChange={(event) => onChange(answerKey, event.target.value)}
                     aria-label={`Answer for question ${question.question_number}`}
-                    className="h-10 min-w-[72px] cursor-pointer rounded-lg border-2 border-slate-300 bg-white px-3 text-center text-[15px] font-black uppercase text-[#05162E] outline-none transition-all hover:border-slate-400 focus:border-[#1E3A6E] focus:ring-2 focus:ring-[#1E3A6E]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-9 min-w-[64px] cursor-pointer rounded-lg border-2 border-slate-300 bg-white px-2.5 text-center text-[13px] font-bold uppercase text-[#05162E] outline-none transition-all hover:border-slate-400 focus:border-[#1E3A6E] focus:ring-2 focus:ring-[#1E3A6E]/20 disabled:cursor-not-allowed disabled:opacity-60 font-times"
                   >
                     <option value="">—</option>
                     {options.map((_: string, index: number) => {

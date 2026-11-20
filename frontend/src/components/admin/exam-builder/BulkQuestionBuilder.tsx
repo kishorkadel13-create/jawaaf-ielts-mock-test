@@ -938,7 +938,7 @@ export default function BulkQuestionBuilder({
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2 font-times">
               {isListeningMatching && parsedQuestions.some((q) => q.options_json?.length) && (() => {
                 const sampleQ = parsedQuestions.find((q) => q.options_json?.length);
                 const pBoxTitle = sampleQ?.extra_data_json?.box_title;
@@ -946,15 +946,15 @@ export default function BulkQuestionBuilder({
                 return (
                   <div className="rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
                     {pBoxTitle && (
-                      <h4 className="mb-3 text-center text-[15px] font-black text-[#05162E]">{pBoxTitle}</h4>
+                      <h4 className="mb-3 text-center text-[15px] font-bold text-[#05162E]">{pBoxTitle}</h4>
                     )}
-                    <p className="text-[12px] font-black uppercase tracking-wider text-[#1E3A6E] mb-3">
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-[#1E3A6E] mb-3 font-sans">
                       Box Options ({pOptions.length > 0 ? `A-${String.fromCharCode(64 + pOptions.length)}` : 'A-I'})
                     </p>
                     <div className="flex flex-col gap-2">
                       {pOptions.map((opt, i) => (
-                        <div key={i} className="flex items-start gap-4 text-[14px] text-[#05162E]">
-                          <span className="w-5 font-black shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
+                        <div key={i} className="flex items-start gap-4 text-[13px] text-[#05162E]">
+                          <span className="w-5 font-bold shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
                           <span className="font-medium text-[#1E293B]">{opt}</span>
                         </div>
                       ))}
@@ -965,11 +965,11 @@ export default function BulkQuestionBuilder({
 
               {parsedQuestions.some((q) => q.question_type === 'MATCHING_HEADINGS' && q.options_json?.length) && (
                 <div className="p-4 bg-[#EFF4FB] border border-[#1E3A6E]/20 rounded-xl">
-                  <h5 className="text-[12px] font-black text-[#1E3A6E] mb-3">List of Headings</h5>
+                  <h5 className="text-[12px] font-bold text-[#1E3A6E] mb-3 font-sans">List of Headings</h5>
                   <div className="grid gap-2 text-[13px] text-[#05162E]">
                     {parsedQuestions.find((q) => q.question_type === 'MATCHING_HEADINGS' && q.options_json?.length)?.options_json?.map((opt, i) => (
                       <div key={i} className="grid grid-cols-[36px_1fr] gap-2">
-                        <span className="font-black">{toRoman(i + 1)}</span>
+                        <span className="font-bold">{toRoman(i + 1)}</span>
                         <span>{opt}</span>
                       </div>
                     ))}
@@ -999,15 +999,15 @@ export default function BulkQuestionBuilder({
                   <React.Fragment key={idx}>
                     {heading && (
                       <div className="pt-2 pb-1">
-                        <h5 className="text-[14px] font-black text-[#1E3A6E] tracking-tight">{heading}</h5>
+                        <h5 className="text-[15px] font-bold text-[#1E3A6E] tracking-tight">{heading}</h5>
                       </div>
                     )}
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl relative">
-                      <span className="absolute top-4 right-4 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500">
+                      <span className="absolute top-4 right-4 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500 font-sans">
                         {q.question_type.replace(/_/g, ' ')}
                       </span>
-                      <div className="font-bold text-[14px] text-[#05162E] mb-2 pr-28 whitespace-pre-wrap">
-                        {q.question_number}. {cleanText.replace(/\[blank\]/g, '__________')}
+                      <div className="font-medium text-[13px] text-[#05162E] mb-2 pr-28 whitespace-pre-wrap leading-relaxed">
+                        <strong className="font-bold">{q.question_number}.</strong> {cleanText.replace(/\[blank\]/g, '__________')}
                       </div>
 
                     {showInlineOptions && (

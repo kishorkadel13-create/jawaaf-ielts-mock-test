@@ -92,13 +92,13 @@ const QuestionInstructionCard = ({ instruction }: { instruction: string }) => {
   const { heading, body } = splitQuestionInstruction(instruction);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm font-times">
       {heading && (
-        <h3 className="text-[22px] font-black mb-4 text-[#05162E]">
+        <h3 className="text-[16px] font-bold mb-2.5 text-[#05162E]">
           {renderFormattedText(heading, 'question-instruction-heading')}
         </h3>
       )}
-      <div className="text-[16px] leading-8 text-[#05162E] whitespace-pre-wrap">
+      <div className="text-[13px] leading-relaxed text-[#05162E] whitespace-pre-wrap">
         {renderFormattedText(body || instruction, 'question-instruction-body')}
       </div>
     </div>
@@ -1313,7 +1313,7 @@ export default function ExamInterface() {
           </div>
 
           {/* RIGHT: Questions Area */}
-          <div className="w-full lg:w-[56%] xl:w-[60%] flex-1 p-4 lg:p-6 lg:pl-3 overflow-y-auto">
+          <div className="w-full lg:w-[56%] xl:w-[60%] flex-1 p-4 lg:p-6 lg:pl-3 overflow-y-auto font-times">
             <div className="space-y-6">
               {activeGroups.map((group: any, gIdx: number) => {
                 const gQuestions = group.questions || [];
@@ -1330,11 +1330,11 @@ export default function ExamInterface() {
                   >
                     {/* Header Row: Part Badge & Question Range */}
                     <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <span className="px-4 py-1.5 rounded-full bg-[#0D224A] text-white text-xs font-bold tracking-wide">
+                      <span className="px-4 py-1.5 rounded-full bg-[#0D224A] text-white text-xs font-bold tracking-wide font-sans">
                         Part {gIdx + 1}
                       </span>
                       {questionRange && (
-                        <span className="text-xs font-bold text-slate-500">
+                        <span className="text-xs font-bold text-slate-500 font-sans">
                           {questionRange}
                         </span>
                       )}
@@ -1342,9 +1342,9 @@ export default function ExamInterface() {
 
                     {/* Instruction Box */}
                     {group.instruction && (
-                      <div className="bg-[#EFF6FF] border border-blue-200/80 rounded-xl p-3.5 flex items-center gap-3">
+                      <div className="bg-[#EFF6FF] border border-blue-200/80 rounded-xl p-3.5 flex items-center gap-3 font-times">
                         <FileText className="h-5 w-5 text-[#2563EB] shrink-0" />
-                        <span className="text-[14px] font-bold text-[#0D224A]">
+                        <span className="text-[13.5px] font-bold text-[#0D224A]">
                           {renderFormattedText(group.instruction)}
                         </span>
                       </div>
@@ -1624,7 +1624,7 @@ export default function ExamInterface() {
 
           {/* RIGHT COLUMN: Interactive Questions column */}
           <div
-            className="min-h-0 w-full min-w-0 bg-[#F8FAFC] p-4 sm:p-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:p-8"
+            className="min-h-0 w-full min-w-0 bg-[#F8FAFC] p-4 sm:p-6 lg:h-full lg:w-1/2 lg:flex-[0_0_50%] lg:overflow-y-scroll lg:p-8 font-times"
           >
             <div style={{ display: 'none' }} aria-hidden="true" data-reading-layout-marker="split-scroll-active" />
             {activeSection?.type === 'writing' ? (

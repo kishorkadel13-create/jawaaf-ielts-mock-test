@@ -304,20 +304,20 @@ export const SummaryCompletionGroup = ({
   const isDark = mode === 'dark';
 
   const inputClass = isDark
-    ? 'inline-block w-32 mx-1.5 bg-slate-950 border-b-2 border-slate-600 focus:border-emerald-500 text-white px-2 py-1 text-center outline-none rounded-t-sm'
-    : 'inline-block w-36 mx-1.5 bg-slate-50 border-b-2 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] px-2 py-1 text-center outline-none rounded-t-sm';
+    ? 'inline-block w-32 mx-1.5 bg-slate-950 border-b-2 border-slate-600 focus:border-emerald-500 text-white px-2 py-1 text-center outline-none rounded-t-sm text-[13px] font-times'
+    : 'inline-block w-36 mx-1.5 bg-slate-50 border-b-2 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] px-2 py-1 text-center outline-none rounded-t-sm text-[13px] font-times';
 
   const selectClass = isDark
-    ? 'inline-block min-w-32 mx-1.5 bg-slate-950 border-2 border-slate-700 focus:border-emerald-500 text-white px-2 py-1 rounded-lg outline-none'
-    : 'inline-block min-w-36 mx-1.5 bg-slate-50 border-2 border-slate-200 focus:border-[#1E3A6E] text-[#05162E] px-2 py-1 rounded-lg outline-none';
+    ? 'inline-block min-w-32 mx-1.5 bg-slate-950 border-2 border-slate-700 focus:border-emerald-500 text-white px-2 py-1 rounded-lg outline-none text-[13px] font-times'
+    : 'inline-block min-w-36 mx-1.5 bg-slate-50 border-2 border-slate-200 focus:border-[#1E3A6E] text-[#05162E] px-2 py-1 rounded-lg outline-none text-[13px] font-times';
 
   const textClass = isDark
-    ? 'text-[15px] text-slate-300 leading-loose font-serif'
-    : 'text-[15px] text-[#05162E] leading-loose font-medium';
+    ? 'text-[13px] text-slate-300 leading-loose font-times'
+    : 'text-[13px] text-[#05162E] leading-loose font-medium font-times';
 
   const panelClass = isDark
-    ? 'p-6 rounded-2xl border-2 bg-slate-900 border-[#1E3A6E]/40 shadow-lg'
-    : 'bg-white border border-slate-200 rounded-2xl p-6 shadow-sm';
+    ? 'p-6 rounded-2xl border-2 bg-slate-900 border-[#1E3A6E]/40 shadow-lg font-times'
+    : 'bg-white border border-slate-200 rounded-2xl p-6 shadow-sm font-times';
 
   const renderTextWithBlanks = (source: string, segmentKey: string) => {
     const parts: React.ReactNode[] = [];
@@ -417,25 +417,25 @@ export const SummaryCompletionGroup = ({
           const dropdownOptionBank = getDropdownOptionBank(segment.questions, segment.source);
           const instructionBlock = (
             <div className={segmentIndex === 0 ? 'mb-5' : 'mb-5 border-t border-slate-200 pt-7'}>
-              <h3 className={`text-[22px] font-black mb-4 ${isDark ? 'text-white' : 'text-[#05162E]'}`}>
+              <h3 className={`text-[16px] font-bold mb-3 ${isDark ? 'text-white' : 'text-[#05162E]'}`}>
                 {renderFormattedText(heading, `summary-heading-${segmentIndex}`)}
               </h3>
               {lines.length > 0 && (
-                <div className={`space-y-3 text-[16px] leading-relaxed ${isDark ? 'text-slate-300' : 'text-[#05162E]'}`}>
+                <div className={`space-y-2 text-[13px] leading-relaxed ${isDark ? 'text-slate-300' : 'text-[#05162E]'}`}>
                   {lines.map((line, lineIndex) => (
                     <p key={lineIndex}>{renderFormattedText(line)}</p>
                   ))}
                 </div>
               )}
               {dropdownOptionBank.length > 0 && (
-                <div className={`mt-5 rounded-xl border p-4 ${
+                <div className={`mt-4 rounded-xl border p-4 ${
                   isDark
                     ? 'border-slate-700 bg-slate-950/40 text-slate-200'
                     : 'border-[#1E3A6E]/15 bg-[#EFF4FB] text-[#05162E]'
                 }`}>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {dropdownOptionBank.map((option) => (
-                      <div key={option.letter} className="grid grid-cols-[28px_1fr] gap-2 text-[15px] leading-relaxed">
+                      <div key={option.letter} className="grid grid-cols-[28px_1fr] gap-2 text-[13px] leading-relaxed">
                         <span className={isDark ? 'font-black text-white' : 'font-black text-[#1E3A6E]'}>
                           {option.letter}.
                         </span>
@@ -471,7 +471,7 @@ export const SummaryCompletionGroup = ({
                             <tr key={rowIndex}>
                               <td
                                 colSpan={row.length}
-                                className={`border px-5 py-4 text-[22px] font-black leading-tight ${
+                                className={`border px-4 py-3 text-[15px] font-bold leading-tight ${
                                   isDark ? 'border-slate-700 bg-slate-950/40 text-white' : 'border-slate-200 bg-white text-[#05162E]'
                                 }`}
                               >
@@ -488,11 +488,11 @@ export const SummaryCompletionGroup = ({
                             {row.map((cell, cellIndex) => (
                               <td
                                 key={cellIndex}
-                                className={`align-middle border px-4 py-4 leading-loose whitespace-pre-wrap ${
+                                className={`align-middle border px-3.5 py-3 leading-relaxed whitespace-pre-wrap ${
                                   isDark
                                     ? 'border-slate-700 bg-slate-950/40'
                                     : 'border-slate-200 bg-white'
-                                } ${headerRow ? 'text-center text-[20px] font-black' : 'text-[17px] font-medium'} ${
+                                } ${headerRow ? 'text-center text-[14px] font-bold' : 'text-[13px] font-medium'} ${
                                   cellIndex === 0 ? 'w-[15%]' : cellIndex === 1 ? 'w-[25%]' : 'w-[30%]'
                                 }`}
                               >

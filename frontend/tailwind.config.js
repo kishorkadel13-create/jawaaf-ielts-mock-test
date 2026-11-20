@@ -31,6 +31,7 @@ export default {
       fontFamily: {
         sans: ['Outfit', 'Inter', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+        times: ['"Times New Roman"', 'Times', 'serif'],
       },
       backdropBlur: {
         xs: '2px',

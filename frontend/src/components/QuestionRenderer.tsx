@@ -17,11 +17,11 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   const bodyTextClass = isLight ? 'text-[#05162E]' : 'text-slate-200';
   const mutedTextClass = isLight ? 'text-slate-700' : 'text-slate-300';
   const inputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-base'
-    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white text-base';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[13px] font-times'
+    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white text-[13px] font-times';
   const inlineInputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-base'
-    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white text-base';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[13px] font-times'
+    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white text-[13px] font-times';
   const optionClass = (selected: boolean) => isLight
     ? selected
       ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E]'
@@ -63,7 +63,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
       if (headingMatch) {
         return (
-          <span key={`${keyPrefix}-${index}`} className="block text-[20px] font-black leading-snug text-inherit mb-2">
+          <span key={`${keyPrefix}-${index}`} className="block text-[15px] font-bold leading-snug text-inherit mb-2 font-times">
             {renderFormattedText(headingMatch[1], `${keyPrefix}-heading-${index}`)}
           </span>
         );
@@ -83,8 +83,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
     if (parts.length < 2) {
       return (
-        <div className="flex flex-col gap-3">
-          <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-inline`)}</div>
+        <div className="flex flex-col gap-3 font-times">
+          <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-inline`)}</div>
           <input
             type="text"
             value={value || ''}
@@ -99,7 +99,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     }
 
     return (
-      <div className={`text-[15px] ${mutedTextClass} leading-loose font-medium`}>
+      <div className={`text-[13px] ${mutedTextClass} leading-loose font-medium font-times`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
             {renderInlineFormattedText(part, `question-${question.id}-part-${idx}`)}
@@ -140,7 +140,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   };
 
   const renderShortAnswer = () => (
-    <div className={`text-[15px] ${bodyTextClass} font-medium leading-loose`}>
+    <div className={`text-[13px] ${bodyTextClass} font-medium leading-loose font-times`}>
       <span className="whitespace-pre-wrap">{renderInlineFormattedText(question_text, `question-${question.id}-short`)}</span>
       <input
         type="text"
@@ -162,7 +162,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     }
 
     return (
-      <div className={`text-[15px] ${mutedTextClass} leading-loose font-medium`}>
+      <div className={`text-[13px] ${mutedTextClass} leading-loose font-medium font-times`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
             {renderInlineFormattedText(part, `question-${question.id}-select-part-${idx}`)}
@@ -201,8 +201,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   );
 
   const renderSelectAnswer = (placeholder = 'Select answer') => (
-    <div className="flex flex-col gap-3">
-      <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-select`)}</div>
+    <div className="flex flex-col gap-3 font-times">
+      <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-select`)}</div>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
@@ -277,14 +277,14 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     const options = isTF ? ['TRUE', 'FALSE', 'NOT GIVEN'] : ['YES', 'NO', 'NOT GIVEN'];
     
     return (
-      <div className="flex flex-col gap-4">
-        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-tf`)}</div>
+      <div className="flex flex-col gap-4 font-times">
+        <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-tf`)}</div>
         <div className="flex gap-2">
           {options.map((opt) => (
             <button
               key={opt}
               onClick={() => onChange(opt)}
-              className={`min-h-11 flex-1 rounded-xl border-2 px-2 py-3 text-[12px] font-bold transition-all ${
+              className={`min-h-11 flex-1 rounded-xl border-2 px-2 py-3 text-[12px] font-bold font-times transition-all ${
                 value === opt
                   ? isLight
                     ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
@@ -315,8 +315,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   // Standard MCQ
   if (question_type === 'SINGLE_MCQ') {
     return (
-      <div className="flex flex-col gap-4">
-        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+      <div className="flex flex-col gap-4 font-times">
+        <div className={`text-[13px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
           {renderQuestionText(`question-${question.id}-mcq`)}
         </div>
         <div className="flex flex-col gap-2.5">
@@ -347,7 +347,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1 text-[14px] leading-snug">
+                <div className="flex-1 text-[13px] leading-snug font-times">
                   <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
                   <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
@@ -379,8 +379,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     };
 
     return (
-      <div className="flex flex-col gap-4">
-        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+      <div className="flex flex-col gap-4 font-times">
+        <div className={`text-[13px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
           {renderQuestionText(`question-${question.id}-multi`)}
         </div>
         <div className="flex flex-col gap-2.5">
@@ -413,7 +413,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1 text-[14px] leading-snug">
+                <div className="flex-1 text-[13px] leading-snug font-times">
                   <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
                   <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
@@ -427,8 +427,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
   // ─── DEFAULT FALLBACK ───
   return (
-    <div className="flex flex-col gap-4">
-      <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-fallback`)}</div>
+    <div className="flex flex-col gap-4 font-times">
+      <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-fallback`)}</div>
       <input
         type="text"
         value={value || ''}
