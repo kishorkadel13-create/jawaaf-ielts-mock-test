@@ -13,6 +13,7 @@ import QuestionBuilder, { QuestionData } from '../../components/admin/exam-build
 import BulkQuestionBuilder from '../../components/admin/exam-builder/BulkQuestionBuilder';
 import StudentPreviewModal from '../../components/admin/exam-builder/StudentPreviewModal';
 import { normalizeMatchingQuestionType } from '../../utils/matchingHeadings';
+import { getParsedOptionsAndBoxTitle, parseQuestionHeadingAndText } from '../../components/ListeningMatchingTextGroup';
 import { renderFormattedBlockText, renderFormattedText } from '../../utils/renderFormattedText';
 import { resolveListeningAudioUrl } from '../../utils/audioUrl';
 
@@ -865,7 +866,10 @@ export default function AdminTestDetailsPage() {
           </div>
 
           <div className="font-semibold text-[14px] text-[#05162E] leading-snug whitespace-pre-wrap">
-            {q.question_text.includes('[blank]') ? (
+            {['MATCHING', 'MATCHING_INFORMATION'].includes(q.question_type) ? (() => {
+              const { text: cleanTxt } = parseQuestionHeadingAndText(q.question_text, q.extra_data_json);
+              return renderFormattedText(cleanTxt || q.question_text, `admin-question-${q.id}`);
+            })() : q.question_text.includes('[blank]') ? (
               q.question_text.split('[blank]').map((part: string, i: number, arr: any[]) => (
                 <React.Fragment key={i}>
                   {renderFormattedText(part, `admin-question-${q.id}-part-${i}`)}
@@ -1381,6 +1385,7 @@ export default function AdminTestDetailsPage() {
                                     initialBulkType={getBulkEditType(batch)}
                                     initialRawText={getBulkEditRawText(batch)}
                                     submitLabel={`Update ${batch.questions.length} Questions`}
+                                    sectionType={activeSection?.type}
                                   />
                                 ) : (
                                   <>
@@ -1399,6 +1404,27 @@ export default function AdminTestDetailsPage() {
                                         <Wand2 className="h-4 w-4" /> Edit Bulk Set
                                       </button>
                                     </div>
+                                    {activeSection?.type === 'listening' && batch.questions?.some((q: any) => q.question_type === 'MATCHING' && q.options_json?.length) && (() => {
+                                      const { boxTitle: bTitle, options: cleanOpts } = getParsedOptionsAndBoxTitle(batch.questions);
+                                      return (
+                                        <div className="rounded-xl border-2 border-slate-700 bg-white p-5 shadow-sm">
+                                          <p className="text-[12px] font-black uppercase tracking-wider text-[#1E3A6E] mb-3">
+                                            Box Options ({cleanOpts.length > 0 ? `A-${String.fromCharCode(64 + cleanOpts.length)}` : 'A-I'})
+                                          </p>
+                                          {bTitle && (
+                                            <p className="text-center text-[14px] font-black text-[#05162E] mb-3">{bTitle}</p>
+                                          )}
+                                          <div className="flex flex-col gap-2">
+                                            {cleanOpts.map((opt: string, i: number) => (
+                                              <div key={i} className="flex items-start gap-4 text-[14px] text-[#05162E]">
+                                                <span className="w-5 font-black shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
+                                                <span className="font-medium text-[#1E293B]">{opt}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
                                     {batch.questions.map((q: any) => renderQuestionCard(q, batch.key))}
                                   </>
                                 )}
@@ -1415,6 +1441,7 @@ export default function AdminTestDetailsPage() {
                           onCancel={() => setIsBulkEditing(false)}
                           nextOrderNo={(activeGroup.questions?.length || 0) + 1}
                           currentInstruction={activeGroup.instruction || ''}
+                          sectionType={activeSection?.type}
                         />
                       ) : editingQuestion && !editingQuestion.id && editingQuestion.question_type === 'WRITING_TASK' ? (
                         <WritingTaskBuilder

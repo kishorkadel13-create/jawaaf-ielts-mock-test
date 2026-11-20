@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Bold, FileText, Heading2, Plus, Wand2, X } from 'lucide-react';
 import { QuestionData } from './QuestionBuilder';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
+import { parseQuestionHeadingAndText } from '../../ListeningMatchingTextGroup';
 import { renderFormattedBlockText } from '../../../utils/renderFormattedText';
 
 interface BulkQuestionBuilderProps {
@@ -13,6 +14,7 @@ interface BulkQuestionBuilderProps {
   initialBulkType?: string;
   initialQuestionStatement?: string;
   submitLabel?: string;
+  sectionType?: string;
 }
 
 const BULK_TYPES = [
@@ -145,7 +147,33 @@ Answer Key:
 16 iii
 17 iv`;
 
+const LISTENING_MATCHING_OPTIONS_PLACEHOLDER = `A  providing entertainment
+B  providing publicity about a council service
+C  contacting local businesses
+D  giving advice to visitors
+E  collecting feedback on events
+F  selling tickets
+G  introducing guest speakers at an event
+H  encouraging cooperation between local organisations
+I  helping people find their seats`;
+
+const LISTENING_MATCHING_QUESTIONS_PLACEHOLDER = `11  walking around the town centre
+12  helping at concerts
+13  getting involved with community groups
+14  helping with a magazine
+15  participating at lunches for retired people
+16  helping with the website
+
+Answer Key:
+11 F
+12 A
+13 H
+14 B
+15 C
+16 G`;
+
 const OPTION_RE = /^([A-Z]|[ivxlcdm]+)[\.\)]\s+(.+)$/i;
+const FLEXIBLE_OPTION_RE = /^([A-Z]|[ivxlcdm]+)[\.\)]?\s+(.+)$/i;
 const QUESTION_START_RE = /^\s*(\d{1,2})[\.\)]?\s+(.+)$/;
 const NUMBERED_BLANK_RE = (num: number) => new RegExp(`["'“”‘’]?\\b${num}\\s*[\\.\\)]?\\s*(?:\\[\\s*blank\\s*\\]|\\.{3,}|_+|-+|…+)["'“”‘’]?`, 'i');
 const ANY_NUMBERED_BLANK_RE = /["'“”‘’]?\b(\d{1,2})\s*[\.\)]?\s*(?:\[\s*blank\s*\]|\.{3,}|_+|-+|…+)["'“”‘’]?/i;
@@ -406,7 +434,9 @@ export default function BulkQuestionBuilder({
   initialBulkType = 'AUTO',
   initialQuestionStatement,
   submitLabel,
+  sectionType = 'reading',
 }: BulkQuestionBuilderProps) {
+  const isListening = sectionType === 'listening';
   const [rawText, setRawText] = useState(initialRawText);
   const [headingOptionsText, setHeadingOptionsText] = useState('');
   const [bulkType, setBulkType] = useState(initialBulkType);
@@ -418,8 +448,25 @@ export default function BulkQuestionBuilder({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const formatGuide = useMemo(() => FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO, [bulkType]);
-  const suggestedStatement = useMemo(() => SUGGESTED_STATEMENTS[bulkType] || '', [bulkType]);
+  const isListeningMatching = isListening && (bulkType === 'MATCHING' || bulkType === 'MATCHING_INFORMATION');
+
+  const formatGuide = useMemo(() => {
+    if (isListeningMatching) {
+      return {
+        title: 'Matching (Box Options & Questions)',
+        hint: 'Put Box Options (A, B, C...) in the options box, and Questions (11, 12...) with Answer Key below.',
+        example: `${LISTENING_MATCHING_OPTIONS_PLACEHOLDER}\n\n${LISTENING_MATCHING_QUESTIONS_PLACEHOLDER}`,
+      };
+    }
+    return FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO;
+  }, [bulkType, isListeningMatching]);
+
+  const suggestedStatement = useMemo(() => {
+    if (isListeningMatching) {
+      return 'Questions 11-16 Choose SIX answers from the box and write the correct letter, A-I, next to 11-16.';
+    }
+    return SUGGESTED_STATEMENTS[bulkType] || '';
+  }, [bulkType, isListeningMatching]);
 
   useEffect(() => {
     setRawText(initialRawText);
@@ -462,10 +509,10 @@ export default function BulkQuestionBuilder({
   };
 
   useEffect(() => {
-    if (bulkType !== 'MATCHING_HEADINGS') return;
+    if (bulkType !== 'MATCHING_HEADINGS' && !isListeningMatching) return;
 
     if (!questionStatement.trim() || /complete the table|table below|one word only/i.test(questionStatement)) {
-      setQuestionStatement(SUGGESTED_STATEMENTS.MATCHING_HEADINGS);
+      setQuestionStatement(suggestedStatement);
     }
 
     if (!headingOptionsText.trim() && rawText.trim()) {
@@ -473,9 +520,10 @@ export default function BulkQuestionBuilder({
       const remainingLines: string[] = [];
 
       rawText.split('\n').forEach((line) => {
-        const optionMatch = line.trim().match(OPTION_RE);
-        if (optionMatch && ROMAN_RE.test(optionMatch[1])) {
-          optionLines.push(line);
+        const trimmed = line.trim();
+        const optionMatch = trimmed.match(FLEXIBLE_OPTION_RE);
+        if (optionMatch && (isListeningMatching ? /^[A-Z]$/i.test(optionMatch[1]) : ROMAN_RE.test(optionMatch[1]))) {
+          optionLines.push(trimmed);
         } else {
           remainingLines.push(line);
         }
@@ -486,12 +534,13 @@ export default function BulkQuestionBuilder({
         setRawText(remainingLines.join('\n').replace(/\n{3,}/g, '\n\n').trim());
       }
     }
-  }, [bulkType, headingOptionsText, questionStatement, rawText]);
+  }, [bulkType, headingOptionsText, questionStatement, rawText, isListeningMatching, suggestedStatement]);
 
   const parseQuestions = () => {
     setError(null);
 
-    const sourceText = bulkType === 'MATCHING_HEADINGS'
+    const isDualBox = bulkType === 'MATCHING_HEADINGS' || isListeningMatching;
+    const sourceText = isDualBox
       ? `${headingOptionsText.trim()}\n\n${rawText.trim()}`.trim()
       : rawText.trim();
 
@@ -512,7 +561,35 @@ export default function BulkQuestionBuilder({
     const parseTextSource = bulkType === 'SUMMARY_COMPLETION_OPTIONS' && optionBankOptions.length > 0
       ? removeSharedOptionLines(questionTextSource)
       : questionTextSource;
-    const sharedOptions = sharedOptionTypes.has(bulkType) ? extractSharedOptions(questionTextSource) : optionBankOptions;
+
+    let sharedOptions: string[] = [];
+    if (isListeningMatching) {
+      if (headingOptionsText.trim()) {
+        sharedOptions = headingOptionsText
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const m = line.match(FLEXIBLE_OPTION_RE);
+            return m ? m[2].trim() : line;
+          });
+      } else {
+        sharedOptions = questionTextSource
+          .split('\n')
+          .map((l) => l.trim())
+          .map((l) => l.match(FLEXIBLE_OPTION_RE))
+          .filter((m): m is RegExpMatchArray => Boolean(m))
+          .map((m) => m[2].trim());
+      }
+    } else {
+      sharedOptions = sharedOptionTypes.has(bulkType) ? extractSharedOptions(questionTextSource) : optionBankOptions;
+    }
+
+    if (isListeningMatching && !sharedOptions.length) {
+      setError('Please add the Box Options (e.g. A. providing entertainment, B. ...).');
+      return;
+    }
+
     const blankBlocks = splitNumberedBlankBlocks(parseTextSource);
     const regularBlocks = splitQuestionBlocks(parseTextSource);
     const shouldPreferBlankBlocks = blankFocusedTypes.has(bulkType) || (bulkType === 'AUTO' && blankBlocks.length > regularBlocks.length);
@@ -561,6 +638,7 @@ export default function BulkQuestionBuilder({
     }
 
     let order = nextOrderNo;
+    const batchId = isListeningMatching ? `listening-matching-${Date.now()}` : undefined;
     const parsed = blocks.map((block) => {
       const options: string[] = [];
       const bodyLines: string[] = [];
@@ -573,7 +651,7 @@ export default function BulkQuestionBuilder({
           return;
         }
 
-        const optionMatch = line.match(OPTION_RE);
+        const optionMatch = line.match(FLEXIBLE_OPTION_RE);
         if (optionMatch) {
           options.push(optionMatch[2].trim());
           return;
@@ -586,22 +664,28 @@ export default function BulkQuestionBuilder({
 
       const isolateTargetBlank = blankFocusedTypes.has(bulkType) || (bulkType === 'AUTO' && bodyLines.join(' ').match(ANY_NUMBERED_BLANK_RE));
       const questionText = normalizeBlankText(bodyLines.join('\n').trim(), block.number, Boolean(isolateTargetBlank));
+      const headingLine = bodyLines.find((l) => /^#{1,3}\s+/.test(l.trim()));
+      const sectionHeading = headingLine ? headingLine.replace(/^#{1,3}\s+/, '').trim() : undefined;
       const answersFromKey = answerMap[block.number] || [];
       const rawAnswers = inlineAnswers.length > 0 ? inlineAnswers : answersFromKey;
       const questionType = inferType(bulkType, options, rawAnswers, questionText);
-      const finalOptions = (sharedOptionTypes.has(questionType) || questionType === 'SUMMARY_COMPLETION_OPTIONS') && sharedOptions.length > 0 ? sharedOptions : options;
-      const shouldNormalizeOptionAnswers = ['SINGLE_MCQ', 'MULTI_SELECT', 'SUMMARY_COMPLETION_OPTIONS', 'MATCHING', 'MATCHING_HEADINGS', 'MATCHING_INFORMATION', 'SENTENCE_COMPLETION'].includes(questionType);
-      const answers = shouldNormalizeOptionAnswers ? normalizeAnswersForOptions(rawAnswers, finalOptions, questionType) : rawAnswers;
+      const finalOptions = (sharedOptionTypes.has(questionType) || questionType === 'SUMMARY_COMPLETION_OPTIONS' || isListeningMatching) && sharedOptions.length > 0 ? sharedOptions : options;
+      const shouldNormalizeOptionAnswers = ['SINGLE_MCQ', 'MULTI_SELECT', 'SUMMARY_COMPLETION_OPTIONS', 'MATCHING', 'MATCHING_HEADINGS', 'MATCHING_INFORMATION', 'SENTENCE_COMPLETION'].includes(questionType) || isListeningMatching;
+      const answers = shouldNormalizeOptionAnswers ? normalizeAnswersForOptions(rawAnswers, finalOptions, isListeningMatching ? 'MATCHING' : questionType) : rawAnswers;
 
       return {
-        question_type: questionType,
+        question_type: isListeningMatching ? 'MATCHING' : questionType,
         question_number: block.number,
         question_text: questionText || `Question ${block.number}`,
         options_json: finalOptions.length > 0 ? finalOptions : undefined,
         correct_answers_json: answers.length > 0 ? answers : ['[NO ANSWER DETECTED]'],
-        extra_data_json: blankFocusedTypes.has(questionType)
-          ? { bulk_source: parseTextSource }
-          : undefined,
+        extra_data_json: {
+          ...(blankFocusedTypes.has(questionType) ? { bulk_source: parseTextSource } : {}),
+          bulk_source: parseTextSource,
+          bulk_instruction: questionStatement.trim(),
+          ...(sectionHeading ? { section_heading: sectionHeading } : {}),
+          ...(isListeningMatching ? { bulk_batch_id: batchId, is_listening_matching: true } : {}),
+        },
         marks: 1,
         order_no: order++,
       };
@@ -734,16 +818,18 @@ export default function BulkQuestionBuilder({
                 <Bold className="h-3.5 w-3.5" /> Bold
               </button>
             </div>
-            {bulkType === 'MATCHING_HEADINGS' ? (
+            {bulkType === 'MATCHING_HEADINGS' || isListeningMatching ? (
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="bg-[#EFF4FB] border-b border-[#1E3A6E]/10 px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-center text-[13px] font-black text-[#1E3A6E]">List of Headings</h4>
+                    <h4 className="text-center text-[13px] font-black text-[#1E3A6E]">
+                      {isListeningMatching ? 'Box Options (A, B, C...)' : 'List of Headings'}
+                    </h4>
                     <button
                       type="button"
                       onClick={() => applyTextareaFormat(headingOptionsRef.current, headingOptionsText, setHeadingOptionsText, 'bold')}
                       className="inline-flex items-center gap-1 rounded-lg border border-[#1E3A6E]/20 bg-white px-2.5 py-1.5 text-[11px] font-black text-[#1E3A6E] hover:bg-[#EFF4FB]"
-                      title="Bold selected heading option text"
+                      title="Bold selected option text"
                     >
                       <Bold className="h-3.5 w-3.5" /> Bold
                     </button>
@@ -754,19 +840,19 @@ export default function BulkQuestionBuilder({
                   rows={7}
                   value={headingOptionsText}
                   onChange={(e) => setHeadingOptionsText(e.target.value)}
-                  placeholder={MATCHING_HEADINGS_OPTIONS_PLACEHOLDER}
+                  placeholder={isListeningMatching ? LISTENING_MATCHING_OPTIONS_PLACEHOLDER : MATCHING_HEADINGS_OPTIONS_PLACEHOLDER}
                   className="w-full p-4 bg-[#F8FAFC] border-0 focus:bg-white text-[13px] font-mono outline-none resize-y transition-colors"
                 />
                 <div className="border-t border-slate-200 px-4 py-3">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Paragraph Questions / Answer Key
+                    {isListeningMatching ? 'Questions & Answer Key' : 'Paragraph Questions / Answer Key'}
                   </label>
                   <textarea
                     ref={rawTextRef}
                     rows={9}
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    placeholder={MATCHING_HEADINGS_QUESTIONS_PLACEHOLDER}
+                    placeholder={isListeningMatching ? LISTENING_MATCHING_QUESTIONS_PLACEHOLDER : MATCHING_HEADINGS_QUESTIONS_PLACEHOLDER}
                     className="mt-2 w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-[#1E3A6E] focus:bg-white text-[13px] font-mono outline-none resize-y transition-colors"
                   />
                 </div>
@@ -800,6 +886,20 @@ export default function BulkQuestionBuilder({
             </div>
 
             <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+              {isListeningMatching && parsedQuestions.some((q) => q.options_json?.length) && (
+                <div className="rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
+                  <h5 className="text-[12px] font-black text-[#1E3A6E] mb-3">Options Box Preview</h5>
+                  <div className="flex flex-col gap-2">
+                    {parsedQuestions.find((q) => q.options_json?.length)?.options_json?.map((opt, i) => (
+                      <div key={i} className="flex items-start gap-4 text-[14px] text-[#05162E]">
+                        <span className="w-5 font-black shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
+                        <span className="font-medium text-[#1E293B]">{opt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {parsedQuestions.some((q) => q.question_type === 'MATCHING_HEADINGS' && q.options_json?.length) && (
                 <div className="p-4 bg-[#EFF4FB] border border-[#1E3A6E]/20 rounded-xl">
                   <h5 className="text-[12px] font-black text-[#1E3A6E] mb-3">List of Headings</h5>
@@ -826,15 +926,22 @@ export default function BulkQuestionBuilder({
 
               {parsedQuestions.filter((q) => !isSummaryCompletionQuestion(q)).map((q, idx) => {
                 const showInlineOptions = Boolean(q.options_json?.length) && !sharedOptionTypes.has(q.question_type);
+                const { heading, text: cleanText } = parseQuestionHeadingAndText(q.question_text, q.extra_data_json);
 
                 return (
-                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl relative">
-                    <span className="absolute top-4 right-4 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500">
-                      {q.question_type.replace(/_/g, ' ')}
-                    </span>
-                    <div className="font-bold text-[14px] text-[#05162E] mb-2 pr-28 whitespace-pre-wrap">
-                      {q.question_number}. {renderFormattedBlockText(q.question_text.replace(/\[blank\]/g, '__________'), `bulk-preview-${idx}`)}
-                    </div>
+                  <React.Fragment key={idx}>
+                    {heading && (
+                      <div className="pt-2 pb-1">
+                        <h5 className="text-[14px] font-black text-[#1E3A6E] tracking-tight">{heading}</h5>
+                      </div>
+                    )}
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl relative">
+                      <span className="absolute top-4 right-4 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-black uppercase text-slate-500">
+                        {q.question_type.replace(/_/g, ' ')}
+                      </span>
+                      <div className="font-bold text-[14px] text-[#05162E] mb-2 pr-28 whitespace-pre-wrap">
+                        {q.question_number}. {cleanText.replace(/\[blank\]/g, '__________')}
+                      </div>
 
                     {showInlineOptions && (
                       <ul className="list-disc pl-5 mb-3 text-[13px] text-slate-600 space-y-1">
@@ -855,8 +962,9 @@ export default function BulkQuestionBuilder({
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </React.Fragment>
+              );
+            })}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">

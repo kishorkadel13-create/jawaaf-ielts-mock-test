@@ -3,7 +3,7 @@ import { X, Clock, HelpCircle, CheckCircle2, XCircle, RotateCcw, ClipboardCheck,
 import { normalizePassageHtml } from '../../../utils/passageHtml';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../../../utils/textHighlighter';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
-import { ListeningMatchingTextGroup, isListeningMatchingTextBlock } from '../../ListeningMatchingTextGroup';
+import { ListeningMatchingTextGroup, isListeningMatchingTextBlock, isListeningMatchingTextQuestion } from '../../ListeningMatchingTextGroup';
 import { MultiSelectAnswerGroup, isMultiSelectAnswerGroup } from '../../MultiSelectAnswerGroup';
 import { renderFormattedBlockText, renderFormattedText, splitQuestionInstruction } from '../../../utils/renderFormattedText';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, toRoman } from '../../../utils/matchingHeadings';
@@ -16,7 +16,7 @@ interface StudentPreviewModalProps {
 
 type OrderedQuestionBlock = {
   id: string;
-  kind: 'matching' | 'summary' | 'standard';
+  kind: 'matching' | 'listening-matching' | 'summary' | 'standard';
   instruction: string;
   questions: any[];
 };
@@ -29,22 +29,30 @@ const getQuestionInstruction = (question: any) => (
   question?.extra_data_json?.bulk_instruction || question?.instruction || ''
 );
 
-const getQuestionBlockKey = (question: any, kind: OrderedQuestionBlock['kind']) => (
-  [
-    kind,
-    question?.extra_data_json?.bulk_source,
-    getQuestionInstruction(question),
-    question?.extra_data_json?.bulk_id,
-  ].filter(Boolean).join('|') || `${kind}-${question?.id}`
-);
+const getQuestionBlockKey = (question: any, kind: OrderedQuestionBlock['kind'], sectionType = '') => {
+  if (kind === 'listening-matching' || (sectionType === 'listening' && isListeningMatchingTextQuestion(question))) {
+    const optionsHash = Array.isArray(question.options_json) ? question.options_json.join('|') : '';
+    return question?.extra_data_json?.bulk_batch_id || `listening-matching:${optionsHash}`;
+  }
 
-const getQuestionKind = (question: any, groupInstruction = ''): OrderedQuestionBlock['kind'] => {
+  return (
+    [
+      kind,
+      question?.extra_data_json?.bulk_source,
+      getQuestionInstruction(question),
+      question?.extra_data_json?.bulk_id,
+    ].filter(Boolean).join('|') || `${kind}-${question?.id}`
+  );
+};
+
+const getQuestionKind = (question: any, groupInstruction = '', sectionType = ''): OrderedQuestionBlock['kind'] => {
   if (isMatchingHeadingsQuestion(question, groupInstruction)) return 'matching';
+  if (sectionType === 'listening' && isListeningMatchingTextQuestion(question)) return 'listening-matching';
   if (isSummaryCompletionQuestion(question)) return 'summary';
   return 'standard';
 };
 
-const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''): OrderedQuestionBlock[] => {
+const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = '', sectionType = ''): OrderedQuestionBlock[] => {
   const sorted = sortQuestionsByNumber(questions);
   const blocks: OrderedQuestionBlock[] = [];
   const used = new Set<string>();
@@ -52,12 +60,12 @@ const buildOrderedQuestionBlocks = (questions: any[] = [], groupInstruction = ''
   sorted.forEach((question) => {
     if (used.has(question.id)) return;
 
-    const kind = getQuestionKind(question, groupInstruction);
-    const blockKey = getQuestionBlockKey(question, kind);
+    const kind = getQuestionKind(question, groupInstruction, sectionType);
+    const blockKey = getQuestionBlockKey(question, kind, sectionType);
     const blockQuestions = sorted.filter((candidate) => (
       !used.has(candidate.id) &&
-      getQuestionKind(candidate, groupInstruction) === kind &&
-      getQuestionBlockKey(candidate, kind) === blockKey
+      getQuestionKind(candidate, groupInstruction, sectionType) === kind &&
+      getQuestionBlockKey(candidate, kind, sectionType) === blockKey
     ));
 
     blockQuestions.forEach((candidate) => used.add(candidate.id));
@@ -685,7 +693,7 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    {buildOrderedQuestionBlocks(grp.questions || [], grp.instruction || '').map((block) => {
+                    {buildOrderedQuestionBlocks(grp.questions || [], grp.instruction || '', sec.type).map((block) => {
                       if (block.kind === 'matching') {
                         return (
                           <MatchingHeadingsGroup
@@ -712,17 +720,22 @@ export default function StudentPreviewModal({ test, onClose }: StudentPreviewMod
                         );
                       }
 
+                      if (block.kind === 'listening-matching' || (sec.type === 'listening' && isListeningMatchingTextBlock(block.questions))) {
+                        return (
+                          <ListeningMatchingTextGroup
+                            key={block.id}
+                            questions={block.questions}
+                            instruction={block.instruction}
+                            values={previewAnswers}
+                            onChange={setPreviewAnswer}
+                            disabled={isSubmitted}
+                          />
+                        );
+                      }
+
                       return (
                         <div key={block.id} className="flex flex-col gap-4">
-                          {sec.type === 'listening' && isListeningMatchingTextBlock(block.questions) ? (
-                            <ListeningMatchingTextGroup
-                              questions={block.questions}
-                              instruction={block.instruction}
-                              values={previewAnswers}
-                              onChange={setPreviewAnswer}
-                              disabled={isSubmitted}
-                            />
-                          ) : isMultiSelectAnswerGroup(block.questions) ? (
+                          {isMultiSelectAnswerGroup(block.questions) ? (
                             <MultiSelectAnswerGroup
                               questions={block.questions}
                               instruction={block.instruction}
