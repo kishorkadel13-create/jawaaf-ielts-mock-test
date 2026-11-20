@@ -378,7 +378,7 @@ export const SummaryCompletionGroup = ({
                 className={selectClass}
               >
                 <option value="">Select</option>
-                {dropdownOptions.map((option) => (
+                {dropdownOptions.map((option: any) => (
                   <option key={option.letter} value={option.text}>{option.letter}</option>
                 ))}
               </select>
@@ -434,7 +434,7 @@ export const SummaryCompletionGroup = ({
                     : 'border-[#1E3A6E]/15 bg-[#EFF4FB] text-[#05162E]'
                 }`}>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {dropdownOptionBank.map((option) => (
+                    {dropdownOptionBank.map((option: any) => (
                       <div key={option.letter} className="grid grid-cols-[28px_1fr] gap-2 text-[13px] leading-relaxed">
                         <span className={isDark ? 'font-black text-white' : 'font-black text-[#1E3A6E]'}>
                           {option.letter}.
