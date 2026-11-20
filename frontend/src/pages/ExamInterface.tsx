@@ -12,7 +12,12 @@ import { normalizePassageHtml } from '../utils/passageHtml';
 import { getMatchingHeadingQuestion, getMatchingHeadingQuestions, isMatchingHeadingsQuestion, normalizeMatchingQuestionType, toRoman } from '../utils/matchingHeadings';
 import { applyHighlightTarget, getHighlightTarget, type HighlightTarget } from '../utils/textHighlighter';
 import { resolveListeningAudioUrl } from '../utils/audioUrl';
-import { Award, Timer, Flag, Save, CheckCircle2, Play, Headphones, Volume2, PenLine, ClipboardX, Loader2, ChevronUp, RefreshCw, WifiOff } from 'lucide-react';
+import JawaafLogo from '../components/JawaafLogo';
+import { 
+  Award, Timer, Flag, Save, CheckCircle2, Play, Pause, Headphones, Volume2, 
+  PenLine, ClipboardX, Loader2, ChevronUp, ChevronDown, ChevronRight, 
+  RefreshCw, WifiOff, Maximize2, Minimize2, LogOut, Info, FileText, Clock 
+} from 'lucide-react';
 
 type OrderedQuestionBlock = {
   id: string;
@@ -172,7 +177,30 @@ export default function ExamInterface() {
   const [audioCheckPlaying, setAudioCheckPlaying] = useState(false);
   const [audioCheckProgress, setAudioCheckProgress] = useState(0);
   const [audioCheckComplete, setAudioCheckComplete] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [isPartDropdownOpen, setIsPartDropdownOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('#part-dropdown-btn') && !target.closest('#part-dropdown-menu')) {
+        setIsPartDropdownOpen(false);
+      }
+    };
+    if (isPartDropdownOpen) {
+      window.addEventListener('click', handleClickOutside);
+      return () => window.removeEventListener('click', handleClickOutside);
+    }
+  }, [isPartDropdownOpen]);
 
   // Load attempt and test on mount
   useEffect(() => {
@@ -483,6 +511,22 @@ export default function ExamInterface() {
     [activeGroups]
   );
 
+  useEffect(() => {
+    if (!activeQuestionId && sectionQuestions.length > 0) {
+      setActiveQuestionId(sectionQuestions[0].id);
+    }
+  }, [sectionQuestions, activeQuestionId]);
+
+  const activeQuestionIndex = Math.max(0, sectionQuestions.findIndex((q: any) => q.id === activeQuestionId));
+  const activeQuestionNumber = sectionQuestions[activeQuestionIndex]?.question_number || (activeQuestionIndex + 1);
+
+  const currentListeningGroupIndex = Math.max(
+    0,
+    activeGroups.findIndex((g: any) => g.questions?.some((q: any) => q.id === activeQuestionId))
+  );
+  const currentListeningPartNumber = currentListeningGroupIndex + 1;
+  const totalListeningParts = activeGroups.length || 4;
+
   const getSectionDurationMinutes = useCallback((section: any) => {
     if (Number(section?.duration) > 0) return Number(section.duration);
     if (section?.type === 'listening') return 30;
@@ -706,16 +750,55 @@ export default function ExamInterface() {
   };
 
   const updateAudioProgress = () => {
-    if (!audioRef.current || !audioRef.current.duration) return;
+    if (!audioRef.current) return;
+    const cur = audioRef.current.currentTime || 0;
+    const dur = audioRef.current.duration || 0;
+    setAudioCurrentTime(cur);
+    if (dur && !isNaN(dur) && dur > 0) {
+      setAudioDuration(dur);
+    }
     if (audioCheckPlaying) {
-      const sampleProgress = Math.min((audioRef.current.currentTime / 15) * 100, 100);
+      const sampleProgress = Math.min((cur / 15) * 100, 100);
       setAudioCheckProgress(sampleProgress);
-      if (audioRef.current.currentTime >= 15) {
+      if (cur >= 15) {
         stopAudioCheck(true);
       }
       return;
     }
-    setAudioProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+    if (dur && !isNaN(dur) && dur > 0) {
+      setAudioProgress((cur / dur) * 100);
+    }
+  };
+
+  const handleAudioSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !audioDuration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, clickX / rect.width));
+    audioRef.current.currentTime = pct * audioDuration;
+    setAudioProgress(pct * 100);
+    setAudioCurrentTime(pct * audioDuration);
+  };
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play().then(() => {
+        setAudioPlaying(true);
+        setAudioAutoplayBlocked(false);
+      }).catch(() => setAudioAutoplayBlocked(true));
+    } else {
+      audioRef.current.pause();
+      setAudioPlaying(false);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
   };
 
   const formatTime = (secs: number) => {
@@ -899,85 +982,197 @@ export default function ExamInterface() {
       )}
       
       {/* 1. Header Toolbar */}
-      <header className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-slate-900 px-4 py-3 text-slate-200 sm:px-6 sm:py-3.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Award className="h-5 w-5 text-[#1E3A6E] shrink-0" />
-          <div className="min-w-0">
-            <h1 className="truncate text-sm font-extrabold tracking-wide text-white">{activeTest.title}</h1>
-            <span className="text-[10px] text-slate-500 font-semibold uppercase">{activeSection?.type} Section</span>
+      {activeSection?.type === 'listening' ? (
+        <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-[#0B1528] px-4 py-2.5 sm:px-6 shadow-md text-slate-200">
+          {/* Left: Brand Logo + Test Name */}
+          <div className="flex min-w-0 items-center gap-3">
+            <JawaafLogo isWhite className="h-8 w-auto shrink-0" />
+            <div className="hidden sm:block h-6 w-px bg-white/15 mx-1" />
+            <div className="min-w-0">
+              <h1 className="truncate text-[14px] sm:text-[15px] font-bold tracking-wide text-white">
+                {activeTest.title || 'IELTS Listening'}
+              </h1>
+              <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
+                Full Mock Test
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Section Navigation Tabs */}
-        <div className="order-3 flex w-full gap-1 overflow-x-auto rounded-xl border border-white/5 bg-slate-950 p-1 sm:order-none sm:w-auto">
-          {activeSection?.type === 'writing' && writingTasks.length > 0 ? (
-            writingTasks.map((task: any, idx: number) => (
+          {/* Center & Right Controls */}
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* Part Selector Pill */}
+            <div className="relative">
               <button
-                key={task.id}
-                onClick={() => setActiveWritingTaskIndex(idx)}
-                className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                  activeWritingTaskIndex === idx
-                    ? 'bg-[#1E3A6E] text-white'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {task.extra_data_json?.task_type || `Task ${idx + 1}`}
-              </button>
-            ))
-          ) : (
-            activeTest.sections.map((sec: any, idx: number) => (
-              <button
-                key={sec.id}
+                id="part-dropdown-btn"
                 type="button"
-                disabled={isFullMock}
-                onClick={() => {
-                  if (!isFullMock) setActiveSection(idx);
-                }}
-                className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                  activeSectionIndex === idx
-                    ? 'bg-[#1E3A6E] text-white'
-                    : isFullMock
-                    ? 'text-slate-600'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={() => setIsPartDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
               >
-                {sec.title}
+                <span>Part {currentListeningPartNumber} of {totalListeningParts}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isPartDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-            ))
-          )}
-        </div>
 
-        {/* Timer & Submit controls */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-6">
-          {/* Autosave status indicator */}
-          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-500">
-            <Save className={`h-3.5 w-3.5 ${autosaveStatus === 'saving' ? 'animate-spin text-[#1E3A6E]' : ''}`} />
-            <span>
-              {autosaveStatus === 'saving' ? 'Saving progress...' :
-               autosaveStatus === 'saved' ? 'Progress autosaved' :
-               autosaveStatus === 'error' ? 'Connection dropped!' : 'Exam Active'}
-            </span>
+              {isPartDropdownOpen && (
+                <div
+                  id="part-dropdown-menu"
+                  className="absolute top-full mt-2 left-0 w-48 rounded-xl border border-slate-700 bg-[#0D224A] py-1.5 shadow-2xl z-50 overflow-hidden"
+                >
+                  {activeGroups.map((grp: any, gIdx: number) => {
+                    const gQuestions = grp.questions || [];
+                    const firstQ = gQuestions[0]?.question_number;
+                    const lastQ = gQuestions[gQuestions.length - 1]?.question_number;
+                    const qRange = firstQ && lastQ ? (firstQ === lastQ ? `Q${firstQ}` : `Q${firstQ}-${lastQ}`) : '';
+                    return (
+                      <button
+                        key={grp.id}
+                        type="button"
+                        onClick={() => {
+                          if (gQuestions[0]?.id) {
+                            setActiveQuestionId(gQuestions[0].id);
+                            const el = document.getElementById(`group-${grp.id}`);
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }
+                          setIsPartDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
+                          currentListeningGroupIndex === gIdx ? 'bg-blue-600/40 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        <span>Part {gIdx + 1}</span>
+                        {qRange && <span className="text-[11px] text-slate-400">{qRange}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Time Remaining */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full border border-slate-700/80 bg-slate-900/60 flex items-center justify-center shrink-0">
+                <Clock className="h-4 w-4 text-slate-300" />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 leading-none">Time Remaining</span>
+                <span className="text-[17px] font-black tracking-wide text-[#F59E0B] leading-tight font-mono">
+                  {formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}
+                </span>
+              </div>
+            </div>
+
+            {/* Question Progress */}
+            <div className="hidden md:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-200">
+                Question {activeQuestionNumber} / {sectionQuestions.length || 40}
+              </span>
+              <div className="w-28 sm:w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                  style={{ width: `${((activeQuestionIndex + 1) / (sectionQuestions.length || 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Fullscreen Button */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="hidden sm:flex h-8 w-8 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 hover:text-white hover:bg-slate-800 items-center justify-center transition-colors"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+
+            {/* End Test Button */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors active:scale-95 disabled:opacity-60"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>{isSubmitting ? 'Ending...' : 'End Test'}</span>
+            </button>
+          </div>
+        </header>
+      ) : (
+        <header className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-slate-900 px-4 py-3 text-slate-200 sm:px-6 sm:py-3.5">
+          <div className="flex min-w-0 items-center gap-3">
+            <Award className="h-5 w-5 text-[#1E3A6E] shrink-0" />
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-extrabold tracking-wide text-white">{activeTest.title}</h1>
+              <span className="text-[10px] text-slate-500 font-semibold uppercase">{activeSection?.type} Section</span>
+            </div>
           </div>
 
-          {/* Countdown Clock */}
-          <div className={`px-4 py-1.5 bg-slate-950 border rounded-xl flex items-center gap-2 font-mono text-sm font-bold ${
-            (isFullMock ? (sectionSecondsRemaining || 0) : secondsRemaining) < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
-          }`}>
-            <Timer className="h-4 w-4 animate-pulse" />
-            <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
+          {/* Section Navigation Tabs */}
+          <div className="order-3 flex w-full gap-1 overflow-x-auto rounded-xl border border-white/5 bg-slate-950 p-1 sm:order-none sm:w-auto">
+            {activeSection?.type === 'writing' && writingTasks.length > 0 ? (
+              writingTasks.map((task: any, idx: number) => (
+                <button
+                  key={task.id}
+                  onClick={() => setActiveWritingTaskIndex(idx)}
+                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
+                    activeWritingTaskIndex === idx
+                      ? 'bg-[#1E3A6E] text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {task.extra_data_json?.task_type || `Task ${idx + 1}`}
+                </button>
+              ))
+            ) : (
+              activeTest.sections.map((sec: any, idx: number) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  disabled={isFullMock}
+                  onClick={() => {
+                    if (!isFullMock) setActiveSection(idx);
+                  }}
+                  className={`min-h-9 shrink-0 rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
+                    activeSectionIndex === idx
+                      ? 'bg-[#1E3A6E] text-white'
+                      : isFullMock
+                      ? 'text-slate-600'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {sec.title}
+                </button>
+              ))
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex min-h-10 items-center justify-center rounded-xl bg-[#1E3A6E] px-3 text-[12px] font-black text-white shadow-sm disabled:opacity-60 sm:hidden"
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
-          </button>
+          {/* Timer & Submit controls */}
+          <div className="flex shrink-0 items-center gap-2 sm:gap-6">
+            <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-500">
+              <Save className={`h-3.5 w-3.5 ${autosaveStatus === 'saving' ? 'animate-spin text-[#1E3A6E]' : ''}`} />
+              <span>
+                {autosaveStatus === 'saving' ? 'Saving progress...' :
+                 autosaveStatus === 'saved' ? 'Progress autosaved' :
+                 autosaveStatus === 'error' ? 'Connection dropped!' : 'Exam Active'}
+              </span>
+            </div>
 
-        </div>
-      </header>
+            <div className={`px-4 py-1.5 bg-slate-950 border rounded-xl flex items-center gap-2 font-mono text-sm font-bold ${
+              (isFullMock ? (sectionSecondsRemaining || 0) : secondsRemaining) < 300 ? 'text-[#EE6055] border-[#EE6055]/30 bg-[#EE6055]/5' : 'text-emerald-400 border-emerald-500/30'
+            }`}>
+              <Timer className="h-4 w-4 animate-pulse" />
+              <span>{formatTime(isFullMock ? (sectionSecondsRemaining ?? secondsRemaining) : secondsRemaining)}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex min-h-10 items-center justify-center rounded-xl bg-[#1E3A6E] px-3 text-[12px] font-black text-white shadow-sm disabled:opacity-60 sm:hidden"
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
+            </button>
+          </div>
+        </header>
+      )}
 
       {(autosaveStatus === 'error' || reconnectMessage) && (
         <div className="z-20 flex shrink-0 flex-col gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-[#05162E] sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -1005,7 +1200,235 @@ export default function ExamInterface() {
       )}
 
       {/* 2. Main CBT Split Screen Layout */}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:flex-row lg:overflow-hidden lg:pb-0">
+      {activeSection?.type === 'listening' ? (
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#F4F7FB] pb-24 lg:flex-row lg:overflow-hidden lg:pb-0">
+          {/* LEFT: Audio Deck Card */}
+          <div className="w-full lg:w-[44%] xl:w-[40%] flex-shrink-0 flex flex-col p-4 lg:p-6 lg:pr-3">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between h-auto lg:h-[calc(100vh-140px)] sticky top-4">
+              {/* Top Navy Banner */}
+              <div className="bg-[#0B1E48] text-white px-5 py-4 flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <Headphones className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[15px] text-white leading-tight">Listen and Answer</h3>
+                  <p className="text-[12px] text-blue-200/80 mt-0.5">You will hear a recording. Answer the questions on the right.</p>
+                </div>
+              </div>
+
+              {/* Hidden HTML5 Audio Element */}
+              <audio 
+                ref={audioRef}
+                src={listeningAudioUrl}
+                preload="auto"
+                controls={false}
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                onCanPlayThrough={handleAudioReady}
+                onProgress={handleAudioReady}
+                onLoadedData={handleAudioReady}
+                onWaiting={() => setAudioLoadingMessage('Buffering listening audio...')}
+                onError={() => {
+                  setAudioLoadError('Listening audio could not be loaded. Ask the admin to upload the file again.');
+                  setAudioReady(false);
+                }}
+                onTimeUpdate={updateAudioProgress}
+                onEnded={() => setAudioPlaying(false)}
+                onRateChange={() => {
+                  if (audioRef.current && audioRef.current.playbackRate !== 1) {
+                    audioRef.current.playbackRate = 1;
+                  }
+                }}
+                onPause={() => {
+                  if (examStartedByStudent && !audioRef.current?.ended && !isFinished) {
+                    audioRef.current?.play().catch(() => setAudioAutoplayBlocked(true));
+                  }
+                }}
+                className="hidden"
+              />
+
+              {/* Center Player Widget */}
+              <div className="flex-1 flex flex-col items-center justify-center py-6 px-6 text-center">
+                <div className="relative flex items-center justify-center my-4">
+                  {/* Outer Pulsing Ring */}
+                  <div className={`w-44 h-44 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
+                    {/* Middle Ring */}
+                    <div className="w-32 h-32 rounded-full bg-[#D7E7FC]/80 flex items-center justify-center">
+                      {/* Play / Pause Circular Button */}
+                      <button
+                        type="button"
+                        onClick={toggleAudioPlayback}
+                        className="w-20 h-20 rounded-full bg-[#0D224A] text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                        title={audioPlaying ? 'Pause Audio' : 'Play Audio'}
+                      >
+                        {audioPlaying ? (
+                          <Pause className="h-8 w-8 text-white fill-current" />
+                        ) : (
+                          <Play className="h-8 w-8 text-white fill-current ml-1" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-[16px] font-bold text-[#0D224A] tracking-tight">
+                  {audioPlaying ? 'Audio Playing...' : audioAutoplayBlocked ? 'Click to Start Audio' : 'Audio Paused'}
+                </p>
+
+                {/* Scrubber Progress Bar */}
+                <div className="w-full max-w-sm mt-5 space-y-1.5">
+                  <div
+                    onClick={handleAudioSeek}
+                    className="relative w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden cursor-pointer"
+                  >
+                    <div
+                      style={{ width: `${audioProgress}%` }}
+                      className="absolute h-full bg-[#0D224A] rounded-full transition-all duration-200"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[12px] font-semibold text-slate-500 font-mono">
+                    <span>{formatTime(audioCurrentTime)}</span>
+                    <span>- {formatTime(Math.max(0, (audioDuration || 0) - audioCurrentTime))}</span>
+                  </div>
+                </div>
+
+                {/* Notice Alert Banner */}
+                <div className="w-full max-w-sm mt-4 bg-[#EFF6FF] border border-blue-200/70 rounded-xl p-3 flex items-start gap-2.5 text-left">
+                  <Info className="h-4 w-4 text-[#2563EB] shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-slate-600 leading-snug">
+                    The audio will play automatically. You cannot pause, rewind or fast-forward.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Landmark Illustration Banner */}
+              <div className="w-full overflow-hidden mt-auto border-t border-slate-100 bg-[#F8FAFC]/50">
+                <img
+                  src="/banner-asset.png"
+                  alt="Landmarks"
+                  className="w-full object-cover object-bottom h-28 opacity-85 pointer-events-none select-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Questions Area */}
+          <div className="w-full lg:w-[56%] xl:w-[60%] flex-1 p-4 lg:p-6 lg:pl-3 overflow-y-auto">
+            <div className="space-y-6">
+              {activeGroups.map((group: any, gIdx: number) => {
+                const gQuestions = group.questions || [];
+                const sortedGQ = [...gQuestions].sort((a: any, b: any) => Number(a.question_number || 0) - Number(b.question_number || 0));
+                const firstQ = sortedGQ[0]?.question_number;
+                const lastQ = sortedGQ[sortedGQ.length - 1]?.question_number;
+                const questionRange = firstQ && lastQ ? (firstQ === lastQ ? `Question ${firstQ}` : `Questions ${firstQ}-${lastQ}`) : '';
+
+                return (
+                  <div
+                    key={group.id}
+                    id={`group-${group.id}`}
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5"
+                  >
+                    {/* Header Row: Part Badge & Question Range */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                      <span className="px-4 py-1.5 rounded-full bg-[#0D224A] text-white text-xs font-bold tracking-wide">
+                        Part {gIdx + 1}
+                      </span>
+                      {questionRange && (
+                        <span className="text-xs font-bold text-slate-500">
+                          {questionRange}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Instruction Box */}
+                    {group.instruction && (
+                      <div className="bg-[#EFF6FF] border border-blue-200/80 rounded-xl p-3.5 flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-[#2563EB] shrink-0" />
+                        <span className="text-[14px] font-bold text-[#0D224A]">
+                          {renderFormattedText(group.instruction)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Group Questions */}
+                    <div className="space-y-6 pt-1">
+                      {buildOrderedQuestionBlocks(group.questions || [], group.instruction || '', activeSection?.type).map((block) => {
+                        if (block.kind === 'listening-matching' || isListeningMatchingTextBlock(block.questions)) {
+                          return (
+                            <ListeningMatchingTextGroup
+                              key={block.id}
+                              questions={block.questions}
+                              instruction={block.instruction}
+                              values={answers}
+                              onChange={setAnswer}
+                              onActivateQuestion={setActiveQuestionId}
+                            />
+                          );
+                        }
+
+                        if (block.kind === 'summary') {
+                          return (
+                            <SummaryCompletionGroup
+                              key={block.id}
+                              questions={block.questions}
+                              values={answers}
+                              onChange={setAnswer}
+                              mode="light"
+                              onActivateQuestion={setActiveQuestionId}
+                              groupInstruction={group.instruction || ''}
+                            />
+                          );
+                        }
+
+                        return (
+                          <div key={block.id} className="space-y-4">
+                            {isMultiSelectAnswerGroup(block.questions) ? (
+                              <MultiSelectAnswerGroup
+                                questions={block.questions}
+                                instruction={block.instruction}
+                                values={answers}
+                                onChange={setAnswer}
+                                onActivateQuestion={setActiveQuestionId}
+                              />
+                            ) : (
+                              <>
+                                <QuestionInstructionCard instruction={block.instruction} />
+                                {block.questions.map((question: any) => (
+                                  <div 
+                                    key={question.id} 
+                                    id={`question-${question.id}`}
+                                    className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all sm:flex-row sm:items-start sm:p-6 ${
+                                      activeQuestionId === question.id 
+                                        ? 'border-[#0D224A]/60 ring-1 ring-[#0D224A]/20' 
+                                        : 'border-slate-200'
+                                    }`}
+                                    onClick={() => setActiveQuestionId(question.id)}
+                                  >
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0D224A] text-[13px] font-black text-white shadow-md">
+                                      {question.question_number}
+                                    </div>
+                                    <div className="flex-1">
+                                      <QuestionRenderer
+                                        question={question}
+                                        value={answers[question.id]}
+                                        onChange={(val) => setAnswer(question.id, val)}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:flex-row lg:overflow-hidden lg:pb-0">
         
         {/* Highlighter Tooltip overlay */}
         {highlightCoords && (
@@ -1411,78 +1834,196 @@ export default function ExamInterface() {
         </div>
 
       </div>
+      )}
 
       {/* 3. Bottom Palette Navigation Dock */}
-      <footer className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] shrink-0 select-none flex-col gap-4 overflow-hidden border-t border-slate-200 bg-white px-4 pb-4 pt-2 text-slate-500 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:flex-row lg:items-center lg:justify-between lg:overflow-visible lg:px-6 lg:py-4 ${
-        isPaletteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'
-      }`}>
-        <button
-          type="button"
-          onClick={() => setIsPaletteOpen(current => !current)}
-          className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F8FAFC] px-4 text-[12px] font-black uppercase tracking-wide text-[#05162E] lg:hidden"
-          aria-expanded={isPaletteOpen}
-        >
-          <span>Question Palette</span>
-          <ChevronUp className={`h-4 w-4 transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`} />
-        </button>
+      {activeSection?.type === 'listening' ? (
+        <footer className="sticky bottom-0 z-30 bg-white border-t border-slate-200 px-4 sm:px-6 py-2.5 sm:py-3 shrink-0 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+          {/* Left: Two Rows of Question Number Chips */}
+          <div className="flex flex-col gap-1.5 overflow-x-auto py-0.5">
+            {/* Row 1: 1 to 25 */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              {sectionQuestions.slice(0, 25).map((q: any) => {
+                const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+                const isFlagged = flaggedQuestions.includes(q.id);
+                const isActiveQ = activeQuestionId === q.id;
 
-        <div className="flex max-w-full flex-wrap gap-2 overflow-x-auto py-1">
-          {(activeSection?.type === 'writing' ? writingTasks : sectionQuestions).map((q: any, idx: number) => {
-            const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
-            const isFlagged = flaggedQuestions.includes(q.id);
-            const isActiveQ = activeSection?.type === 'writing' ? activeWritingTaskIndex === idx : activeQuestionId === q.id;
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => setActiveQuestionId(q.id)}
+                    className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${
+                      isActiveQ
+                        ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
+                        : isFlagged
+                        ? 'bg-[#F59E0B] text-white'
+                        : isAnswered
+                        ? 'bg-[#0D224A] text-white'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                    }`}
+                  >
+                    {q.question_number}
+                  </button>
+                );
+              })}
+            </div>
 
-            return (
+            {/* Row 2: 26 to 40 */}
+            {sectionQuestions.length > 25 && (
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {sectionQuestions.slice(25).map((q: any) => {
+                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+                  const isFlagged = flaggedQuestions.includes(q.id);
+                  const isActiveQ = activeQuestionId === q.id;
+
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => setActiveQuestionId(q.id)}
+                      className={`h-7 min-w-7 px-1 sm:h-8 sm:min-w-8 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center transition-all ${
+                        isActiveQ
+                          ? 'bg-[#0D224A] text-white ring-2 ring-[#0D224A]/40 shadow-sm'
+                          : isFlagged
+                          ? 'bg-[#F59E0B] text-white'
+                          : isAnswered
+                          ? 'bg-[#0D224A] text-white'
+                          : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                      }`}
+                    >
+                      {q.question_number}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Legend and Action Buttons */}
+          <div className="flex items-center justify-between xl:justify-end gap-4 sm:gap-6 shrink-0 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-100">
+            {/* Legend */}
+            <div className="flex items-center gap-3 sm:gap-4 text-xs font-medium text-slate-600">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0D224A]"></span>
+                <span className="text-[11px] sm:text-xs">Answered</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>
+                <span className="text-[11px] sm:text-xs">Flagged</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full border border-slate-400 bg-white"></span>
+                <span className="text-[11px] sm:text-xs">Unanswered</span>
+              </div>
+            </div>
+
+            {/* Actions: Flag & Next */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <button
-                key={q.id}
+                type="button"
                 onClick={() => {
-                  if (activeSection?.type === 'writing') {
-                    setActiveWritingTaskIndex(idx);
-                  } else {
-                    setActiveQuestionId(q.id);
-                  }
-                  setIsPaletteOpen(false);
+                  if (activeQuestionId) toggleFlag(activeQuestionId);
                 }}
-                className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} flex h-9 min-w-9 items-center justify-center rounded-xl text-[13px] font-bold transition-all ${
-                  isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
-                } ${
-                  isFlagged 
-                    ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' 
-                    : isAnswered 
-                    ? 'bg-[#1E3A6E] text-white hover:bg-[#162d57]' 
-                    : 'bg-white border border-slate-300 text-slate-500 hover:bg-[#F8FAFC]'
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                  activeQuestionId && flaggedQuestions.includes(activeQuestionId)
+                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                    : 'border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                {activeSection?.type === 'writing' ? (q.extra_data_json?.task_type || `Task ${idx + 1}`) : q.question_number}
+                <Flag className="h-3.5 w-3.5 text-slate-500" />
+                <span>Flag</span>
               </button>
-            );
-          })}
-        </div>
 
-        {/* Legend */}
-        <div className="flex shrink-0 flex-wrap gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 sm:gap-5">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-[#1E3A6E]"></div>
-            <span>Answered</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeQuestionIndex < sectionQuestions.length - 1) {
+                    setActiveQuestionId(sectionQuestions[activeQuestionIndex + 1].id);
+                  } else {
+                    handleSubmit();
+                  }
+                }}
+                className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+              >
+                <span>Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-amber-500"></div>
-            <span>Flagged</span>
+        </footer>
+      ) : (
+        <footer className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] shrink-0 select-none flex-col gap-4 overflow-hidden border-t border-slate-200 bg-white px-4 pb-4 pt-2 text-slate-500 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:flex-row lg:items-center lg:justify-between lg:overflow-visible lg:px-6 lg:py-4 ${
+          isPaletteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'
+        }`}>
+          <button
+            type="button"
+            onClick={() => setIsPaletteOpen(current => !current)}
+            className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F8FAFC] px-4 text-[12px] font-black uppercase tracking-wide text-[#05162E] lg:hidden"
+            aria-expanded={isPaletteOpen}
+          >
+            <span>Question Palette</span>
+            <ChevronUp className={`h-4 w-4 transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className="flex max-w-full flex-wrap gap-2 overflow-x-auto py-1">
+            {(activeSection?.type === 'writing' ? writingTasks : sectionQuestions).map((q: any, idx: number) => {
+              const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+              const isFlagged = flaggedQuestions.includes(q.id);
+              const isActiveQ = activeSection?.type === 'writing' ? activeWritingTaskIndex === idx : activeQuestionId === q.id;
+
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => {
+                    if (activeSection?.type === 'writing') {
+                      setActiveWritingTaskIndex(idx);
+                    } else {
+                      setActiveQuestionId(q.id);
+                    }
+                    setIsPaletteOpen(false);
+                  }}
+                  className={`${activeSection?.type === 'writing' ? 'px-4 w-auto' : 'w-9'} flex h-9 min-w-9 items-center justify-center rounded-xl text-[13px] font-bold transition-all ${
+                    isActiveQ ? 'ring-2 ring-[#1E3A6E]/30 scale-110 z-10 shadow-lg' : ''
+                  } ${
+                    isFlagged 
+                      ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' 
+                      : isAnswered 
+                      ? 'bg-[#1E3A6E] text-white hover:bg-[#162d57]' 
+                      : 'bg-white border border-slate-300 text-slate-500 hover:bg-[#F8FAFC]'
+                  }`}
+                >
+                  {activeSection?.type === 'writing' ? (q.extra_data_json?.task_type || `Task ${idx + 1}`) : q.question_number}
+                </button>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-white border border-slate-300"></div>
-            <span>Unanswered</span>
+
+          {/* Legend */}
+          <div className="flex shrink-0 flex-wrap gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 sm:gap-5">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-md bg-[#1E3A6E]"></div>
+              <span>Answered</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-md bg-amber-500"></div>
+              <span>Flagged</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-md bg-white border border-slate-300"></div>
+              <span>Unanswered</span>
+            </div>
           </div>
-        </div>
-        
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1E3A6E] px-8 py-3 text-[14px] font-black uppercase tracking-wide text-white shadow-md transition-all hover:bg-[#162d57] sm:w-auto"
-        >
-          <CheckCircle2 className="h-5 w-5" /> {submitButtonLabel}
-        </button>
-      </footer>
+          
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1E3A6E] px-8 py-3 text-[14px] font-black uppercase tracking-wide text-white shadow-md transition-all hover:bg-[#162d57] sm:w-auto"
+          >
+            <CheckCircle2 className="h-5 w-5" /> {submitButtonLabel}
+          </button>
+        </footer>
+      )}
 
     </div>
   );
