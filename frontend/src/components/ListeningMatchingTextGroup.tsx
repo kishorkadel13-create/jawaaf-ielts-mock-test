@@ -24,11 +24,20 @@ export const getParsedOptionsAndBoxTitle = (questions: any[]) => {
 
   if (rawOptions.length > 1) {
     const firstOpt = rawOptions[0]?.trim() || '';
+    const cleanFirstOpt = firstOpt.replace(/^\*\*|\*\*$/g, '').replace(/^#{1,3}\s+/, '').replace(/:$/, '').trim();
+
+    // If explicitTitle matches the first option, strip it
+    if (explicitTitle && cleanFirstOpt.toLowerCase() === explicitTitle.toLowerCase()) {
+      return {
+        boxTitle: explicitTitle,
+        options: rawOptions.slice(1),
+      };
+    }
+
     // If first option was saved as "**Topics**" or "## Topics" or ending with colon
     if (/^\*\*[^*]+\*\*$/.test(firstOpt) || /^#{1,3}\s+/.test(firstOpt) || /:$/.test(firstOpt)) {
-      const detectedTitle = firstOpt.replace(/^\*\*|\*\*$/g, '').replace(/^#{1,3}\s+/, '').replace(/:$/, '').trim();
       return {
-        boxTitle: explicitTitle || detectedTitle,
+        boxTitle: explicitTitle || cleanFirstOpt,
         options: rawOptions.slice(1),
       };
     }

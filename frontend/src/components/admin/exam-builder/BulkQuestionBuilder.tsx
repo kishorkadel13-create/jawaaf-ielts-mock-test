@@ -11,6 +11,7 @@ interface BulkQuestionBuilderProps {
   nextOrderNo: number;
   currentInstruction?: string;
   initialRawText?: string;
+  initialHeadingOptions?: string;
   initialBulkType?: string;
   initialQuestionStatement?: string;
   submitLabel?: string;
@@ -431,6 +432,7 @@ export default function BulkQuestionBuilder({
   nextOrderNo,
   currentInstruction = '',
   initialRawText = '',
+  initialHeadingOptions = '',
   initialBulkType = 'AUTO',
   initialQuestionStatement,
   submitLabel,
@@ -438,7 +440,7 @@ export default function BulkQuestionBuilder({
 }: BulkQuestionBuilderProps) {
   const isListening = sectionType === 'listening';
   const [rawText, setRawText] = useState(initialRawText);
-  const [headingOptionsText, setHeadingOptionsText] = useState('');
+  const [headingOptionsText, setHeadingOptionsText] = useState(initialHeadingOptions);
   const [bulkType, setBulkType] = useState(initialBulkType);
   const [questionStatement, setQuestionStatement] = useState(initialQuestionStatement ?? currentInstruction);
   const statementRef = useRef<HTMLTextAreaElement | null>(null);
@@ -470,12 +472,12 @@ export default function BulkQuestionBuilder({
 
   useEffect(() => {
     setRawText(initialRawText);
-    setHeadingOptionsText('');
+    setHeadingOptionsText(initialHeadingOptions || '');
     setBulkType(initialBulkType);
     setQuestionStatement(initialQuestionStatement ?? currentInstruction);
     setParsedQuestions(null);
     setError(null);
-  }, [initialRawText, initialBulkType, initialQuestionStatement, currentInstruction]);
+  }, [initialRawText, initialHeadingOptions, initialBulkType, initialQuestionStatement, currentInstruction]);
 
   const applyTextareaFormat = (
     textarea: HTMLTextAreaElement | null,
@@ -563,23 +565,62 @@ export default function BulkQuestionBuilder({
       : questionTextSource;
 
     let sharedOptions: string[] = [];
+    let detectedBoxTitle: string | null = null;
     if (isListeningMatching) {
       if (headingOptionsText.trim()) {
-        sharedOptions = headingOptionsText
-          .split('\n')
-          .map((l) => l.trim())
-          .filter(Boolean)
-          .map((line) => {
-            const m = line.match(FLEXIBLE_OPTION_RE);
-            return m ? m[2].trim() : line;
-          });
+        const rawLines = headingOptionsText.split('\n').map((l) => l.trim()).filter(Boolean);
+        const hasPrefixed = rawLines.some((l) => FLEXIBLE_OPTION_RE.test(l));
+
+        if (hasPrefixed) {
+          const firstOptIdx = rawLines.findIndex((l) => FLEXIBLE_OPTION_RE.test(l));
+          if (firstOptIdx > 0) {
+            detectedBoxTitle = rawLines
+              .slice(0, firstOptIdx)
+              .join(' ')
+              .replace(/^#{1,3}\s+/, '')
+              .replace(/^\*\*|\*\*$/g, '')
+              .replace(/:$/, '')
+              .trim();
+          }
+          sharedOptions = rawLines
+            .slice(firstOptIdx)
+            .filter((l) => FLEXIBLE_OPTION_RE.test(l))
+            .map((line) => {
+              const m = line.match(FLEXIBLE_OPTION_RE);
+              return m ? m[2].trim() : line;
+            });
+        } else {
+          if (rawLines.length > 1 && (/^\*\*[^*]+\*\*$/.test(rawLines[0]) || /^#{1,3}\s+/.test(rawLines[0]) || /:$/.test(rawLines[0]))) {
+            detectedBoxTitle = rawLines[0].replace(/^#{1,3}\s+/, '').replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+            sharedOptions = rawLines.slice(1);
+          } else {
+            sharedOptions = rawLines;
+          }
+        }
       } else {
-        sharedOptions = questionTextSource
-          .split('\n')
-          .map((l) => l.trim())
+        const rawLines = questionTextSource.split('\n').map((l) => l.trim()).filter(Boolean);
+        const firstOptIdx = rawLines.findIndex((l) => FLEXIBLE_OPTION_RE.test(l));
+        if (firstOptIdx > 0) {
+          const preamble = rawLines[firstOptIdx - 1];
+          if (/^\*\*[^*]+\*\*$/.test(preamble) || /^#{1,3}\s+/.test(preamble) || /:$/.test(preamble)) {
+            detectedBoxTitle = preamble.replace(/^#{1,3}\s+/, '').replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+          }
+        }
+        sharedOptions = rawLines
           .map((l) => l.match(FLEXIBLE_OPTION_RE))
           .filter((m): m is RegExpMatchArray => Boolean(m))
           .map((m) => m[2].trim());
+      }
+
+      if (!detectedBoxTitle) {
+        const qLines = parseTextSource.split('\n').map((l) => l.trim()).filter(Boolean);
+        for (const line of qLines) {
+          if (/^\d+[\.\s]/.test(line)) break;
+          if (/^\*\*[^*]+\*\*$/.test(line) && !line.toLowerCase().includes('speaker')) {
+            detectedBoxTitle = line.replace(/^\*\*|\*\*$/g, '').trim();
+            break;
+          }
+        }
       }
     } else {
       sharedOptions = sharedOptionTypes.has(bulkType) ? extractSharedOptions(questionTextSource) : optionBankOptions;
@@ -673,17 +714,29 @@ export default function BulkQuestionBuilder({
       const shouldNormalizeOptionAnswers = ['SINGLE_MCQ', 'MULTI_SELECT', 'SUMMARY_COMPLETION_OPTIONS', 'MATCHING', 'MATCHING_HEADINGS', 'MATCHING_INFORMATION', 'SENTENCE_COMPLETION'].includes(questionType) || isListeningMatching;
       const answers = shouldNormalizeOptionAnswers ? normalizeAnswersForOptions(rawAnswers, finalOptions, isListeningMatching ? 'MATCHING' : questionType) : rawAnswers;
 
+      let cleanQuestionText = questionText;
+      let finalSectionHeading = sectionHeading;
+
+      if (isListeningMatching) {
+        const parsedHT = parseQuestionHeadingAndText(questionText, { section_heading: sectionHeading }, detectedBoxTitle);
+        if (parsedHT.heading) {
+          finalSectionHeading = parsedHT.heading;
+        }
+        cleanQuestionText = parsedHT.text || `Question ${block.number}`;
+      }
+
       return {
         question_type: isListeningMatching ? 'MATCHING' : questionType,
         question_number: block.number,
-        question_text: questionText || `Question ${block.number}`,
+        question_text: cleanQuestionText || `Question ${block.number}`,
         options_json: finalOptions.length > 0 ? finalOptions : undefined,
         correct_answers_json: answers.length > 0 ? answers : ['[NO ANSWER DETECTED]'],
         extra_data_json: {
           ...(blankFocusedTypes.has(questionType) ? { bulk_source: parseTextSource } : {}),
           bulk_source: parseTextSource,
           bulk_instruction: questionStatement.trim(),
-          ...(sectionHeading ? { section_heading: sectionHeading } : {}),
+          ...(finalSectionHeading ? { section_heading: finalSectionHeading } : {}),
+          ...(detectedBoxTitle ? { box_title: detectedBoxTitle } : {}),
           ...(isListeningMatching ? { bulk_batch_id: batchId, is_listening_matching: true } : {}),
         },
         marks: 1,
@@ -886,19 +939,29 @@ export default function BulkQuestionBuilder({
             </div>
 
             <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
-              {isListeningMatching && parsedQuestions.some((q) => q.options_json?.length) && (
-                <div className="rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
-                  <h5 className="text-[12px] font-black text-[#1E3A6E] mb-3">Options Box Preview</h5>
-                  <div className="flex flex-col gap-2">
-                    {parsedQuestions.find((q) => q.options_json?.length)?.options_json?.map((opt, i) => (
-                      <div key={i} className="flex items-start gap-4 text-[14px] text-[#05162E]">
-                        <span className="w-5 font-black shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
-                        <span className="font-medium text-[#1E293B]">{opt}</span>
-                      </div>
-                    ))}
+              {isListeningMatching && parsedQuestions.some((q) => q.options_json?.length) && (() => {
+                const sampleQ = parsedQuestions.find((q) => q.options_json?.length);
+                const pBoxTitle = sampleQ?.extra_data_json?.box_title;
+                const pOptions = sampleQ?.options_json || [];
+                return (
+                  <div className="rounded-md border-2 border-slate-700 bg-white p-5 shadow-sm">
+                    {pBoxTitle && (
+                      <h4 className="mb-3 text-center text-[15px] font-black text-[#05162E]">{pBoxTitle}</h4>
+                    )}
+                    <p className="text-[12px] font-black uppercase tracking-wider text-[#1E3A6E] mb-3">
+                      Box Options ({pOptions.length > 0 ? `A-${String.fromCharCode(64 + pOptions.length)}` : 'A-I'})
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {pOptions.map((opt, i) => (
+                        <div key={i} className="flex items-start gap-4 text-[14px] text-[#05162E]">
+                          <span className="w-5 font-black shrink-0 text-[#05162E]">{String.fromCharCode(65 + i)}</span>
+                          <span className="font-medium text-[#1E293B]">{opt}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {parsedQuestions.some((q) => q.question_type === 'MATCHING_HEADINGS' && q.options_json?.length) && (
                 <div className="p-4 bg-[#EFF4FB] border border-[#1E3A6E]/20 rounded-xl">
@@ -926,7 +989,11 @@ export default function BulkQuestionBuilder({
 
               {parsedQuestions.filter((q) => !isSummaryCompletionQuestion(q)).map((q, idx) => {
                 const showInlineOptions = Boolean(q.options_json?.length) && !sharedOptionTypes.has(q.question_type);
-                const { heading, text: cleanText } = parseQuestionHeadingAndText(q.question_text, q.extra_data_json);
+                const { heading, text: cleanText } = parseQuestionHeadingAndText(
+                  q.question_text,
+                  q.extra_data_json,
+                  q.extra_data_json?.box_title
+                );
 
                 return (
                   <React.Fragment key={idx}>

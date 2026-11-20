@@ -775,6 +775,22 @@ export default function AdminTestDetailsPage() {
     return `${rows}\n\nAnswer Key:\n${answerLines}`;
   };
 
+  const getBulkEditHeadingOptions = (batch: any) => {
+    if (activeSection?.type !== 'listening') return '';
+    const isMatching = batch.questions?.some((q: any) => ['MATCHING', 'MATCHING_INFORMATION'].includes(q.question_type));
+    if (!isMatching) return '';
+    const { boxTitle, options } = getParsedOptionsAndBoxTitle(batch.questions);
+    if (!options.length) return '';
+    const lines: string[] = [];
+    if (boxTitle) {
+      lines.push(boxTitle);
+    }
+    options.forEach((opt: string, i: number) => {
+      lines.push(`${String.fromCharCode(65 + i)}  ${opt}`);
+    });
+    return lines.join('\n');
+  };
+
   const startEditBulkBatch = (batch: any) => {
     setEditingQuestion(null);
     setEditingBatchKey(null);
@@ -1383,6 +1399,7 @@ export default function AdminTestDetailsPage() {
                                     currentInstruction={getBulkEditInstruction(batch)}
                                     initialQuestionStatement={getBulkEditInstruction(batch)}
                                     initialBulkType={getBulkEditType(batch)}
+                                    initialHeadingOptions={getBulkEditHeadingOptions(batch)}
                                     initialRawText={getBulkEditRawText(batch)}
                                     submitLabel={`Update ${batch.questions.length} Questions`}
                                     sectionType={activeSection?.type}
