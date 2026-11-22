@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown, Download, Eye, FileText, Headphones, History, Loader2, Lock, LogOut, Maximize2, MessageCircle, Minimize2, Minus, Monitor, PenLine, Play, Plus, Search, Send, Settings, Target, User, Video, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -383,13 +384,24 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
     setScale(prev => Math.max(0.65, Number((prev - 0.15).toFixed(2))));
   };
 
+  // Prevent background body scroll when in fullscreen
+  useEffect(() => {
+    if (isFullscreen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isFullscreen]);
+
   const renderViewer = (inFullscreen = false) => (
     <div
-      className={`flex flex-col ${inFullscreen ? 'h-full w-full' : 'overflow-hidden rounded-2xl border border-[#D8BE93] bg-[#FCF8EE] shadow-sm'}`}
+      className={`flex flex-col ${inFullscreen ? 'h-screen w-screen bg-[#111111]' : 'overflow-hidden rounded-2xl border border-[#D8BE93] bg-[#FCF8EE] shadow-sm'}`}
       onContextMenu={e => e.preventDefault()}
     >
       {/* Top Header Bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-3 border-b border-[#E3CA9D] px-4 py-3 sm:px-5 ${inFullscreen ? 'bg-[#1E1E1E] text-white border-white/10' : 'bg-[#FAF3E5]'}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5 ${inFullscreen ? 'bg-[#181818] text-white border-white/10' : 'border-[#E3CA9D] bg-[#FAF3E5]'}`}>
         {/* Left: Red PDF Icon & Title */}
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E03131] text-white shadow-xs">
@@ -475,7 +487,7 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className={`custom-scrollbar flex-1 overflow-y-auto scroll-smooth p-4 sm:p-6 ${inFullscreen ? 'h-[calc(100vh-70px)] bg-[#141414]' : 'h-[520px] sm:h-[620px] 2xl:h-[680px] bg-[#F7F3EA]'}`}
+        className={`custom-scrollbar flex-1 overflow-y-auto scroll-smooth p-4 sm:p-6 ${inFullscreen ? 'h-[calc(100vh-65px)] w-full bg-[#111111]' : 'h-[520px] sm:h-[620px] 2xl:h-[680px] bg-[#F7F3EA]'}`}
       >
         {loading && !pages.length && (
           <div className="grid min-h-[360px] place-items-center text-center">
@@ -526,11 +538,12 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
     <>
       {renderViewer(false)}
 
-      {/* Fullscreen Overlay */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-[9999] flex flex-col bg-black/95 backdrop-blur-md">
+      {/* Fullscreen Overlay via Portal directly onto document.body - 100% solid, opaque, covering entire window */}
+      {isFullscreen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex h-screen w-screen flex-col bg-[#111111] text-white select-none">
           {renderViewer(true)}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
