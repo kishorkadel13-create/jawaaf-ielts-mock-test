@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, Clock, Crown, Download, FileText, Headphones, History, Lock, LogOut, MessageCircle, Monitor, PenLine, Play, Search, Send, Settings, Target, User, Video } from 'lucide-react';
+import { ArrowLeft, BarChart3, BookOpen, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown, Download, Eye, FileText, Headphones, History, Loader2, Lock, LogOut, Maximize2, MessageCircle, Minimize2, Minus, Monitor, PenLine, Play, Plus, Search, Send, Settings, Target, User, Video, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -265,6 +265,12 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
   const [pages, setPages] = useState<Array<{ pageNumber: number; src: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [scale, setScale] = useState(1.0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     if (!resourceId) return;
@@ -277,30 +283,40 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
         setLoading(true);
         setError('');
         setPages([]);
+        setCurrentPage(1);
+
         const loadingTask = pdfjsLib.getDocument({
           url: documentUrl,
           httpHeaders: token ? { Authorization: `Bearer ${token}` } : undefined
         });
         const pdf = await loadingTask.promise;
-        const renderedPages = [];
+        if (cancelled) return;
+
+        setTotalPages(pdf.numPages);
+        const renderedPages: Array<{ pageNumber: number; src: string }> = [];
+
+        // High resolution scale for crisp text
+        const renderScale = 2.0;
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          if (cancelled) break;
           const page = await pdf.getPage(pageNumber);
-          const viewport = page.getViewport({ scale: 1.55 });
+          const viewport = page.getViewport({ scale: renderScale });
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           if (!context) continue;
 
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          await page.render({ canvas: canvas, viewport }).promise;
+          await page.render({ canvas, viewport }).promise;
           renderedPages.push({ pageNumber, src: canvas.toDataURL('image/png') });
           if (!cancelled) setPages([...renderedPages]);
         }
 
         await loadingTask.destroy();
-      } catch (err) {
-        if (!cancelled) setError('Notes could not be rendered inside the reader. Please upload a PDF file or use a public Drive PDF link.');
+      } catch (err: any) {
+        console.error('NotesPdfReader error:', err);
+        if (!cancelled) setError('Notes could not be rendered inside the reader. Please verify the uploaded PDF file or Drive sharing permissions.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -313,34 +329,210 @@ const NotesPdfReader = ({ title, resourceId, token }: { title: string; resourceI
     };
   }, [resourceId, token]);
 
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-        <div className="min-w-0">
-          <p className="text-[12px] font-black uppercase tracking-wider text-slate-400">Viewing Notes</p>
-          <h3 className="truncate text-[16px] font-black">{title}</h3>
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
+
+  const handleScroll = () => {
+    if (isScrollingRef.current) return;
+    const container = scrollContainerRef.current;
+    if (!container || !pages.length) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    let closestPage = 1;
+    let minDistance = Infinity;
+
+    for (let i = 1; i <= pages.length; i++) {
+      const el = document.getElementById(`notes-page-${resourceId}-${i}`);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      const distance = Math.abs(rect.top - containerTop - 30);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPage = i;
+      }
+    }
+
+    setCurrentPage(closestPage);
+  };
+
+  const scrollToPage = (pageNumber: number) => {
+    const target = Math.max(1, Math.min(pageNumber, totalPages));
+    setCurrentPage(target);
+    const el = document.getElementById(`notes-page-${resourceId}-${target}`);
+    if (el) {
+      isScrollingRef.current = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 500);
+    }
+  };
+
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(1.8, Number((prev + 0.15).toFixed(2))));
+  };
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(0.65, Number((prev - 0.15).toFixed(2))));
+  };
+
+  const renderViewer = (inFullscreen = false) => (
+    <div
+      className={`flex flex-col ${inFullscreen ? 'h-full w-full' : 'overflow-hidden rounded-2xl border border-[#D8BE93] bg-[#FCF8EE] shadow-sm'}`}
+      onContextMenu={e => e.preventDefault()}
+    >
+      {/* Top Header Bar */}
+      <div className={`flex flex-wrap items-center justify-between gap-3 border-b border-[#E3CA9D] px-4 py-3 sm:px-5 ${inFullscreen ? 'bg-[#1E1E1E] text-white border-white/10' : 'bg-[#FAF3E5]'}`}>
+        {/* Left: Red PDF Icon & Title */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E03131] text-white shadow-xs">
+            <FileText className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h3 className={`truncate text-[15px] sm:text-[16px] font-black ${inFullscreen ? 'text-white' : 'text-[#2D1A10]'}`}>
+              Lesson Notes
+            </h3>
+            {title && (
+              <p className={`truncate text-[11px] font-semibold ${inFullscreen ? 'text-white/60' : 'text-[#7A5B3E]'}`}>
+                {title}
+              </p>
+            )}
+          </div>
         </div>
-        {pages.length > 0 && <p className="text-[12px] font-black text-slate-400">{pages.length} pages</p>}
+
+        {/* Right: Controls (Zoom, Page Navigation, Fullscreen) - NO Download button */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Zoom Controls */}
+          <div className={`flex items-center rounded-lg border px-1 py-0.5 shadow-2xs ${inFullscreen ? 'border-white/20 bg-white/10 text-white' : 'border-[#DEC59C] bg-white/95 text-[#5F4630]'}`}>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={scale <= 0.65}
+              title="Zoom out"
+              className={`flex h-7 w-7 items-center justify-center rounded transition-colors disabled:opacity-30 ${inFullscreen ? 'hover:bg-white/10' : 'hover:bg-[#F3E7D2]'}`}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className={`min-w-[42px] text-center text-[11.5px] font-black ${inFullscreen ? 'text-white' : 'text-[#2D1A10]'}`}>
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              disabled={scale >= 1.8}
+              title="Zoom in"
+              className={`flex h-7 w-7 items-center justify-center rounded transition-colors disabled:opacity-30 ${inFullscreen ? 'hover:bg-white/10' : 'hover:bg-[#F3E7D2]'}`}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Page Navigation */}
+          <div className={`flex items-center rounded-lg border px-1.5 py-0.5 shadow-2xs ${inFullscreen ? 'border-white/20 bg-white/10 text-white' : 'border-[#DEC59C] bg-white/95 text-[#5F4630]'}`}>
+            <button
+              type="button"
+              onClick={() => scrollToPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+              title="Previous page"
+              className={`flex h-7 w-7 items-center justify-center rounded transition-colors disabled:opacity-30 ${inFullscreen ? 'hover:bg-white/10' : 'hover:bg-[#F3E7D2]'}`}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className={`min-w-[48px] text-center text-[12px] font-black ${inFullscreen ? 'text-white' : 'text-[#2D1A10]'}`}>
+              {currentPage} / {totalPages || 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => scrollToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              title="Next page"
+              className={`flex h-7 w-7 items-center justify-center rounded transition-colors disabled:opacity-30 ${inFullscreen ? 'hover:bg-white/10' : 'hover:bg-[#F3E7D2]'}`}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Fullscreen Button with tooltip */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(prev => !prev)}
+            title={inFullscreen ? "Exit full screen" : "Click to view notes in full screen"}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-2xs transition-colors ${inFullscreen ? 'border-white/20 bg-white/10 text-white hover:bg-white/20' : 'border-[#DEC59C] bg-white/95 text-[#5F4630] hover:bg-[#F3E7D2] hover:text-[#2D1A10]'}`}
+          >
+            {inFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
-      <div className="max-h-[720px] overflow-y-auto bg-[#F3F6FB] px-4 py-6">
+
+      {/* Main Scrollable Document Area: Bigger notes area with smooth scroll */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className={`custom-scrollbar flex-1 overflow-y-auto scroll-smooth p-4 sm:p-6 ${inFullscreen ? 'h-[calc(100vh-70px)] bg-[#141414]' : 'h-[520px] sm:h-[620px] 2xl:h-[680px] bg-[#F7F3EA]'}`}
+      >
         {loading && !pages.length && (
-          <div className="grid min-h-[320px] place-items-center text-[14px] font-bold text-slate-500">Preparing notes reader...</div>
+          <div className="grid min-h-[360px] place-items-center text-center">
+            <div>
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#A23A24]" />
+              <p className="mt-3 text-[14px] font-bold text-[#5F4630]">Preparing lesson notes...</p>
+              <p className="mt-1 text-[12px] font-semibold text-[#8A6A42]">Rendering high quality pages</p>
+            </div>
+          </div>
         )}
+
         {error && (
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-[14px] font-bold text-rose-600">{error}</div>
+          <div className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+            <FileText className="mx-auto h-8 w-8 text-rose-500" />
+            <h4 className="mt-2 text-[15px] font-black text-rose-800">Notes Loading Issue</h4>
+            <p className="mt-1 text-[13px] font-semibold text-rose-600">{error}</p>
+          </div>
         )}
-        <div className="mx-auto grid max-w-4xl gap-5">
-          {pages.map(page => (
-            <figure key={page.pageNumber} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
-              <img src={page.src} alt={`${title} page ${page.pageNumber}`} className="w-full select-none bg-white" draggable={false} />
-              <figcaption className="border-t border-slate-100 px-4 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">
-                Page {page.pageNumber}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
+
+        {pages.length > 0 && (
+          <div className="mx-auto flex flex-col items-center gap-6">
+            {pages.map(page => (
+              <figure
+                id={`notes-page-${resourceId}-${page.pageNumber}`}
+                key={page.pageNumber}
+                className="relative mx-auto overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_10px_30px_rgba(45,26,16,0.08)] transition-all duration-200"
+                style={{
+                  width: `${Math.round(100 * scale)}%`,
+                  maxWidth: `${Math.round(960 * scale)}px`
+                }}
+              >
+                <img
+                  src={page.src}
+                  alt={`${title} page ${page.pageNumber}`}
+                  className="w-full select-none bg-white object-contain"
+                  draggable={false}
+                  onContextMenu={e => e.preventDefault()}
+                />
+              </figure>
+            ))}
+          </div>
+        )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {renderViewer(false)}
+
+      {/* Fullscreen Overlay */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-[9999] flex flex-col bg-black/95 backdrop-blur-md">
+          {renderViewer(true)}
+        </div>
+      )}
+    </>
   );
 };
 
@@ -888,24 +1080,22 @@ export default function CoursesPage() {
                           )}
 
                           {activeTab === 'notes' && (
-                            <div id="notes" className="grid gap-4">
-                              <h3 className="flex items-center gap-2 text-[18px] font-black text-[#2D1A10]"><FileText className="h-5 w-5" /> Lesson Notes</h3>
-                              {activeLesson.notes ? (
+                            <div id="notes" className="grid gap-3">
+                              {activeLesson.notes && (
                                 <div className="rounded-[14px] border border-[#E1C79A] bg-[#FFF4DF] p-5 whitespace-pre-wrap text-[14px] font-semibold leading-7 text-[#5F4630]">{activeLesson.notes}</div>
-                              ) : !activeLesson.resources?.length ? (
-                                <p className="text-[14px] font-semibold text-[#73563A]">No written notes added yet.</p>
-                              ) : null}
+                              )}
 
                               {activeLesson.resources?.length ? (
-                                <div className="grid gap-4">
+                                <div className="grid gap-3">
                                   {activeLesson.resources.length > 1 && (
-                                    <div className="grid gap-2 sm:flex sm:flex-wrap">
+                                    <div className="flex flex-wrap gap-2">
                                       {activeLesson.resources.map(resource => (
                                         <button
                                           key={resource.id}
                                           onClick={() => setActiveResourceId(resource.id)}
-                                          className={`min-h-11 rounded-full border px-4 py-2 text-[12px] font-black transition-colors ${activeResourceId === resource.id ? 'border-[#31547A] bg-[#31547A] text-white' : 'border-[#D4B27E] bg-[#FFF4DF] text-[#5F3B20]'}`}
+                                          className={`min-h-9 rounded-full border px-3.5 py-1 text-[12px] font-black transition-colors ${activeResourceId === resource.id ? 'border-[#31547A] bg-[#31547A] text-white shadow-xs' : 'border-[#D4B27E] bg-[#FFF4DF] text-[#5F3B20] hover:bg-[#FCEAD2]'}`}
                                         >
+                                          <FileText className="inline h-3.5 w-3.5 mr-1" />
                                           {resource.title}
                                         </button>
                                       ))}
@@ -916,6 +1106,8 @@ export default function CoursesPage() {
                                     <NotesPdfReader title={activeResource.title} resourceId={activeResource.id} token={token} />
                                   )}
                                 </div>
+                              ) : !activeLesson.notes ? (
+                                <p className="text-[14px] font-semibold text-[#73563A]">No written notes added yet.</p>
                               ) : null}
                             </div>
                           )}
@@ -1067,22 +1259,26 @@ export default function CoursesPage() {
                     </h3>
                     <div className="grid gap-1.5">
                       {activeLesson.resources?.length ? activeLesson.resources.map(resource => {
-                        const href = resolveStorageUrl(resource.resource_file || resource.resource_url, 'uploads');
+                        const isSelected = activeResourceId === resource.id && activeTab === 'notes';
                         return (
-                          <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="cinema-button-paper flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20] hover:border-[#A23A24]">
-                            {resource.title}
-                            <Download className="h-4 w-4" />
-                          </a>
+                          <button
+                            key={resource.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveResourceId(resource.id);
+                              setActiveTab('notes');
+                              document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`cinema-button-paper flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight transition-colors ${isSelected ? 'border-[#A23A24] bg-[#FFF0E0] text-[#A23A24]' : 'text-[#5F3B20] hover:border-[#A23A24]'}`}
+                          >
+                            <span className="truncate text-left">{resource.title}</span>
+                            <Eye className="h-4 w-4 shrink-0 text-[#8A6A42]" />
+                          </button>
                         );
                       }) : (
-                        <>
-                          <p className="cinema-button-paper flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20]">
-                            <Download className="h-4 w-4" /> Download worksheet
-                          </p>
-                          <p className="cinema-button-paper flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20]">
-                            <FileText className="h-4 w-4" /> Lesson transcript
-                          </p>
-                        </>
+                        <div className="cinema-button-paper flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-black leading-tight text-[#5F3B20]">
+                          <FileText className="h-4 w-4 text-[#8A6A42]" /> Lesson Notes
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1701,17 +1897,23 @@ export default function CoursesPage() {
 
                     {Boolean(activeLesson.resources?.length) && (
                       <div id="files" className="rounded-2xl border border-slate-200 p-5">
-                        <h3 className="mb-3 text-[15px] font-black">Downloadable Materials</h3>
+                        <h3 className="mb-3 text-[15px] font-black">Lesson Resources</h3>
                         <div className="grid gap-2">
-                          {activeLesson.resources?.map(resource => {
-                            const href = resolveStorageUrl(resource.resource_file || resource.resource_url, 'uploads');
-                            return (
-                              <a key={resource.id} href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-[13px] font-black text-[#294b77] hover:bg-[#EFF4FB]">
-                                {resource.title}
-                                <Download className="h-4 w-4" />
-                              </a>
-                            );
-                          })}
+                          {activeLesson.resources?.map(resource => (
+                            <button
+                              key={resource.id}
+                              type="button"
+                              onClick={() => {
+                                setActiveResourceId(resource.id);
+                                setActiveTab('notes');
+                                document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-[13px] font-black text-[#294b77] hover:bg-[#EFF4FB]"
+                            >
+                              <span>{resource.title}</span>
+                              <Eye className="h-4 w-4 text-slate-400" />
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}

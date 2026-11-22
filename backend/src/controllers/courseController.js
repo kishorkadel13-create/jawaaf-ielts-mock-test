@@ -499,12 +499,7 @@ export const getLessonResourceContent = async (req, res) => {
       contentType = fileData.type || contentType;
       buffer = Buffer.from(await fileData.arrayBuffer());
     } else if (resource.resource_url) {
-      const sourceUrl = getDriveDownloadUrl(resource.resource_url);
-      const upstream = await fetch(sourceUrl, {
-        headers: {
-          'User-Agent': 'JawaafIELTSLab/1.0'
-        }
-      });
+      const upstream = await resolveGoogleDriveResponse(resource.resource_url);
 
       if (!upstream.ok) {
         return res.status(502).json({ error: 'ResourceFetchError', message: 'Could not load this notes file.' });
