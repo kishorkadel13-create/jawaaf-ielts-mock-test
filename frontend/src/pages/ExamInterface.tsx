@@ -94,11 +94,11 @@ const QuestionInstructionCard = ({ instruction }: { instruction: string }) => {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm font-times">
       {heading && (
-        <h3 className="text-[16px] font-bold mb-2.5 text-[#05162E]">
+        <h3 className="text-[17px] font-bold mb-2 text-[#05162E]">
           {renderFormattedText(heading, 'question-instruction-heading')}
         </h3>
       )}
-      <div className="text-[13px] leading-relaxed text-[#05162E] whitespace-pre-wrap">
+      <div className="text-[14px] leading-[1.25] text-[#05162E] whitespace-pre-wrap">
         {renderFormattedText(body || instruction, 'question-instruction-body')}
       </div>
     </div>
@@ -1342,9 +1342,9 @@ export default function ExamInterface() {
 
                     {/* Instruction Box */}
                     {group.instruction && (
-                      <div className="bg-[#EFF6FF] border border-blue-200/80 rounded-xl p-3.5 flex items-center gap-3 font-times">
-                        <FileText className="h-5 w-5 text-[#2563EB] shrink-0" />
-                        <span className="text-[13.5px] font-bold text-[#0D224A]">
+                      <div className="bg-[#EFF6FF] border border-blue-200/80 rounded-xl p-3 flex items-center gap-3 font-times">
+                        <FileText className="h-4 w-4 text-[#2563EB] shrink-0" />
+                        <span className="text-[14px] font-bold text-[#0D224A] leading-[1.25]">
                           {renderFormattedText(group.instruction)}
                         </span>
                       </div>

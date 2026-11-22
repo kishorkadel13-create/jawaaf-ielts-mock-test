@@ -17,11 +17,11 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   const bodyTextClass = isLight ? 'text-[#05162E]' : 'text-slate-200';
   const mutedTextClass = isLight ? 'text-slate-700' : 'text-slate-300';
   const inputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[13px] font-times'
-    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white text-[13px] font-times';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[14.5px] font-times'
+    : 'bg-slate-950 border-slate-700 focus:border-emerald-500 text-white text-[14.5px] font-times';
   const inlineInputClass = isLight
-    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[13px] font-times'
-    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white text-[13px] font-times';
+    ? 'bg-slate-50 border-slate-300 focus:border-[#1E3A6E] text-[#05162E] text-[14.5px] font-times'
+    : 'bg-slate-950 border-slate-600 focus:border-emerald-500 text-white text-[14.5px] font-times';
   const optionClass = (selected: boolean) => isLight
     ? selected
       ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E]'
@@ -63,7 +63,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
       if (headingMatch) {
         return (
-          <span key={`${keyPrefix}-${index}`} className="block text-[15px] font-bold leading-snug text-inherit mb-2 font-times">
+          <span key={`${keyPrefix}-${index}`} className="block text-[16px] font-bold leading-snug text-inherit mb-1.5 font-times">
             {renderFormattedText(headingMatch[1], `${keyPrefix}-heading-${index}`)}
           </span>
         );
@@ -83,8 +83,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
     if (parts.length < 2) {
       return (
-        <div className="flex flex-col gap-3 font-times">
-          <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-inline`)}</div>
+        <div className="flex flex-col gap-2 font-times">
+          <div className={`text-[15px] ${bodyTextClass} font-medium leading-[1.25] whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-inline`)}</div>
           <input
             type="text"
             value={value || ''}
@@ -92,14 +92,14 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
             {...readingPasteProps}
             data-reading-answer={onPasteText ? 'true' : undefined}
             placeholder={placeholder}
-            className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 outline-none transition-all ${inputClass}`}
+            className={`min-h-11 w-full rounded-xl border-2 px-3.5 py-2.5 outline-none transition-all ${inputClass}`}
           />
         </div>
       );
     }
 
     return (
-      <div className={`text-[13px] ${mutedTextClass} leading-loose font-medium font-times`}>
+      <div className={`text-[15px] ${mutedTextClass} leading-[1.25] font-medium font-times`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
             {renderInlineFormattedText(part, `question-${question.id}-part-${idx}`)}
@@ -130,7 +130,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                   });
                 }}
                 data-reading-answer={onPasteText ? 'true' : undefined}
-                className={`my-1 inline-block min-h-11 w-full rounded-t-sm border-b-2 px-2 py-2 text-center outline-none transition-colors sm:mx-2 sm:w-36 ${inlineInputClass}`}
+                className={`my-0.5 inline-block min-h-9 w-full rounded-t-sm border-b-2 px-2 py-1 text-center outline-none transition-colors sm:mx-1.5 sm:w-36 ${inlineInputClass}`}
               />
             )}
           </React.Fragment>
@@ -140,7 +140,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   };
 
   const renderShortAnswer = () => (
-    <div className={`text-[13px] ${bodyTextClass} font-medium leading-loose font-times`}>
+    <div className={`text-[15px] ${bodyTextClass} font-medium leading-[1.25] font-times`}>
       <span className="whitespace-pre-wrap">{renderInlineFormattedText(question_text, `question-${question.id}-short`)}</span>
       <input
         type="text"
@@ -149,7 +149,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
         {...readingPasteProps}
         data-reading-answer={onPasteText ? 'true' : undefined}
         aria-label={`Answer for question ${question.question_number}`}
-        className={`mt-2 inline-block min-h-11 w-full max-w-full rounded-none border-0 border-b-2 px-2 py-2 text-center outline-none transition-colors sm:ml-3 sm:mt-0 sm:w-48 ${inlineInputClass}`}
+        className={`mt-1.5 inline-block min-h-9 w-full max-w-full rounded-none border-0 border-b-2 px-2 py-1 text-center outline-none transition-colors sm:ml-2 sm:mt-0 sm:w-48 ${inlineInputClass}`}
       />
     </div>
   );
@@ -162,7 +162,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     }
 
     return (
-      <div className={`text-[13px] ${mutedTextClass} leading-loose font-medium font-times`}>
+      <div className={`text-[15px] ${mutedTextClass} leading-[1.25] font-medium font-times`}>
         {parts.map((part: string, idx: number) => (
           <React.Fragment key={idx}>
             {renderInlineFormattedText(part, `question-${question.id}-select-part-${idx}`)}
@@ -178,7 +178,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                     onChange(e.target.value);
                   }
                 }}
-                className={`my-1 inline-block min-h-11 w-full rounded-lg border-2 px-3 py-2 outline-none transition-colors sm:mx-2 sm:w-auto sm:min-w-36 ${inputClass}`}
+                className={`my-0.5 inline-block min-h-9 w-full rounded-lg border-2 px-2.5 py-1 outline-none transition-colors sm:mx-1.5 sm:w-auto sm:min-w-32 ${inputClass}`}
               >
                 <option value="">Select</option>
                 {options.map((opt: string, optionIdx: number) => (
@@ -201,12 +201,12 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   );
 
   const renderSelectAnswer = (placeholder = 'Select answer') => (
-    <div className="flex flex-col gap-3 font-times">
-      <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-select`)}</div>
+    <div className="flex flex-col gap-2 font-times">
+      <div className={`text-[15px] ${bodyTextClass} font-medium leading-[1.25] whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-select`)}</div>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 outline-none transition-all ${inputClass}`}
+        className={`min-h-11 w-full rounded-xl border-2 px-3.5 py-2.5 outline-none transition-all ${inputClass}`}
       >
         <option value="">{placeholder}</option>
         {options.map((opt: string, idx: number) => (
@@ -277,14 +277,14 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     const options = isTF ? ['TRUE', 'FALSE', 'NOT GIVEN'] : ['YES', 'NO', 'NOT GIVEN'];
     
     return (
-      <div className="flex flex-col gap-4 font-times">
-        <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-tf`)}</div>
+      <div className="flex flex-col gap-3 font-times">
+        <div className={`text-[15px] ${bodyTextClass} font-medium leading-[1.25] whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-tf`)}</div>
         <div className="flex gap-2">
           {options.map((opt) => (
             <button
               key={opt}
               onClick={() => onChange(opt)}
-              className={`min-h-11 flex-1 rounded-xl border-2 px-2 py-3 text-[12px] font-bold font-times transition-all ${
+              className={`min-h-10 flex-1 rounded-xl border-2 px-2 py-2 text-[13px] font-bold font-times transition-all ${
                 value === opt
                   ? isLight
                     ? 'bg-[#1E3A6E] border-[#1E3A6E] text-white shadow-sm'
@@ -315,18 +315,18 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
   // Standard MCQ
   if (question_type === 'SINGLE_MCQ') {
     return (
-      <div className="flex flex-col gap-4 font-times">
-        <div className={`text-[13px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+      <div className="flex flex-col gap-3 font-times">
+        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-[1.25] whitespace-pre-wrap`}>
           {renderQuestionText(`question-${question.id}-mcq`)}
         </div>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2">
           {options.map((opt: string, idx: number) => {
             const isSelected = value === opt;
             const letter = String.fromCharCode(65 + idx);
             return (
               <label 
                 key={idx} 
-                className={`flex min-h-12 cursor-pointer items-center gap-3.5 rounded-xl border-2 px-4 py-3 transition-all ${
+                className={`flex min-h-11 cursor-pointer items-center gap-3.5 rounded-xl border-2 px-3.5 py-2.5 transition-all ${
                   isSelected
                     ? 'bg-[#EFF4FB] border-[#1E3A6E] text-[#05162E] shadow-sm font-medium'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-[#F8FAFC]'
@@ -347,7 +347,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1 text-[13px] leading-snug font-times">
+                <div className="flex-1 text-[14.5px] leading-[1.25] font-times">
                   <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
                   <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
@@ -379,11 +379,11 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     };
 
     return (
-      <div className="flex flex-col gap-4 font-times">
-        <div className={`text-[13px] ${bodyTextClass} font-semibold leading-relaxed whitespace-pre-wrap`}>
+      <div className="flex flex-col gap-3 font-times">
+        <div className={`text-[15px] ${bodyTextClass} font-semibold leading-[1.25] whitespace-pre-wrap`}>
           {renderQuestionText(`question-${question.id}-multi`)}
         </div>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2">
           {options.map((opt: string, idx: number) => {
             const isSelected = selectedValues.includes(opt);
             const isDisabled = !isSelected && selectedValues.length >= maxSelections;
@@ -391,7 +391,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
             return (
               <label 
                 key={idx} 
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl border-2 transition-all ${
                   isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                 } ${
                   isSelected
@@ -413,7 +413,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1 text-[13px] leading-snug font-times">
+                <div className="flex-1 text-[14.5px] leading-[1.25] font-times">
                   <span className="font-bold mr-2 text-[#05162E]">{letter}.</span>
                   <span className="font-medium text-[#1E293B]">{opt}</span>
                 </div>
@@ -427,8 +427,8 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
 
   // ─── DEFAULT FALLBACK ───
   return (
-    <div className="flex flex-col gap-4 font-times">
-      <div className={`text-[13px] ${bodyTextClass} font-medium leading-relaxed whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-fallback`)}</div>
+    <div className="flex flex-col gap-3 font-times">
+      <div className={`text-[15px] ${bodyTextClass} font-medium leading-[1.25] whitespace-pre-wrap`}>{renderQuestionText(`question-${question.id}-fallback`)}</div>
       <input
         type="text"
         value={value || ''}
@@ -436,7 +436,7 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
         {...readingPasteProps}
         data-reading-answer={onPasteText ? 'true' : undefined}
         placeholder="Type your answer here..."
-        className={`w-full border-2 px-4 py-3 rounded-xl outline-none transition-all ${inputClass}`}
+        className={`w-full border-2 px-3.5 py-2.5 rounded-xl outline-none transition-all ${inputClass}`}
       />
     </div>
   );

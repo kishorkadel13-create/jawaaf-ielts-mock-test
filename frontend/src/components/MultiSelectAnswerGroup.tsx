@@ -63,12 +63,12 @@ export const MultiSelectAnswerGroup = ({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 font-times">
       {instruction && (
-        <div className="mb-5 text-[13px] leading-relaxed text-[#05162E]">
+        <div className="mb-4 text-[14px] leading-[1.25] text-[#05162E]">
           {renderFormattedBlockText(instruction, `multi-select-instruction-${firstQuestion?.id || 'group'}`)}
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3.5 flex flex-wrap items-center gap-2">
         {orderedQuestions.map((question) => (
           <span
             key={question.id}
@@ -83,11 +83,11 @@ export const MultiSelectAnswerGroup = ({
         </span>
       </div>
 
-      <div className="mb-4 text-[13.5px] font-bold leading-relaxed text-[#05162E]">
+      <div className="mb-3.5 text-[15px] font-bold leading-[1.25] text-[#05162E]">
         {renderFormattedText(firstQuestion?.question_text || '', `multi-select-question-${firstQuestion?.id || 'group'}`)}
       </div>
 
-      <div className="grid gap-2.5">
+      <div className="grid gap-2">
         {options.map((option: string, index: number) => {
           const isSelected = selectedValues.includes(option);
           const isDisabled = !isSelected && selectedValues.length >= maxSelections;
@@ -98,7 +98,7 @@ export const MultiSelectAnswerGroup = ({
               type="button"
               disabled={disabled || isDisabled}
               onClick={() => toggleOption(option)}
-              className={`grid min-h-12 grid-cols-[36px_1fr] items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all ${
+              className={`grid min-h-11 grid-cols-[36px_1fr] items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
                 isSelected
                   ? 'border-[#1E3A6E] bg-[#EFF4FB] text-[#05162E]'
                   : isDisabled
@@ -111,7 +111,7 @@ export const MultiSelectAnswerGroup = ({
               }`}>
                 {isSelected ? '✓' : optionLetter(index)}
               </span>
-              <span className="text-[13px] leading-snug font-medium">{renderFormattedText(option, `multi-select-option-${index}`)}</span>
+              <span className="text-[14.5px] leading-[1.25] font-medium">{renderFormattedText(option, `multi-select-option-${index}`)}</span>
             </button>
           );
         })}
