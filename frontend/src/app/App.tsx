@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import AppRoutes, { prefetchAdminRoutes, prefetchStudentRoutes } from '../routes/AppRoutes';
 import { useAuthStore } from '../store/authStore';
 import { touchStoredStreakData } from '../utils/streak';
@@ -79,12 +80,14 @@ export default function App() {
   }, [isAuthenticated, profile?.id, profile?.role]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans">
-          <AppRoutes />
-        </div>
-      </Router>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans">
+            <AppRoutes />
+          </div>
+        </Router>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }

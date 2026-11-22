@@ -1257,9 +1257,8 @@ export default function ExamInterface() {
                             startLockedAudio();
                           }
                         }}
-                        className={`w-18 h-18 rounded-full bg-[#0D224A] text-white shadow-lg flex items-center justify-center transition-transform ${
-                          !audioPlaying ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'
-                        }`}
+                        className={`w-18 h-18 rounded-full bg-[#0D224A] text-white shadow-lg flex items-center justify-center transition-transform ${!audioPlaying ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'
+                          }`}
                         title={audioPlaying ? 'Audio Playing (Locked)' : 'Click to Start Audio'}
                       >
                         {audioPlaying ? (
