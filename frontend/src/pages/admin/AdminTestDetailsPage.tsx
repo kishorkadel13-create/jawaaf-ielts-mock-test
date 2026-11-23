@@ -633,6 +633,12 @@ export default function AdminTestDetailsPage() {
         }
       }
 
+      // If this batch contains a map image, also sync it to the active group
+      const firstMapImage = questions.find(q => q.extra_data_json?.map_image_url)?.extra_data_json?.map_image_url;
+      if (firstMapImage && !activeGroup.image_url) {
+        await api.put(`/admin/groups/${activeGroup.id}`, { image_url: firstMapImage }).catch(() => {});
+      }
+
       for (const q of questions) {
         const dbType = mapToDBType(q.question_type);
         const payload = {
