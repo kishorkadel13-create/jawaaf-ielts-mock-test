@@ -1051,13 +1051,13 @@ export default function PricingPage() {
         </section>
 
         {/* ── SECTION 4: FEATURE COMPARISON MATRIX TABLE ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-label="Feature Comparison Table">
+        <section className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-16 md:py-20" aria-label="IELTS Plan Feature Comparison Table">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
-              Compare Plan Features Side-by-Side
+              Choose the Plan That Matches Your Target Band
             </h2>
-            <p className="mt-2 text-slate-500 text-sm max-w-xl mx-auto">
-              Everything you get with each subscription package clearly broken down.
+            <p className="mt-2 text-slate-500 text-sm max-w-2xl mx-auto">
+              Both packages provide comprehensive coverage for <strong>Academic and General Training</strong> modules with complete CD-IELTS computer simulation.
             </p>
           </div>
 
@@ -1065,12 +1065,12 @@ export default function PricingPage() {
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[#05162E]">
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-sm sm:text-base">Features &amp; Services</th>
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm sm:text-base">
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-sm sm:text-base w-[38%]">Features &amp; Services</th>
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm sm:text-base w-[31%]">
                     Online Pro Access<br />
                     <span className="text-xs font-semibold text-slate-500">NPR 6,500 | 90 Days</span>
                   </th>
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm sm:text-base bg-[#EE6055]/5">
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm sm:text-base bg-[#EE6055]/5 w-[31%]">
                     Premium IELTS Mentorship<br />
                     <span className="text-xs font-semibold text-[#EE6055]">NPR 10,000 | 90 Days</span>
                   </th>
@@ -1078,24 +1078,54 @@ export default function PricingPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {[
+                  { feature: 'Package Price', f1: 'NPR 6,500', f2: 'NPR 10,000' },
                   { feature: 'Subscription Duration', f1: '90 Days Full Access', f2: '90 Days Full Access' },
-                  { feature: 'Scheduled Physical Classroom Sessions', f1: '—', f2: 'Putalisadak Timetable' },
-                  { feature: 'Personal Instructor Guidance', f1: 'Online Support', f2: 'Face-to-Face & Priority' },
-                  { feature: 'Face-to-Face Speaking Practice', f1: '—', f2: 'In-Person with Instructors' },
-                  { feature: 'Physical Paper Writing Evaluation', f1: '—', f2: 'Hand-Checked Detailed Feedback' },
-                  { feature: 'Physical IELTS Computer Lab Access', f1: '—', f2: 'Putalisadak Lab' },
+                  { feature: 'Online IELTS Preparation Platform', f1: 'Included', f2: 'Included' },
+                  { feature: 'IELTS Academic & General Training', f1: 'Both Included', f2: 'Both Included' },
+                  { feature: 'IELTS Listening Practice & Mock Tests', f1: 'Included', f2: 'Included' },
+                  { feature: 'IELTS Reading Practice & Mock Tests', f1: 'Included', f2: 'Included' },
+                  { feature: 'IELTS Writing Task 1 & Task 2', f1: 'Included', f2: 'Included' },
+                  { feature: 'IELTS Speaking Preparation', f1: 'Included', f2: 'Included' },
+                  { feature: 'Full-Length CD-IELTS Mock Tests', f1: 'Included', f2: 'Included' },
+                  { feature: 'Section-Wise IELTS Practice Tests', f1: 'Included', f2: 'Included' },
+                  { feature: 'Continuous Listening Audio Simulation', f1: 'Included', f2: 'Included' },
                   { feature: 'AI-Powered IELTS Writing Evaluation', f1: 'Included', f2: 'Included' },
-                  { feature: 'Full-Length CD-IELTS Mock Tests', f1: 'Unlimited Access', f2: 'Unlimited Access' },
-                  { feature: 'Listening Continuous Audio Simulation', f1: 'Included', f2: 'Included' },
-                  { feature: 'Academic & General Training Modules', f1: 'Both Covered', f2: 'Both Covered' },
-                  { feature: 'Recorded Video Classes (All 4 Skills)', f1: 'All 4 Skills Included', f2: 'All 4 Skills Included' },
-                  { feature: 'AI Performance Analytics & Mistake Tracker', f1: 'Included', f2: 'Included' },
-                  { feature: 'CD-IELTS Examination Interface', f1: 'Split-Screen + Notepad', f2: 'Split-Screen + Notepad' }
+                  { feature: 'AI Performance Analytics & Mistake Tracking', f1: 'Included', f2: 'Included' },
+                  { feature: 'Recorded IELTS Video Classes (All 4 Skills)', f1: 'Included', f2: 'Included' },
+                  { feature: 'CD-IELTS Computer Simulator', f1: 'Full Exam Interface', f2: 'Full Exam Interface' },
+                  { feature: 'Digital Notepad & Text Highlighter', f1: 'Included', f2: 'Included' },
+                  { feature: 'Scheduled Physical IELTS Classroom Sessions', f1: '—', f2: 'Included' },
+                  { feature: 'Personal IELTS Instructor Guidance', f1: '—', f2: 'Face-to-Face' },
+                  { feature: 'Face-to-Face IELTS Speaking Practice', f1: '—', f2: 'Included' },
+                  { feature: 'Physical IELTS Writing Evaluation', f1: '—', f2: 'Hand-Checked Feedback' },
+                  { feature: 'Physical IELTS Computer Lab Access', f1: '—', f2: 'Included' },
                 ].map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                     <td className="py-3.5 px-4 sm:px-6 font-semibold text-[#05162E]">{row.feature}</td>
-                    <td className="py-3.5 px-4 sm:px-6 text-center font-medium text-slate-600">{row.f1}</td>
-                    <td className="py-3.5 px-4 sm:px-6 text-center font-bold text-[#05162E] bg-[#EE6055]/5">{row.f2}</td>
+                    <td className="py-3.5 px-4 sm:px-6 text-center font-medium text-slate-600">
+                      {row.f1 === '—' ? (
+                        <span className="text-slate-300 font-bold text-base">—</span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          {(row.f1 === 'Included' || row.f1 === 'Both Included' || row.f1 === 'Full Exam Interface') && (
+                            <svg className="w-4 h-4 text-[#1E3A6E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          )}
+                          {row.f1}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 sm:px-6 text-center font-bold text-[#05162E] bg-[#EE6055]/5">
+                      {row.f2 === '—' ? (
+                        <span className="text-slate-300 font-bold text-base">—</span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          {(row.f2 === 'Included' || row.f2 === 'Both Included' || row.f2 === 'Full Exam Interface' || row.f2 === 'Face-to-Face' || row.f2 === 'Hand-Checked Feedback') && (
+                            <svg className="w-4 h-4 text-[#EE6055] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          )}
+                          {row.f2}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
