@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import JawaafLogo from '../components/JawaafLogo';
 import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
   Check,
+  CheckCircle,
   CheckCircle2,
   X,
-  Sparkles,
   Clock,
   Calendar,
   ShieldCheck,
   Award,
-  ArrowRight,
   BookOpen,
   Headphones,
   Users,
@@ -25,16 +27,40 @@ import {
   Star,
   Monitor,
   GraduationCap,
-  MessageSquare
+  MessageSquare,
+  BarChart3,
+  Play,
+  CreditCard,
+  QrCode,
+  Building2,
+  FileText
 } from 'lucide-react';
 
+/* ─────────────────────────── FAQ COMPONENT ─────────────────────────── */
+function FAQItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left bg-white hover:bg-slate-50 transition-colors"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="font-semibold text-[#05162E] text-sm sm:text-base leading-snug">{q}</span>
+        <span className="shrink-0 text-[#1E3A6E]">
+          {open ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+        </span>
+      </button>
+      {open && (
+        <div className="px-6 pb-5 bg-white border-t border-slate-100">
+          <p className="text-slate-600 text-sm leading-relaxed pt-3">{a}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PricingPage() {
-  const [openFaq, setOpenFaq] = useState(null);
-
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
   const schemaData = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -148,623 +174,622 @@ export default function PricingPage() {
       a: 'We are conveniently located at the educational hub of Nepal: Putalisadak, Kathmandu (opposite to Star Mall / near Kumari Bank). You can visit our office Sunday to Friday, 7:00 AM to 6:00 PM, or call us at 01-4647115.'
     },
     {
-      q: 'Can I take a free demo test before purchasing a package?',
-      a: 'Yes! You can click "Free Demo Mock Test" on our website and immediately take a real full-length computer-based IELTS practice test without even registering. You only create an account when you want to view your final band score and breakdown.'
+      q: 'Can I test the platform for free before paying?',
+      a: 'Yes! You can take our Free Demo Mock Test without paying or providing payment details. Experience the real timer, listening audio player, reading passages, and writing interface to see why thousands of Nepali students trust Jawaaf IELTS Lab.'
     }
-  ];
-
-  const comparisonFeatures = [
-    { name: 'Subscription Validity', plan90: '90 Days (3 Months)', plan150: '150 Days (5 Months)' },
-    { name: 'Modules Covered', plan90: 'Academic + General Training', plan150: 'Academic + General Training' },
-    { name: 'Computer-Based (CD-IELTS) Simulator', plan90: true, plan150: true },
-    { name: 'Updated 2026 Video Recorded Classes', plan90: true, plan150: true },
-    { name: 'Full-Length Timed Mock Tests', plan90: 'Unlimited (30+ Full Tests)', plan150: 'Unlimited (30+ Full Tests)' },
-    { name: 'Section-Wise Practice Sets (L, R, W, S)', plan90: '1,000+ Questions', plan150: '1,000+ Questions' },
-    { name: 'Listening with Continuous Audio Player', plan90: true, plan150: true },
-    { name: 'Writing Task 1 & 2 Timed Exam Editor', plan90: true, plan150: true },
-    { name: 'Automated AI Band Scoring & Analytics', plan90: true, plan150: true },
-    { name: 'Physical Instructor Face-to-Face Meetings', plan90: false, plan150: 'Unlimited In-Person Access' },
-    { name: '1-on-1 In-Person Speaking Mock Interviews', plan90: 'Online / Self-Record', plan150: 'Live Examiner at Putalisadak' },
-    { name: 'Certified Human Teacher Writing Check', plan90: 'Digital AI + Rubrics', plan150: 'Line-by-Line Physical Correction' },
-    { name: 'Physical Computer Lab & Silent Library', plan90: false, plan150: 'Included at Putalisadak' },
-    { name: 'Personalized Band 7.5+ Study Plan', plan90: 'Standard Self-Paced', plan150: 'Dedicated Mentor Session' },
-    { name: 'Study Abroad & Visa Counseling Guidance', plan90: 'Basic Support', plan150: 'Priority Free Visa Consulting' },
   ];
 
   return (
     <>
       <Helmet>
-        <title>IELTS Course Fees & Pricing in Nepal — Jawaaf IELTS Lab | Putalisadak Kathmandu</title>
+        <title>Pricing &amp; Packages — Jawaaf IELTS Lab | IELTS Preparation Course Fee in Nepal</title>
         <meta
           name="description"
-          content="Affordable IELTS preparation packages in Nepal. Choose 90-Day Online Access (NPR 6,500) or 150-Day Hybrid & Physical Mentorship (NPR 11,500) at Putalisadak, Kathmandu. Full CD-IELTS computer-based mock tests, updated video courses, Academic and General Training."
+          content="Transparent and affordable IELTS course fees in Nepal. Choose between 90-Day Online Access (NPR 6,500) and 150-Day Hybrid Mentorship with in-person instructor feedback in Putalisadak Kathmandu (NPR 11,500). Real CD-IELTS mock tests & Band 8+ video classes."
         />
         <meta
           name="keywords"
-          content="IELTS mock test price in Nepal, IELTS preparation course fee Nepal, Online IELTS classes cost Kathmandu, Jawaaf Consulting Academy Putalisadak, IELTS 90 days subscription Nepal, IELTS 150 days hybrid package, Computer based IELTS practice test price, IELTS academic and general training fee Nepal, Best IELTS coaching fees Kathmandu"
+          content="IELTS preparation course fee in Nepal, IELTS course price Kathmandu, IELTS mock test price Nepal, Jawaaf IELTS Lab pricing, 90 days IELTS preparation fee Nepal, 150 days IELTS class Nepal, IELTS Putalisadak fee, computer based IELTS mock test price, IELTS academic and general training price Nepal"
         />
-        <link rel="canonical" href="https://jawaaf.com/pricing" />
-        <meta property="og:title" content="IELTS Course Fees & Pricing in Nepal — Jawaaf IELTS Lab" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://lab.jawaaf.com/pricing" />
+        <meta property="og:title" content="Pricing &amp; Subscription Packages — Jawaaf IELTS Lab Nepal" />
         <meta
           property="og:description"
-          content="Compare 90-Day Online (NPR 6,500) and 150-Day Hybrid Mentorship (NPR 11,500) packages. Real CD-IELTS test interface, updated video courses, and certified teacher feedback in Putalisadak Kathmandu."
+          content="Choose your IELTS plan: 90 Days Online Access (Rs. 6,500) or 150 Days Hybrid with Physical Instructor Mentorship at Putalisadak (Rs. 11,500)."
         />
-        <meta property="og:url" content="https://jawaaf.com/pricing" />
+        <meta property="og:url" content="https://lab.jawaaf.com/pricing" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(schemaData)}</script>
       </Helmet>
 
-      <div className="min-h-screen bg-[#F4F7FB] text-[#05162E] selection:bg-[#EE6055]/20 selection:text-[#EE6055]">
-        {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50 bg-[#0B2558]/95 backdrop-blur-md border-b border-white/10 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group transition-transform hover:scale-[1.02]">
-              <JawaafLogo isWhite={true} className="h-9 sm:h-11 w-auto drop-shadow-md" />
-            </Link>
+      <div className="min-h-screen bg-[#F4F7FB]">
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-blue-100">
-              <Link to="/" className="hover:text-white transition-colors">Home</Link>
-              <Link to="/features" className="hover:text-white transition-colors">Features</Link>
-              <Link to="/pricing" className="text-white font-bold border-b-2 border-[#EE6055] pb-0.5">Pricing</Link>
-              <Link to="/tests" className="hover:text-white transition-colors">Mock Tests</Link>
-              <Link to="/courses" className="hover:text-white transition-colors">Video Classes</Link>
-            </nav>
+        {/* ── 1ST VIEW: UNIFIED HERO & ONBOARDING CANVAS (Identical to Features Page) ── */}
+        <section className="relative bg-gradient-to-br from-[#0B2558] via-[#133A7C] to-[#0A1E45] py-8 sm:py-12 md:py-16 overflow-hidden">
+          {/* Subtle dot matrix grid overlay for depth and SaaS elegance */}
+          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-            {/* Header Actions */}
-            <div className="flex items-center gap-3">
+          {/* Luminous atmospheric glowing lights (royal sapphire, warm coral, cyan) */}
+          <div className="absolute -top-24 -right-24 w-[550px] h-[550px] rounded-full bg-sky-400/20 blur-[130px] pointer-events-none" />
+          <div className="absolute top-1/4 -left-24 w-[480px] h-[480px] rounded-full bg-[#EE6055]/25 blur-[140px] pointer-events-none" />
+          <div className="absolute bottom-10 right-1/3 w-[450px] h-[350px] rounded-full bg-blue-300/15 blur-[110px] pointer-events-none" />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+            {/* Top Navigation & Brand Header */}
+            <header className="flex items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-white/15">
               <Link
-                to="/demo-exam"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/30 transition-all border border-white/20"
+                to="/"
+                className="inline-flex items-center gap-2 text-white hover:text-white text-xs sm:text-sm font-semibold transition-all bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl border border-white/20 backdrop-blur-md shadow-sm"
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Free Demo Test</span>
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Home</span>
               </Link>
-              <Link
-                to="/login"
-                className="text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-2 rounded-xl transition-all"
-              >
-                Log In
+
+              {/* Jawaaf Logo */}
+              <Link to="/" className="flex items-center group transition-transform hover:scale-[1.02]">
+                <JawaafLogo isWhite={true} className="h-8 sm:h-10 md:h-11 w-auto drop-shadow-md" />
               </Link>
+
+              <div className="flex items-center gap-2.5">
+                <Link
+                  to="/features"
+                  className="text-white/80 hover:text-white text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-lg hover:bg-white/10 hidden sm:inline-flex"
+                >
+                  Features
+                </Link>
+                <Link
+                  to="/demo-exam"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/30 transition-all border border-white/20"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Free Demo Mock Test</span>
+                  <span className="sm:hidden">Try Free</span>
+                </Link>
+              </div>
+            </header>
+
+            {/* ── CARD 1: HERO CONTAINER (Top Card with Mascot - Matches Features Page) ── */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#163D78] via-[#1B4B91] to-[#103063] border border-white/20 p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_-15px_rgba(5,20,50,0.5)]">
+              {/* Natural depth gradients & top border highlight */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-sky-300/20 blur-3xl" />
+              <div className="pointer-events-none absolute -left-16 -bottom-16 h-80 w-80 rounded-full bg-[#EE6055]/20 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A224D]/80 via-[#103063]/30 to-transparent z-0" />
+
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                {/* Left Content (7-8 cols on lg) */}
+                <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-start text-left pb-2 sm:pb-4">
+                  {/* Eyebrow Tag */}
+                  <div className="inline-flex items-center gap-2 bg-[#EE6055] text-white rounded-full px-3.5 py-1 mb-4 shadow-md shadow-[#EE6055]/25 border border-white/25">
+                    <Zap className="h-3.5 w-3.5 fill-white text-white" />
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest">TRANSPARENT PRICING &amp; PLANS</span>
+                  </div>
+
+                  {/* Main Title with Primary SEO Keywords */}
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-black text-white leading-[1.18] tracking-tight drop-shadow-sm">
+                    Affordable IELTS Plans for{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF8278] via-[#FFA89F] to-[#FFE2DE]">
+                      Online &amp; In-Person
+                    </span>{' '}
+                    Success
+                  </h1>
+
+                  {/* Subtext */}
+                  <p className="mt-4 text-blue-50 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl font-normal drop-shadow-sm">
+                    Select the ideal duration for your preparation. Includes <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">Band 8+ recorded video classes</strong>, <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">real CD-IELTS computer simulation</strong>, and <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">physical instructor mentorship in Putalisadak</strong>.
+                  </p>
+
+                  {/* CTA Actions */}
+                  <div className="mt-7 flex flex-wrap items-center gap-3.5">
+                    <a
+                      href="#pricing-plans"
+                      className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-6 py-3.5 rounded-xl transition-all shadow-xl shadow-[#EE6055]/40 hover:shadow-[#EE6055]/60 hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm tracking-wide uppercase border border-white/20"
+                    >
+                      EXPLORE PACKAGES <ArrowRight className="h-4 w-4" />
+                    </a>
+                    <Link
+                      to="/demo-exam"
+                      className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-3.5 rounded-xl transition-all text-xs sm:text-sm backdrop-blur-md shadow-sm"
+                    >
+                      <Sparkles className="h-4 w-4 text-amber-300" /> Start Free Demo Test
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Right Content: Mascot Image Grounded Seamlessly */}
+                <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center lg:items-end justify-end self-end lg:-mb-10 lg:-mr-6 xl:-mr-8">
+                  <div className="relative flex flex-col items-center">
+                    {/* Soft ambient back glow behind the owl's head */}
+                    <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-52 h-52 rounded-full bg-gradient-to-b from-[#EE6055]/30 via-sky-300/25 to-transparent blur-3xl" />
+
+                    {/* Mascot with subtle ambient lighting */}
+                    <img
+                      src="/images/feedback/writing-feedback-overall-mascot-natural.png"
+                      alt="Jawaaf IELTS Mascot"
+                      className="relative z-10 w-56 h-auto sm:w-64 md:w-72 lg:w-80 xl:w-[340px] max-w-full object-contain select-none filter drop-shadow-[0_18px_30px_rgba(4,18,48,0.5)] hover:scale-[1.02] transition-transform duration-500"
+                    />
+
+                    {/* Natural Grounding Contact Shadow under the wooden desk */}
+                    <div className="w-[88%] h-4 bg-[#051533]/80 blur-md rounded-full -mt-3 relative z-0 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </header>
 
-        {/* ── HERO SECTION ── */}
-        <section className="relative bg-gradient-to-br from-[#0B2558] via-[#133A7C] to-[#0A1E45] py-14 sm:py-18 md:py-22 overflow-hidden text-white">
-          {/* Subtle Ambient Glows */}
-          <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-[#EE6055]/20 blur-[130px] pointer-events-none" />
-          <div className="absolute bottom-10 right-0 w-96 h-96 rounded-full bg-sky-400/15 blur-[140px] pointer-events-none" />
-
-          {/* Dot Matrix Texture */}
-          <div
-            className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-              backgroundSize: '24px 24px'
-            }}
-          />
-
-          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            {/* Pill */}
-            <div className="inline-flex items-center gap-2 bg-[#EE6055] text-white rounded-full px-4 py-1.5 mb-5 shadow-lg shadow-[#EE6055]/30 border border-white/20 text-xs sm:text-sm font-bold tracking-wide uppercase">
-              <Sparkles className="h-4 w-4" />
-              <span>Affordable &amp; Transparent IELTS Subscription</span>
+            {/* ── CARD 2: 4 STATS CARDS (Identical to Features Page) ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
+              {[
+                { value: '50,000+', label: 'Students Prepared', icon: <Users className="h-5 w-5 text-sky-200" />, badgeBg: 'bg-sky-400/25 border-sky-300/30' },
+                { value: '1,000+', label: 'Mock Tests Taken', icon: <BarChart3 className="h-5 w-5 text-[#FFB0A8]" />, badgeBg: 'bg-[#EE6055]/25 border-[#EE6055]/30' },
+                { value: '98%', label: 'Success Rate', icon: <Award className="h-5 w-5 text-emerald-200" />, badgeBg: 'bg-emerald-400/25 border-emerald-300/30' },
+                { value: '4.8/5', label: 'Student Rating', icon: <Star className="h-5 w-5 text-amber-200 fill-amber-300" />, badgeBg: 'bg-amber-400/25 border-amber-300/30' },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-2xl bg-white/[0.12] hover:bg-white/[0.18] border border-white/20 p-4 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left backdrop-blur-md transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 group"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`p-2 rounded-xl border ${s.badgeBg} shadow-sm group-hover:scale-110 transition-transform`}>
+                      {s.icon}
+                    </span>
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-sm">
+                    {s.value}
+                  </span>
+                  <span className="text-xs sm:text-sm text-blue-100 font-medium mt-0.5">
+                    {s.label}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            {/* H1 Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12]">
-              Invest in Your Future with Nepal's{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF8278] via-[#FFA89F] to-[#FFE2DE]">
-                Most Trusted IELTS Plans
-              </span>
-            </h1>
+            {/* ── CARD 3: 3 SIMPLE ENROLLMENT STEPS (Identical White Container to Features Page) ── */}
+            <div className="mt-4 sm:mt-6 bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_-15px_rgba(5,20,50,0.35)] border border-slate-100 text-[#05162E]">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6 sm:mb-8 pb-5 border-b border-slate-100 text-center md:text-left">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20 mb-2">
+                    <Sparkles className="h-3 w-3" /> Quick 3-Step Enrollment
+                  </span>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#05162E] tracking-tight">
+                    How Subscription Activation Works
+                  </h2>
+                </div>
+                <p className="text-slate-500 text-xs sm:text-sm max-w-md font-medium">
+                  Instant activation via eSewa, Khalti, QR, Bank Transfer, or at our Putalisadak office.
+                </p>
+              </div>
 
-            {/* Subtitle */}
-            <p className="mt-5 text-blue-100 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed font-normal">
-              Choose the package that suits your learning style. Get <strong>100% online self-paced access</strong> anywhere in Nepal, or choose our <strong>hybrid in-person mentorship</strong> with senior examiners at <strong>Putalisadak, Kathmandu</strong>.
-            </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                {/* Step 1 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#1E3A6E]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#1E3A6E] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    01
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Select Your Plan
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Choose either the 90-Day Online Plan for self-paced study or the 150-Day Hybrid Plan with face-to-face mentor sessions.
+                  </p>
+                </div>
 
-            {/* 4 Feature Badges */}
-            <div className="mt-8 flex flex-wrap justify-center items-center gap-2.5 sm:gap-4 text-xs sm:text-sm font-semibold text-blue-50">
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15">
-                <Monitor className="h-4 w-4 text-[#FF8278]" />
-                <span>Real CD-IELTS Exam Interface</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15">
-                <GraduationCap className="h-4 w-4 text-[#FF8278]" />
-                <span>Academic &amp; General Training</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15">
-                <Laptop className="h-4 w-4 text-[#FF8278]" />
-                <span>Updated Band 8+ Video Classes</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15">
-                <Users className="h-4 w-4 text-[#FF8278]" />
-                <span>Certified Teacher Feedback</span>
+                {/* Step 2 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#0B2558]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#0B2558] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    02
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Complete Quick Payment
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Pay securely using eSewa, Khalti, Fonepay QR, Direct Bank Transfer, or cash/card at our Putalisadak Academy.
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#EE6055]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#EE6055] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    03
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Start Prep Immediately
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Unlock all CD-IELTS computer mock tests, updated Band 8+ video courses, and schedule teacher evaluations.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── PRICING CARDS SECTION ── */}
-        <section className="relative -mt-10 sm:-mt-14 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-20 pb-16">
+        {/* ── SECTION 2: THE 2 SUBSCRIPTION PLANS (Direct Comparison) ── */}
+        <section id="pricing-plans" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20 scroll-mt-6" aria-label="Subscription Pricing Packages">
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-[#1E3A6E] bg-blue-100/80 px-3.5 py-1 rounded-full mb-3 border border-blue-200">
+              <Calendar className="h-3.5 w-3.5 text-[#1E3A6E]" /> DURATION-BASED SUBSCRIPTION
+            </span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#05162E] leading-tight">
+              Choose the Plan That Matches Your Target Band
+            </h2>
+            <p className="mt-3 text-slate-500 max-w-2xl mx-auto text-sm sm:text-base">
+              Both packages provide comprehensive coverage for <strong>Academic and General Training</strong> modules with complete CD-IELTS computer simulation.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
 
-            {/* ══ PLAN 1: 90 DAYS ONLINE ACCESS ══ */}
-            <div className="flex flex-col bg-white rounded-3xl p-7 sm:p-9 border-2 border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-all duration-300 relative group">
-              {/* Top Tag */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#1E3A6E]/10 text-[#1E3A6E] border border-[#1E3A6E]/20">
-                  <Clock className="h-3.5 w-3.5" /> 90 Days Online Plan
-                </span>
-                <span className="text-xs font-bold text-slate-400">Self-Paced Study</span>
-              </div>
-
-              {/* Title & Description */}
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E]">
-                90-Day Online Pro
-              </h2>
-              <p className="mt-2 text-sm text-slate-500 leading-relaxed min-h-[40px]">
-                Complete self-paced preparation for students across Nepal and abroad who need flexible online practice anytime.
-              </p>
-
-              {/* Price Container */}
-              <div className="mt-6 p-5 rounded-2xl bg-[#F8FAFC] border border-slate-100 flex items-baseline justify-between">
-                <div>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Total Course Fee</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-sm font-extrabold text-slate-500">NPR</span>
-                    <span className="text-4xl sm:text-5xl font-black text-[#1E3A6E]">6,500</span>
+            {/* ── CARD 1: 90 DAYS ONLINE ACCESS (NPR 6,500) ── */}
+            <div className="relative rounded-3xl bg-white border border-slate-200 shadow-xl p-7 sm:p-9 flex flex-col justify-between hover:border-[#1E3A6E]/40 hover:shadow-2xl transition-all">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#1E3A6E] bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+                    90 Days Online Plan
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span>3 Full Months Access</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-black">
-                    Only Rs. 72 / day
-                  </span>
-                  <span className="block text-[11px] text-slate-400 mt-1">No hidden charges</span>
-                </div>
-              </div>
 
-              {/* What's Included */}
-              <div className="mt-7 flex-1">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3.5">
-                  Package Includes:
+                <h3 className="text-2xl font-black text-[#05162E] tracking-tight mb-2">
+                  Online Pro Access
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+                  Perfect for self-motivated students across Nepal and abroad who need flexible online practice, recorded video classes, and CD-IELTS computer simulation.
                 </p>
-                <ul className="space-y-3 text-sm text-slate-700">
-                  {[
-                    '90 Days (3 Months) 24/7 unlimited portal access',
-                    'Both Academic & General Training modules covered',
-                    'Full Computer-Based (CD-IELTS) Exam Simulator',
-                    'All Updated 2026 Band 8+ recorded video classes',
-                    'Listening practice with continuous non-stop audio track',
-                    'Reading passages with live highlighter & text tools',
-                    'Writing Task 1 & Task 2 timed interface with word counter',
-                    '30+ Full-length timed mock tests with instant AI scoring',
-                    '1,000+ Section-wise practice questions with explanations',
-                    'Mobile, tablet, and laptop responsive access',
-                    'Online progress dashboard & band score prediction'
-                  ].map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <div className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
-                      </div>
-                      <span className="leading-snug">{feat}</span>
-                    </li>
-                  ))}
+
+                {/* Price Display */}
+                <div className="flex items-baseline gap-2 pb-6 border-b border-slate-100 mb-6">
+                  <span className="text-xs sm:text-sm font-bold text-slate-400">NPR</span>
+                  <span className="text-4xl sm:text-5xl font-black text-[#05162E] tracking-tight">6,500</span>
+                  <span className="text-xs text-slate-500 font-medium">/ 90 days total (~Rs. 72/day)</span>
+                </div>
+
+                {/* Included Features List */}
+                <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3.5">
+                  What&apos;s Included:
+                </p>
+                <ul className="space-y-3 text-sm text-slate-700 mb-8">
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>90 Days 24/7 Online Portal Access</strong> from any device</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>Band 8+ Updated Video Courses</strong> for Listening, Reading, Writing &amp; Speaking</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>Both Modules Covered:</strong> Dedicated tracks for Academic and General Training</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>Real CD-IELTS Computer Simulator:</strong> Exact timer, text highlighter, notepad &amp; split screen</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>One Continuous Listening Audio:</strong> Locked playback just like the actual British Council/IDP test</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>Full Mock Tests &amp; Section-Wise Practice</strong> with instant score calculation</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
+                    <span><strong>AI-Powered Analytics:</strong> Identify your weak question types in real-time</span>
+                  </li>
                   <li className="flex items-start gap-2.5 text-slate-400">
-                    <div className="h-5 w-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <X className="h-3.5 w-3.5 stroke-[2.5]" />
-                    </div>
-                    <span className="line-through leading-snug">Physical instructor meeting &amp; in-person mock interview</span>
+                    <X className="h-4 w-4 text-slate-300 shrink-0 mt-0.5" />
+                    <span className="line-through">In-person physical instructor meetings at Putalisadak</span>
+                  </li>
+                  <li className="flex items-start gap-2.5 text-slate-400">
+                    <X className="h-4 w-4 text-slate-300 shrink-0 mt-0.5" />
+                    <span className="line-through">Physical 1-on-1 speaking interview with human examiner</span>
                   </li>
                 </ul>
               </div>
 
-              {/* CTA Action */}
-              <div className="mt-8 pt-6 border-t border-slate-100">
+              <div>
                 <Link
-                  to="/register?plan=online-90"
-                  className="w-full flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#162d57] text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-[#1E3A6E]/25 transition-all text-sm uppercase tracking-wide hover:scale-[1.01] active:scale-[0.99]"
+                  to="/register"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
                 >
                   Enroll in 90-Day Online Plan <ArrowRight className="h-4 w-4" />
                 </Link>
-                <p className="text-center text-[11px] text-slate-400 font-semibold mt-2.5">
-                  Instant activation via eSewa / Khalti / Fonepay
+                <p className="text-center text-[11px] text-slate-400 mt-2.5">
+                  Instant access upon payment verification • No card required to register
                 </p>
               </div>
             </div>
 
-            {/* ══ PLAN 2: 150 DAYS HYBRID + IN-PERSON MENTORSHIP ══ */}
-            <div className="flex flex-col bg-gradient-to-b from-[#0F2D6B] via-[#0B2558] to-[#071B42] text-white rounded-3xl p-7 sm:p-9 border-2 border-[#EE6055] shadow-2xl shadow-[#EE6055]/20 relative group">
-              {/* Floating Recommended Banner */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] text-white px-5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-lg shadow-[#EE6055]/40 flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 fill-white" />
-                <span>Recommended for Band 7.5+ Target</span>
+            {/* ── CARD 2: 150 DAYS HYBRID & PHYSICAL MENTORSHIP (NPR 11,500) ── */}
+            <div className="relative rounded-3xl bg-gradient-to-b from-[#0A224D] via-[#103063] to-[#0A1E45] border-2 border-[#EE6055] shadow-2xl p-7 sm:p-9 flex flex-col justify-between text-white overflow-hidden group">
+              {/* Recommended Badge */}
+              <div className="absolute top-0 right-0 bg-[#EE6055] text-white text-[11px] font-black uppercase tracking-widest py-1.5 px-6 rounded-bl-2xl shadow-md flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" /> RECOMMENDED FOR BAND 7.5+
               </div>
 
-              {/* Top Tag */}
-              <div className="flex items-center justify-between mb-4 mt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#EE6055]/25 text-[#FF9E95] border border-[#EE6055]/30">
-                  <Calendar className="h-3.5 w-3.5" /> 150 Days Extended Plan
-                </span>
-                <span className="text-xs font-bold text-amber-300">Hybrid + Physical</span>
-              </div>
-
-              {/* Title & Description */}
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                150-Day Hybrid &amp; Mentorship
-              </h2>
-              <p className="mt-2 text-sm text-blue-100 leading-relaxed min-h-[40px]">
-                Full online portal access <strong className="text-white underline decoration-[#EE6055] underline-offset-2">PLUS in-person instructor feedback</strong>, live speaking interviews, and physical writing corrections in Putalisadak.
-              </p>
-
-              {/* Price Container */}
-              <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-baseline justify-between">
-                <div>
-                  <span className="text-xs font-bold text-blue-200 uppercase tracking-widest block">Total Course Fee</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-sm font-extrabold text-blue-200">NPR</span>
-                    <span className="text-4xl sm:text-5xl font-black text-white">11,500</span>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#FF9E96] bg-[#EE6055]/20 border border-[#EE6055]/30 px-3 py-1 rounded-full">
+                    150 Days Hybrid Mentorship
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-200 bg-white/10 px-2.5 py-1 rounded-lg">
+                    <Calendar className="h-3.5 w-3.5 text-sky-300" />
+                    <span>5 Full Months Access</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-3 py-1 bg-[#EE6055] text-white rounded-lg text-xs font-black shadow-sm">
-                    Only Rs. 76 / day
-                  </span>
-                  <span className="block text-[11px] text-blue-200 mt-1">5 Full Months Access</span>
-                </div>
-              </div>
 
-              {/* What's Included */}
-              <div className="mt-7 flex-1">
-                <p className="text-xs font-black uppercase tracking-wider text-amber-300 mb-3.5 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5" /> Everything in 90-Day Online Plan, PLUS:
+                <h3 className="text-2xl font-black text-white tracking-tight mb-2">
+                  Hybrid &amp; Physical Mentorship
+                </h3>
+                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed mb-6">
+                  The ultimate preparation experience: full online portal access PLUS physical face-to-face mentorship, speaking interviews, and essay correction at Putalisadak.
                 </p>
-                <ul className="space-y-3 text-sm text-blue-50">
-                  {[
-                    '150 Days (5 Months) Extended 24/7 online portal access',
-                    'Physical Face-to-Face meetings with Instructors at Putalisadak',
-                    '1-on-1 In-Person Speaking Mock Interviews with examiner feedback',
-                    'Detailed Human Instructor Writing Task 1 & 2 paper correction',
-                    'Line-by-line grammar, lexical, and coherence feedback',
-                    'Physical Computer Lab & Silent Library access in Putalisadak',
-                    'Both Academic & General Training modules covered in-depth',
-                    'Real CD-IELTS computer testing software practice',
-                    'All Updated 2026 recorded masterclasses with Band 8+ strategies',
-                    'Unlimited Full-Length Mock Tests with deep progress audit',
-                    'Personalized Band 7.5+ Weakness Diagnosis & Study Roadmap',
-                    'Free Study Abroad & Visa Processing Consultation Assistance'
-                  ].map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <div className="h-5 w-5 rounded-full bg-[#EE6055] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm shadow-[#EE6055]/30">
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
-                      </div>
-                      <span className="leading-snug">{feat}</span>
-                    </li>
-                  ))}
+
+                {/* Price Display */}
+                <div className="flex items-baseline gap-2 pb-6 border-b border-white/15 mb-6">
+                  <span className="text-xs sm:text-sm font-bold text-blue-200">NPR</span>
+                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">11,500</span>
+                  <span className="text-xs text-blue-200 font-medium">/ 150 days total (~Rs. 76/day)</span>
+                </div>
+
+                {/* Included Features List */}
+                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-200 mb-3.5">
+                  Everything in Online Pro, PLUS:
+                </p>
+                <ul className="space-y-3 text-sm text-blue-50 mb-8">
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Extended 150 Days Access:</strong> 5 full months of unlimited portal preparation</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Physical Face-to-Face Meetings:</strong> Meet instructors in person at Putalisadak Kathmandu</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">1-on-1 In-Person Speaking Mocks:</strong> Live interviews with certified examiners &amp; fluency coaching</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Physical Writing Paper Evaluation:</strong> Hand-graded essay corrections with detailed band descriptors</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Putalisadak Lab &amp; Library Access:</strong> Practice in our quiet computer lab environment</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">All Video Courses &amp; CD-IELTS Mocks:</strong> Full access to all recorded classes and question banks</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Direct Instructor WhatsApp Support:</strong> Clear doubts directly with senior IELTS mentors</span>
+                  </li>
                 </ul>
               </div>
 
-              {/* CTA Action */}
-              <div className="mt-8 pt-6 border-t border-white/15">
+              <div>
                 <Link
-                  to="/register?plan=hybrid-150"
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-[#EE6055]/40 transition-all text-sm uppercase tracking-wide hover:scale-[1.01] active:scale-[0.99] border border-white/20"
+                  to="/register"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-xl shadow-[#EE6055]/30 hover:scale-[1.01] text-sm"
                 >
                   Join 150-Day Hybrid Mentorship <ArrowRight className="h-4 w-4" />
                 </Link>
-                <p className="text-center text-[11px] text-blue-200 font-semibold mt-2.5">
-                  Visit Putalisadak or Pay Online via eSewa / Khalti / Bank
+                <p className="text-center text-[11px] text-blue-200 mt-2.5">
+                  Visit Putalisadak Office or register online • Seats filled on rolling basis
                 </p>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* ── COMPUTER-BASED IELTS (CD-IELTS) SPOTLIGHT ── */}
-        <section className="bg-white py-14 md:py-20 border-y border-slate-200">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-6 space-y-5">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20">
-                  <Monitor className="h-3.5 w-3.5" /> Perfect for Computer-Based Exam
-                </span>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#05162E] leading-tight">
-                  Why Paper Practice Fails on Real CD-IELTS Test Day
-                </h2>
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                  More than 70% of students taking the computer-based IELTS lose marks not because of English, but because they are unfamiliar with typing under a countdown clock, managing split-screen passage reading, and using on-screen highlighting.
-                </p>
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                  At <strong>Jawaaf IELTS Lab</strong>, every mock test and practice session reproduces the <strong>exact same user experience</strong> as the official British Council and IDP test centers in Nepal.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-slate-200">
-                    <p className="font-extrabold text-sm text-[#05162E]">Split Screen Reading</p>
-                    <p className="text-xs text-slate-500 mt-1">Scroll passage and answer questions side-by-side with live highlighter.</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-slate-200">
-                    <p className="font-extrabold text-sm text-[#05162E]">Locked Audio Playback</p>
-                    <p className="text-xs text-slate-500 mt-1">One continuous listening track without pause or rewind, just like real exam.</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-slate-200">
-                    <p className="font-extrabold text-sm text-[#05162E]">Real Time Word Counter</p>
-                    <p className="text-xs text-slate-500 mt-1">Live word count for Writing Task 1 (150 words) and Task 2 (250 words).</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-slate-200">
-                    <p className="font-extrabold text-sm text-[#05162E]">Map Labelling Dropdowns</p>
-                    <p className="text-xs text-slate-500 mt-1">Real floor plan and diagram labelling with seamless dropdown choices.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Teaser Graphic */}
-              <div className="lg:col-span-6 bg-gradient-to-br from-[#0B2558] to-[#1E3A6E] rounded-3xl p-6 sm:p-8 text-white shadow-2xl border border-white/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#EE6055]/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="flex items-center justify-between border-b border-white/15 pb-4 mb-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-400"></span>
-                    <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
-                    <span className="w-3 h-3 rounded-full bg-green-400"></span>
-                    <span className="text-xs font-bold text-blue-200 ml-2">Jawaaf CD-IELTS Interface</span>
-                  </div>
-                  <span className="text-xs font-mono font-bold text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded">59:45 Left</span>
-                </div>
-
-                <div className="space-y-4 text-xs sm:text-sm">
-                  <div className="p-4 bg-white/10 rounded-2xl border border-white/15">
-                    <p className="text-xs font-black uppercase text-[#FF8278]">Academic &amp; General Training</p>
-                    <p className="mt-1 text-blue-100 font-medium">Full compatibility for students pursuing university admissions abroad as well as professionals applying for Australian PR and Canadian express entry.</p>
-                  </div>
-
-                  <div className="p-4 bg-white/10 rounded-2xl border border-white/15">
-                    <p className="text-xs font-black uppercase text-[#FF8278]">Both Plans Include Complete Simulator</p>
-                    <p className="mt-1 text-blue-100 font-medium">Both the 90-Day Online Plan and 150-Day Hybrid Plan give you full, unrestricted access to the computer simulator.</p>
-                  </div>
-
-                  <div className="pt-2">
-                    <Link
-                      to="/demo-exam"
-                      className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white bg-[#EE6055] hover:bg-[#d94f46] px-5 py-3 rounded-xl shadow-md transition-all uppercase tracking-wide"
-                    >
-                      <Sparkles className="h-4 w-4" /> Try Free Demo Test Right Now
-                    </Link>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── FEATURE COMPARISON TABLE ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20" aria-label="Package Comparison">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20">
-              Detailed Side-by-Side Comparison
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#05162E] mt-3">
-              Compare 90-Day Online vs 150-Day Hybrid
-            </h2>
-            <p className="text-slate-500 text-sm sm:text-base mt-2">
-              Everything is transparent with zero hidden fees. Pick the package that aligns with your goal.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[620px]">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-[#F8FAFC]">
-                    <th className="py-5 px-6 font-extrabold text-sm sm:text-base text-[#05162E] w-1/2">
-                      Features &amp; Deliverables
-                    </th>
-                    <th className="py-5 px-6 font-extrabold text-sm sm:text-base text-[#1E3A6E] text-center w-1/4 bg-[#1E3A6E]/5">
-                      90-Day Online Plan<br />
-                      <span className="text-xs font-bold text-slate-500">NPR 6,500</span>
-                    </th>
-                    <th className="py-5 px-6 font-extrabold text-sm sm:text-base text-[#EE6055] text-center w-1/4 bg-[#EE6055]/5">
-                      150-Day Hybrid Plan<br />
-                      <span className="text-xs font-bold text-[#EE6055]">NPR 11,500 ⭐</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {comparisonFeatures.map((row, index) => (
-                    <tr key={index} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-4 px-6 font-medium text-slate-800">
-                        {row.name}
-                      </td>
-                      <td className="py-4 px-6 text-center bg-[#1E3A6E]/[0.02]">
-                        {typeof row.plan90 === 'boolean' ? (
-                          row.plan90 ? (
-                            <Check className="h-5 w-5 text-emerald-600 mx-auto stroke-[3]" />
-                          ) : (
-                            <X className="h-5 w-5 text-slate-300 mx-auto" />
-                          )
-                        ) : (
-                          <span className="font-semibold text-slate-700">{row.plan90}</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-center bg-[#EE6055]/[0.03]">
-                        {typeof row.plan150 === 'boolean' ? (
-                          row.plan150 ? (
-                            <Check className="h-5 w-5 text-[#EE6055] mx-auto stroke-[3]" />
-                          ) : (
-                            <X className="h-5 w-5 text-slate-300 mx-auto" />
-                          )
-                        ) : (
-                          <span className="font-extrabold text-[#05162E]">{row.plan150}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Bottom Table CTAs */}
-            <div className="p-6 bg-[#F8FAFC] border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="h-6 w-6 text-emerald-600 shrink-0" />
-                <p className="text-xs text-slate-500 leading-snug">
-                  <strong>Risk-Free Guarantee:</strong> You can upgrade from the 90-Day Plan to the 150-Day Hybrid Plan anytime during your study period!
-                </p>
-              </div>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Link
-                  to="/register?plan=online-90"
-                  className="flex-1 sm:flex-none px-5 py-2.5 bg-[#1E3A6E] hover:bg-[#162d57] text-white text-xs font-bold rounded-xl transition-all text-center"
-                >
-                  Choose 90-Day
-                </Link>
-                <Link
-                  to="/register?plan=hybrid-150"
-                  className="flex-1 sm:flex-none px-5 py-2.5 bg-[#EE6055] hover:bg-[#d94f46] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#EE6055]/30 text-center"
-                >
-                  Choose 150-Day Hybrid
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── PAYMENT & ACTIVATION SECTION ── */}
+        {/* ── SECTION 3: CD-IELTS SPOTLIGHT (Why Computer Simulator Matters) ── */}
         <section className="bg-gradient-to-br from-[#05162E] to-[#1E3A6E] py-16 md:py-20 text-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF8278] bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                Fast &amp; Simple Enrollment
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-[#FFB0A8] bg-[#EE6055]/20 border border-[#EE6055]/30 px-3.5 py-1 rounded-full mb-3">
+                <Monitor className="h-3.5 w-3.5 text-[#EE6055]" /> REAL EXAM SIMULATION
               </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mt-3">
-                Easy Payment Methods Across Nepal
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight">
+                Why Preparing on Real CD-IELTS Software is Crucial
               </h2>
-              <p className="text-blue-100 text-sm sm:text-base mt-2">
-                We accept all major Nepali digital wallets, QR transfers, bank deposits, and cash in Putalisadak.
+              <p className="mt-3 text-blue-200 max-w-2xl mx-auto text-sm sm:text-base">
+                Practicing only on paper books leaves Nepali students unprepared for the fast pace, computer screen fatigue, and continuous audio of the actual test center.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Payment Card 1: Digital Wallets */}
-              <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-3">
-                <div className="h-10 w-10 rounded-xl bg-[#EE6055] text-white flex items-center justify-center font-black">
-                  <Zap className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-lg text-white">eSewa &amp; Khalti</h3>
-                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-                  Instant digital transfer via eSewa ID or Khalti. Send your screenshot to our WhatsApp for immediate 5-minute portal activation.
-                </p>
-              </div>
-
-              {/* Payment Card 2: Fonepay QR & Bank */}
-              <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-3">
-                <div className="h-10 w-10 rounded-xl bg-sky-500 text-white flex items-center justify-center font-black">
-                  <Monitor className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-lg text-white">Fonepay QR &amp; Bank Transfer</h3>
-                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-                  Scan our official Fonepay merchant QR from any Nepali mobile banking app, or deposit directly into our official account.
-                </p>
-              </div>
-
-              {/* Payment Card 3: Putalisadak Office */}
-              <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-3">
-                <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black">
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-lg text-white">Cash / In-Person at Putalisadak</h3>
-                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-                  Visit our office at Putalisadak, Kathmandu. Meet the instructors, inspect the computer lab, and enroll directly with cash or POS.
-                </p>
-              </div>
-            </div>
-
-            {/* Putalisadak Location Box */}
-            <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-[#EE6055] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#EE6055]/30">
-                  <MapPin className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-lg text-white">Jawaaf Consulting Academy — Kathmandu Hub</h4>
-                  <p className="text-sm text-blue-100 mt-1 leading-relaxed">
-                    Putalisadak, Kathmandu, Nepal (Opposite to Star Mall / near Kumari Bank). Open Sunday–Friday, 7:00 AM – 6:00 PM.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <a
-                  href="tel:014647115"
-                  className="inline-flex items-center gap-2 bg-white text-[#0B2558] font-extrabold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors text-sm shadow-md"
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: <Headphones className="h-6 w-6 text-[#EE6055]" />,
+                  title: 'Locked Continuous Audio',
+                  desc: 'Just like the actual exam, audio plays once without pause, rewind, or speed manipulation. Trains your ears for real exam pressure.'
+                },
+                {
+                  icon: <Laptop className="h-6 w-6 text-sky-300" />,
+                  title: 'Split-Screen Reading UI',
+                  desc: 'Read passages on the left while answering questions on the right. Highlight text and take notes on screen without switching tabs.'
+                },
+                {
+                  icon: <FileText className="h-6 w-6 text-emerald-300" />,
+                  title: 'Built-in Word Counter & Timer',
+                  desc: 'Real 60-minute combined timer for Task 1 & Task 2 with live word counting so you never fall short of the required 150/250 word limit.'
+                },
+                {
+                  icon: <GraduationCap className="h-6 w-6 text-amber-300" />,
+                  title: 'Both Academic & General',
+                  desc: 'Full question pools for university applicants (Academic) and work/PR applicants (General Training) with targeted modules.'
+                },
+                {
+                  icon: <Users className="h-6 w-6 text-[#FF9E96]" />,
+                  title: 'Physical In-Person Speaking',
+                  desc: 'Practice face-to-face speaking mock tests with British Council/IDP certified trainers at our Putalisadak campus.'
+                },
+                {
+                  icon: <ShieldCheck className="h-6 w-6 text-indigo-300" />,
+                  title: 'IDP / British Council Aligned',
+                  desc: 'Question formats, scoring rubrics, and difficulty levels strictly calibrate with current 2026 official test standards.'
+                }
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="bg-white/10 border border-white/15 rounded-2xl p-6 backdrop-blur-md hover:bg-white/[0.15] transition-all"
                 >
-                  <Phone className="h-4 w-4 text-[#EE6055]" /> 01-4647115
-                </a>
-                <a
-                  href="https://wa.me/9779800000000?text=Hi%2C%20I%20want%20to%20enroll%20in%20Jawaaf%20IELTS%20Lab"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#25D366] text-white font-extrabold px-5 py-3 rounded-xl hover:bg-[#20ba59] transition-colors text-sm shadow-md"
-                >
-                  <MessageSquare className="h-4 w-4" /> WhatsApp
-                </a>
-              </div>
+                  <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-bold text-white text-base mb-2">{item.title}</h3>
+                  <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ── FAQ SECTION ── */}
-        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20" aria-label="Frequently Asked Questions">
-          <div className="text-center mb-12">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20">
-              Got Questions?
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#05162E] mt-3">
-              Frequently Asked Questions About IELTS Fees &amp; Classes
+        {/* ── SECTION 4: FEATURE COMPARISON MATRIX TABLE ── */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-label="Feature Comparison Table">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
+              Compare Plan Features Side-by-Side
             </h2>
-            <p className="text-slate-500 text-sm sm:text-base mt-2">
-              Everything you need to know about our subscriptions, payments, and in-person mentorship in Kathmandu.
+            <p className="mt-2 text-slate-500 text-sm max-w-xl mx-auto">
+              Everything you get with each subscription package clearly broken down.
             </p>
           </div>
 
-          <div className="space-y-3.5">
-            {faqs.map((faq, index) => {
-              const isOpen = openFaq === index;
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all"
-                >
-                  <button
-                    onClick={() => toggleFaq(index)}
-                    className="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 font-extrabold text-sm sm:text-base text-[#05162E] hover:text-[#1E3A6E] transition-colors"
-                  >
-                    <span>{faq.q}</span>
-                    <span className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
-                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </span>
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-[#05162E]">
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-sm sm:text-base">Features &amp; Services</th>
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm sm:text-base">
+                    90 Days Online Pro<br />
+                    <span className="text-xs font-semibold text-slate-500">NPR 6,500</span>
+                  </th>
+                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm sm:text-base bg-[#EE6055]/5">
+                    150 Days Hybrid Mentorship<br />
+                    <span className="text-xs font-semibold text-[#EE6055]">NPR 11,500</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {[
+                  { feature: 'Access Duration', f1: '90 Days (3 Months)', f2: '150 Days (5 Months)' },
+                  { feature: 'CD-IELTS Computer Mock Tests', f1: 'Unlimited Access', f2: 'Unlimited Access' },
+                  { feature: 'Listening Audio Interface', f1: 'Locked Real Audio', f2: 'Locked Real Audio' },
+                  { feature: 'Reading Split-Screen Practice', f1: 'Included', f2: 'Included' },
+                  { feature: 'Writing Simulator (Word Count & Timer)', f1: 'Included', f2: 'Included' },
+                  { feature: 'Academic & General Training Tracks', f1: 'Both Included', f2: 'Both Included' },
+                  { feature: 'Updated Band 8+ Video Courses', f1: 'All 4 Skills', f2: 'All 4 Skills' },
+                  { feature: 'Section-wise Practice Banks', f1: '1,000+ Questions', f2: '1,000+ Questions' },
+                  { feature: 'Automated AI Band Estimation', f1: 'Instant', f2: 'Instant' },
+                  { feature: 'Physical Meetings with Mentors', f1: '—', f2: 'Putalisadak Office' },
+                  { feature: 'In-Person 1-on-1 Speaking Mocks', f1: '—', f2: 'Certified Human Examiner' },
+                  { feature: 'Physical Paper Writing Correction', f1: '—', f2: 'Certified Human Examiner' },
+                  { feature: 'Putalisadak Lab & Library Access', f1: '—', f2: 'Included' },
+                  { feature: 'Direct WhatsApp Teacher Support', f1: 'Standard', f2: 'Priority 1-on-1' }
+                ].map((row, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                    <td className="py-3.5 px-4 sm:px-6 font-semibold text-[#05162E]">{row.feature}</td>
+                    <td className="py-3.5 px-4 sm:px-6 text-center font-medium text-slate-600">{row.f1}</td>
+                    <td className="py-3.5 px-4 sm:px-6 text-center font-bold text-[#05162E] bg-[#EE6055]/5">{row.f2}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
-        {/* ── BOTTOM CTA BANNER ── */}
+        {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY ── */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-md">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20">
+                  Multiple Payment Modes
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-[#05162E] tracking-tight mt-3 mb-2">
+                  Fast &amp; Convenient Payment Across Nepal
+                </h3>
+                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
+                  We accept all popular payment gateways in Nepal. Pay online in seconds or walk into our Putalisadak Academy.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { name: 'eSewa', sub: 'Instant Digital Wallet' },
+                    { name: 'Khalti', sub: 'Instant Wallet' },
+                    { name: 'Fonepay QR', sub: 'Any Mobile Banking' },
+                    { name: 'Bank Transfer', sub: 'All Nepali Banks' },
+                    { name: 'Putalisadak Cash', sub: 'At Front Desk' },
+                    { name: 'Debit / Credit Card', sub: 'At Office POS' }
+                  ].map((m) => (
+                    <div key={m.name} className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-left">
+                      <p className="font-extrabold text-xs text-[#05162E]">{m.name}</p>
+                      <p className="text-[10px] text-slate-500">{m.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Putalisadak Location Card */}
+              <div className="rounded-2xl bg-gradient-to-br from-[#0B2558] to-[#1E3A6E] p-6 text-white border border-white/10 shadow-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-5 w-5 text-[#EE6055]" />
+                  <h4 className="font-bold text-base">Visit Our Putalisadak Office</h4>
+                </div>
+                <p className="text-xs text-blue-100 leading-relaxed mb-4">
+                  Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
+                </p>
+                <div className="space-y-2 text-xs border-t border-white/10 pt-4">
+                  <p className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-sky-300" />
+                    <span>01-4647115 | +977-9800000000</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-300" />
+                    <span>Sunday – Friday: 7:00 AM – 6:00 PM</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-emerald-300" />
+                    <span>Silent Computer Lab &amp; Physical Speaking Rooms</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SECTION 6: FAQ ACCORDION (Matches FeaturesPage Component) ── */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-label="Frequently Asked Questions">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
+              Frequently Asked Questions About Pricing &amp; Classes
+            </h2>
+            <p className="mt-2 text-slate-500 text-sm max-w-xl mx-auto">
+              Everything you need to know about our fees, durations, modules, and exam simulation.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── SECTION 7: BOTTOM CTA BANNER (Identical to Features Page) ── */}
         <section className="bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] py-14 md:py-16 text-white text-center">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3">
               Not Sure Which Plan to Pick? Try a Free Demo Exam First!
             </h2>
             <p className="text-white/90 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
-              Experience the real computer-based interface, timer, questions, and audio without entering any credit card.
+              Experience the real computer-based interface, timer, questions, and audio without entering any payment information.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
@@ -783,14 +808,14 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── FOOTER ── */}
+        {/* ── SECTION 8: FOOTER (Matches Features Page Footer) ── */}
         <footer className="bg-[#05162E] py-12 text-slate-400 text-sm border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
               <div className="md:col-span-2 space-y-3">
                 <JawaafLogo isWhite={true} className="h-10 w-auto" />
                 <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed mt-2">
-                  Jawaaf Consulting Academy is Nepal's leading IELTS preparation academy and testing lab. We help Nepali students achieve Band 7.5+ and fulfill their study abroad and visa dreams.
+                  Jawaaf Consulting Academy is Nepal&apos;s leading IELTS preparation academy and testing lab. We help Nepali students achieve Band 7.5+ and fulfill their study abroad and visa dreams.
                 </p>
                 <p className="text-xs text-slate-400">
                   📍 Putalisadak, Kathmandu, Nepal | 📞 01-4647115
