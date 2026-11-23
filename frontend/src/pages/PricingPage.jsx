@@ -1051,8 +1051,8 @@ export default function PricingPage() {
         </section>
 
         {/* ── SECTION 4: FEATURE COMPARISON MATRIX TABLE ── */}
-        <section className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-16 md:py-20" aria-label="IELTS Plan Feature Comparison Table">
-          <div className="text-center mb-10">
+        <section className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 md:py-8" aria-label="IELTS Plan Feature Comparison Table">
+          <div className="text-center mb-4">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
               Choose the Plan That Matches Your Target Band
             </h2>
@@ -1065,12 +1065,12 @@ export default function PricingPage() {
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[#05162E]">
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-sm sm:text-base w-[38%]">Features &amp; Services</th>
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm sm:text-base w-[31%]">
+                  <th className="py-2.5 px-4 sm:px-6 font-extrabold text-sm">Features &amp; Services</th>
+                  <th className="py-2.5 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm w-[31%]">
                     Online Pro Access<br />
                     <span className="text-xs font-semibold text-slate-500">NPR 6,500 | 90 Days</span>
                   </th>
-                  <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm sm:text-base bg-[#EE6055]/5 w-[31%]">
+                  <th className="py-2.5 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm bg-[#EE6055]/5 w-[31%]">
                     Premium IELTS Mentorship<br />
                     <span className="text-xs font-semibold text-[#EE6055]">NPR 10,000 | 90 Days</span>
                   </th>
@@ -1101,8 +1101,8 @@ export default function PricingPage() {
                   { feature: 'Physical IELTS Computer Lab Access', f1: '—', f2: 'Included' },
                 ].map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                    <td className="py-3.5 px-4 sm:px-6 font-semibold text-[#05162E]">{row.feature}</td>
-                    <td className="py-3.5 px-4 sm:px-6 text-center font-medium text-slate-600">
+                    <td className="py-1.5 px-4 sm:px-6 font-semibold text-[#05162E] text-xs sm:text-sm">{row.feature}</td>
+                    <td className="py-1.5 px-4 sm:px-6 text-center font-medium text-slate-600 text-xs sm:text-sm">
                       {row.f1 === '—' ? (
                         <span className="text-slate-300 font-bold text-base">—</span>
                       ) : (
@@ -1114,7 +1114,7 @@ export default function PricingPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 sm:px-6 text-center font-bold text-[#05162E] bg-[#EE6055]/5">
+                    <td className="py-1.5 px-4 sm:px-6 text-center font-bold text-[#05162E] bg-[#EE6055]/5 text-xs sm:text-sm">
                       {row.f2 === '—' ? (
                         <span className="text-slate-300 font-bold text-base">—</span>
                       ) : (
@@ -1195,7 +1195,7 @@ export default function PricingPage() {
 
         {/* ── SECTION 6: FAQ ACCORDION ── */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-label="Frequently Asked Questions">
-          <div className="text-center mb-10">
+          <div className="text-center mb-4">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
               Frequently Asked Questions About Pricing &amp; Classes
             </h2>
