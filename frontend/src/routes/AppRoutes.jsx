@@ -4,6 +4,7 @@ import ProtectedRoute from './ProtectedRoute';
 
 const loadLandingPage = () => import('../pages/LandingPage');
 const loadFeaturesPage = () => import('../pages/FeaturesPage');
+const loadPricingPage = () => import('../pages/PricingPage');
 const loadLoginPage = () => import('../pages/LoginPage');
 const loadRegisterPage = () => import('../pages/RegisterPage');
 const loadVerifyEmailPage = () => import('../pages/VerifyEmailPage');
@@ -40,6 +41,7 @@ const loadTeacherDashboardPage = () => import('../pages/admin/TeacherDashboardPa
 
 const LandingPage = lazy(loadLandingPage);
 const FeaturesPage = lazy(loadFeaturesPage);
+const PricingPage = lazy(loadPricingPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
 const VerifyEmailPage = lazy(loadVerifyEmailPage);
@@ -99,6 +101,7 @@ export default function AppRoutes() {
       {/* Public Guest Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/demo-exam" element={<ExamInterface />} />
       <Route path="/demo-result" element={<DemoResultPage />} />
       <Route path="/login" element={<LoginPage />} />

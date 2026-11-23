@@ -101,7 +101,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-4 border-t border-slate-100 bg-white px-4 py-5 shadow-xl sm:px-6 xl:hidden">
             <Link to="/" className="font-bold text-[#1E3A6E]">Home</Link>
             {['Features', 'Mock Tests', 'Pricing', 'About Us', 'Contact'].map(l => (
-              <Link key={l} to="/" className="font-medium text-slate-600">{l}</Link>
+              <Link key={l} to={`/${l.toLowerCase().replace(' ', '-')}`} className="font-medium text-slate-600">{l}</Link>
             ))}
             <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
               <Link to="/login" className="py-2.5 rounded-lg border border-slate-300 text-center font-semibold text-sm text-slate-700">Log In</Link>

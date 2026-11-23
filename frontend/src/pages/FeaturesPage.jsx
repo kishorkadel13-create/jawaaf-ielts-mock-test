@@ -245,6 +245,12 @@ export default function FeaturesPage() {
 
               <div className="flex items-center gap-2.5">
                 <Link
+                  to="/pricing"
+                  className="text-white/80 hover:text-white text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-lg hover:bg-white/10 hidden sm:inline-flex"
+                >
+                  Pricing
+                </Link>
+                <Link
                   to="/demo-exam"
                   className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/30 transition-all border border-white/20"
                 >
@@ -584,10 +590,11 @@ export default function FeaturesPage() {
               </div>
               <div className="flex flex-wrap justify-center gap-5 text-sm text-blue-300">
                 <Link to="/" className="hover:text-white transition-colors">Home</Link>
+                <Link to="/features" className="hover:text-white transition-colors">Features</Link>
+                <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
                 <Link to="/tests" className="hover:text-white transition-colors">Mock Tests</Link>
                 <Link to="/courses" className="hover:text-white transition-colors">Video Classes</Link>
                 <Link to="/register" className="hover:text-white transition-colors">Register Free</Link>
-                <Link to="/features" className="hover:text-white transition-colors">Features</Link>
               </div>
             </div>
             <div className="mt-6 pt-6 border-t border-white/10 text-center">
