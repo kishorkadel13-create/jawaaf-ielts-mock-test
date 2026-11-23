@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Bold, FileText, Heading2, Plus, Wand2, X } from 'lucide-react';
+import { AlertCircle, Bold, FileText, Heading2, Image, Plus, Wand2, X } from 'lucide-react';
 import { QuestionData } from './QuestionBuilder';
 import { SummaryCompletionGroup, isSummaryCompletionQuestion } from '../../SummaryCompletionGroup';
 import { renderFormattedBlockText } from '../../../utils/renderFormattedText';
+import { api } from '../../../services/api';
 
 interface BulkQuestionBuilderProps {
   onSave: (questions: QuestionData[], instruction?: string) => void;
@@ -27,6 +28,7 @@ const BULK_TYPES = [
   { value: 'MATCHING_INFORMATION', label: '11. Matching Information' },
   { value: 'MATCHING_HEADINGS', label: '12. Matching Headings' },
   { value: 'MULTI_SELECT', label: '13. Choose Two / Multi-select' },
+  { value: 'MAP_LABELLING', label: '14. Map / Plan Labelling (Listening)' },
 ];
 
 const FORMAT_GUIDES: Record<string, { title: string; hint: string; example: string }> = {
@@ -105,6 +107,11 @@ const FORMAT_GUIDES: Record<string, { title: string; hint: string; example: stri
     hint: 'Paste one or more numbered prompts with options. Give multiple answer letters separated by comma.',
     example: `1. Which TWO things were made using silk?\nA. Fishing lines\nB. Glass bottles\nC. Bowstrings\nD. Stone tools\nE. Bricks\n\nAnswer Key:\n1 A, C`,
   },
+  MAP_LABELLING: {
+    title: '14. Map / Plan Labelling (Listening)',
+    hint: 'Upload the map/plan image above, set the dropdown letters (e.g. A–J), then paste numbered questions. Each question gets a letter dropdown. Answer must be one of the configured letters.',
+    example: `15. coffee room\n16. warehouse\n17. staff canteen\n18. meeting room\n19. human resources\n20. boardroom\n\nAnswer Key:\n15 A\n16 D\n17 F\n18 B\n19 E\n20 C`,
+  },
 };
 
 const SUGGESTED_STATEMENTS: Record<string, string> = {
@@ -123,6 +130,7 @@ const SUGGESTED_STATEMENTS: Record<string, string> = {
   MATCHING_INFORMATION: 'Questions 1-5 Which paragraph contains the following information? Write the correct letter, A-D.',
   MATCHING_HEADINGS: 'Questions 1-5 Choose the correct heading for each paragraph from the list of headings below.',
   MULTI_SELECT: 'Questions 1-2 Choose TWO letters, A-E.',
+  MAP_LABELLING: 'Questions 15-20 Label the map below. Write the correct letter, A–J, next to each question.',
 };
 
 const MATCHING_HEADINGS_OPTIONS_PLACEHOLDER = `i. Early discovery of silk
@@ -369,6 +377,13 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // MAP_LABELLING specific state
+  const [mapImageUrl, setMapImageUrl] = useState('');
+  const [mapImageUploading, setMapImageUploading] = useState(false);
+  const mapImageInputRef = useRef<HTMLInputElement | null>(null);
+  // dropdown letter options for map labelling (default A–J)
+  const [mapLetters, setMapLetters] = useState('A,B,C,D,E,F,G,H,I,J');
+
   const formatGuide = useMemo(() => FORMAT_GUIDES[bulkType] || FORMAT_GUIDES.AUTO, [bulkType]);
   const suggestedStatement = useMemo(() => SUGGESTED_STATEMENTS[bulkType] || '', [bulkType]);
 
@@ -493,6 +508,22 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
       const questionText = normalizeBlankText(bodyLines.join('\n').trim(), block.number, Boolean(isolateTargetBlank));
       const answersFromKey = answerMap[block.number] || [];
       const rawAnswers = inlineAnswers.length > 0 ? inlineAnswers : answersFromKey;
+
+      // MAP_LABELLING: force type, use configured letters as options
+      if (bulkType === 'MAP_LABELLING') {
+        const letters = mapLetters.split(',').map((l) => l.trim()).filter(Boolean);
+        return {
+          question_type: 'MAP_LABELLING',
+          question_number: block.number,
+          question_text: questionText || `Question ${block.number}`,
+          options_json: letters,
+          correct_answers_json: rawAnswers.length > 0 ? rawAnswers : ['[NO ANSWER DETECTED]'],
+          extra_data_json: { map_image_url: mapImageUrl || '' },
+          marks: 1,
+          order_no: order++,
+        };
+      }
+
       const questionType = inferType(bulkType, options, rawAnswers, questionText);
       const finalOptions = (sharedOptionTypes.has(questionType) || questionType === 'SUMMARY_COMPLETION_OPTIONS') && sharedOptions.length > 0 ? sharedOptions : options;
       const shouldNormalizeOptionAnswers = ['SINGLE_MCQ', 'MULTI_SELECT', 'SUMMARY_COMPLETION_OPTIONS', 'MATCHING', 'MATCHING_HEADINGS', 'MATCHING_INFORMATION', 'SENTENCE_COMPLETION'].includes(questionType);
@@ -513,6 +544,24 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
     });
 
     setParsedQuestions(parsed);
+  };
+
+  // Upload map image for MAP_LABELLING
+  const handleMapImageUpload = async (file: File) => {
+    if (!file) return;
+    setMapImageUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post('/admin/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setMapImageUrl(data.url || '');
+    } catch (err: any) {
+      setError('Image upload failed: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setMapImageUploading(false);
+    }
   };
 
   const handleSaveClick = async () => {
@@ -673,6 +722,103 @@ export default function BulkQuestionBuilder({ onSave, onCancel, nextOrderNo, cur
                     onChange={(e) => setRawText(e.target.value)}
                     placeholder={MATCHING_HEADINGS_QUESTIONS_PLACEHOLDER}
                     className="mt-2 w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-[#1E3A6E] focus:bg-white text-[13px] font-mono outline-none resize-y transition-colors"
+                  />
+                </div>
+              </div>
+            ) : bulkType === 'MAP_LABELLING' ? (
+              <div className="flex flex-col gap-4">
+                {/* Map Image Upload */}
+                <div className="bg-white border-2 border-dashed border-[#1E3A6E]/30 rounded-xl p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[12px] font-black text-[#1E3A6E] flex items-center gap-1.5">
+                        🗺️ Map / Plan Image
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Upload the floor plan or map image that students will label.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={mapImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleMapImageUpload(file);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => mapImageInputRef.current?.click()}
+                        disabled={mapImageUploading}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1E3A6E] text-white text-[12px] font-bold rounded-lg hover:bg-[#162d57] transition-colors disabled:opacity-60"
+                      >
+                        {mapImageUploading ? '⏳ Uploading…' : '📁 Upload Image'}
+                      </button>
+                      {mapImageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setMapImageUrl('')}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* URL fallback */}
+                  <input
+                    type="url"
+                    value={mapImageUrl}
+                    onChange={(e) => setMapImageUrl(e.target.value)}
+                    placeholder="Or paste image URL here…"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[12px] outline-none focus:border-[#1E3A6E]"
+                  />
+                  {mapImageUrl && (
+                    <img
+                      src={mapImageUrl}
+                      alt="Map preview"
+                      className="w-full max-h-64 object-contain rounded-xl border border-slate-200 bg-slate-50"
+                    />
+                  )}
+                </div>
+
+                {/* Dropdown letter options */}
+                <div className="bg-[#EFF4FB] border border-[#1E3A6E]/20 rounded-xl p-4">
+                  <label className="text-[11px] font-black text-[#1E3A6E] uppercase tracking-wider block mb-2">
+                    Map Location Letters (dropdown options for students)
+                  </label>
+                  <input
+                    type="text"
+                    value={mapLetters}
+                    onChange={(e) => setMapLetters(e.target.value)}
+                    placeholder="A,B,C,D,E,F,G,H,I,J"
+                    className="w-full px-3 py-2 bg-white border border-[#1E3A6E]/20 rounded-lg text-[13px] font-mono outline-none focus:border-[#1E3A6E]"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Comma-separated letters shown on the map image (e.g. A,B,C,D,E,F,G,H,I,J). Students select from this dropdown for each question.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {mapLetters.split(',').map((l) => l.trim()).filter(Boolean).map((letter) => (
+                      <span key={letter} className="px-2 py-0.5 bg-[#1E3A6E] text-white text-[11px] font-black rounded-md">
+                        {letter}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Questions input */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                    Questions &amp; Answer Key
+                  </label>
+                  <textarea
+                    ref={rawTextRef}
+                    rows={12}
+                    value={rawText}
+                    onChange={(e) => setRawText(e.target.value)}
+                    placeholder={FORMAT_GUIDES.MAP_LABELLING.example}
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-[#1E3A6E] focus:bg-white text-[13px] font-mono outline-none resize-y transition-colors"
                   />
                 </div>
               </div>

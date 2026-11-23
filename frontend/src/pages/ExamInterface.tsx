@@ -1155,6 +1155,17 @@ export default function ExamInterface() {
                     return (
                       <div key={block.id} className="space-y-4">
                         <QuestionInstructionCard instruction={block.instruction} />
+                        {/* MAP_LABELLING: show map image above questions */}
+                        {block.questions[0]?.question_type === 'MAP_LABELLING' && block.questions[0]?.extra_data_json?.map_image_url && (
+                          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3">🗺️ Map / Plan — Label the locations</p>
+                            <img
+                              src={block.questions[0].extra_data_json.map_image_url}
+                              alt="Map to label"
+                              className="w-full max-h-96 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                            />
+                          </div>
+                        )}
                         {block.questions.map((question: any) => (
                           <div 
                             key={question.id} 
