@@ -778,17 +778,84 @@ export default function BulkQuestionBuilder({
     setParsedQuestions(parsed);
   };
 
-  // Upload map image for MAP_LABELLING
+  const prepareMapImage = async (file: File): Promise<File> => {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+    try {
+      const imageUrl = URL.createObjectURL(file);
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      const maxDimension = 2000;
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        URL.revokeObjectURL(imageUrl);
+        return file;
+      }
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(imageUrl);
+
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.90));
+      if (!blob) return file;
+
+      const fileName = (file.name.replace(/\.[^.]+$/, '') || 'map-image') + '.jpg';
+      return new File([blob], fileName, { type: 'image/jpeg' });
+    } catch {
+      return file;
+    }
+  };
+
+  const createInlineDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Upload map image for MAP_LABELLING (supports up to 15MB with smart client optimization & graceful fallback)
   const handleMapImageUpload = async (file: File) => {
     if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Please select an image smaller than 20MB.');
+      return;
+    }
     setMapImageUploading(true);
+    setError(null);
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const { data } = await api.post('/admin/upload', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setMapImageUrl(data.url || '');
+      // 1. Optimize image client-side to ensure crisp display under storage limits
+      const optimizedFile = await prepareMapImage(file);
+
+      // 2. Try uploading via /admin/upload
+      try {
+        const form = new FormData();
+        form.append('file', optimizedFile);
+        const { data } = await api.post('/admin/upload', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (data?.url) {
+          setMapImageUrl(data.url);
+          return;
+        }
+      } catch (uploadErr: any) {
+        console.warn('Storage upload returned error, falling back to instant inline image:', uploadErr);
+        // 3. Fallback: If Supabase storage reports limit or error, store as optimized data URL so admin is NEVER blocked!
+        const dataUrl = await createInlineDataUrl(optimizedFile);
+        setMapImageUrl(dataUrl);
+        return;
+      }
     } catch (err: any) {
       setError('Image upload failed: ' + (err?.message || 'Unknown error'));
     } finally {

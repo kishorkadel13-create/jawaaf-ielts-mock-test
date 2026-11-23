@@ -47,7 +47,7 @@ const ensureAssetBucket = async () => {
     const { error: updateError } = await supabaseAdmin.storage.updateBucket(ASSET_BUCKET, {
       public: true,
       allowedMimeTypes: ALL_ASSET_MIME_TYPES,
-      fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
+      fileSizeLimit: UPLOAD_MAX_SIZE_BYTES
     });
 
     if (updateError) throw updateError;
@@ -57,7 +57,7 @@ const ensureAssetBucket = async () => {
   const { error: createError } = await supabaseAdmin.storage.createBucket(ASSET_BUCKET, {
     public: true,
     allowedMimeTypes: ALL_ASSET_MIME_TYPES,
-    fileSizeLimit: `${UPLOAD_MAX_SIZE_MB}MB`
+    fileSizeLimit: UPLOAD_MAX_SIZE_BYTES
   });
 
   if (createError && createError.message !== 'The resource already exists') {
