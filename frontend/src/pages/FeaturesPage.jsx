@@ -218,18 +218,21 @@ export default function FeaturesPage() {
       <div className="min-h-screen bg-[#F4F7FB]">
 
         {/* ── 1ST VIEW: UNIFIED HERO & ONBOARDING CANVAS ── */}
-        <section className="relative bg-[#071328] py-8 sm:py-12 md:py-16 overflow-hidden">
-          {/* Subtle ambient lighting effects */}
-          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#1E3A6E]/30 blur-[120px] pointer-events-none" />
-          <div className="absolute top-1/3 -left-32 w-[450px] h-[450px] rounded-full bg-[#EE6055]/15 blur-[130px] pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
+        <section className="relative bg-gradient-to-br from-[#0B2558] via-[#133A7C] to-[#0A1E45] py-8 sm:py-12 md:py-16 overflow-hidden">
+          {/* Modern subtle dot matrix grid overlay for depth and SaaS elegance */}
+          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+
+          {/* Luminous atmospheric glowing lights (royal sapphire, warm coral, cyan) */}
+          <div className="absolute -top-24 -right-24 w-[550px] h-[550px] rounded-full bg-sky-400/20 blur-[130px] pointer-events-none" />
+          <div className="absolute top-1/4 -left-24 w-[480px] h-[480px] rounded-full bg-[#EE6055]/25 blur-[140px] pointer-events-none" />
+          <div className="absolute bottom-10 right-1/3 w-[450px] h-[350px] rounded-full bg-blue-300/15 blur-[110px] pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             {/* Top Navigation & Brand Header */}
-            <header className="flex items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-white/10">
+            <header className="flex items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-white/15">
               <Link
                 to="/"
-                className="inline-flex items-center gap-2 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 text-white hover:text-white text-xs sm:text-sm font-semibold transition-all bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl border border-white/20 backdrop-blur-md shadow-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to Home</span>
@@ -237,13 +240,13 @@ export default function FeaturesPage() {
 
               {/* Jawaaf Logo */}
               <Link to="/" className="flex items-center group transition-transform hover:scale-[1.02]">
-                <JawaafLogo isWhite={true} className="h-8 sm:h-10 md:h-11 w-auto" />
+                <JawaafLogo isWhite={true} className="h-8 sm:h-10 md:h-11 w-auto drop-shadow-md" />
               </Link>
 
               <div className="flex items-center gap-2.5">
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] to-[#d94f46] hover:brightness-110 px-3.5 sm:px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/25 transition-all"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/30 transition-all border border-white/20"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Free Demo Mock Test</span>
@@ -253,46 +256,47 @@ export default function FeaturesPage() {
             </header>
 
             {/* ── CARD 1: HERO CONTAINER (Top Card with Mascot) ── */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#122b54] via-[#163a72] to-[#0c1f40] border border-blue-400/25 p-6 sm:p-8 md:p-10 shadow-2xl">
-              {/* Natural depth gradients (ambient floor and gentle backlighting) */}
-              <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-400/15 blur-3xl" />
-              <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-[#EE6055]/15 blur-3xl" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#07152d]/90 via-[#0b2046]/40 to-transparent z-0" />
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#163D78] via-[#1B4B91] to-[#103063] border border-white/20 p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_-15px_rgba(5,20,50,0.5)]">
+              {/* Natural depth gradients & top border highlight */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-sky-300/20 blur-3xl" />
+              <div className="pointer-events-none absolute -left-16 -bottom-16 h-80 w-80 rounded-full bg-[#EE6055]/20 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A224D]/80 via-[#103063]/30 to-transparent z-0" />
 
               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
                 {/* Left Content (7-8 cols on lg) */}
                 <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-start text-left pb-2 sm:pb-4">
                   {/* Eyebrow Tag */}
-                  <div className="inline-flex items-center gap-2 bg-[#EE6055]/20 border border-[#EE6055]/40 rounded-full px-3.5 py-1 mb-4 shadow-sm">
-                    <Zap className="h-3.5 w-3.5 text-[#EE6055]" />
-                    <span className="text-[#EE6055] text-[11px] sm:text-xs font-black uppercase tracking-widest">PLATFORM FEATURES</span>
+                  <div className="inline-flex items-center gap-2 bg-[#EE6055] text-white rounded-full px-3.5 py-1 mb-4 shadow-md shadow-[#EE6055]/25 border border-white/25">
+                    <Zap className="h-3.5 w-3.5 fill-white text-white" />
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest">PLATFORM FEATURES</span>
                   </div>
 
                   {/* Main Title with Primary SEO Keywords */}
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-black text-white leading-[1.18] tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-black text-white leading-[1.18] tracking-tight drop-shadow-sm">
                     Nepal's #1 Platform for{' '}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#EE6055] via-[#ff786e] to-[#ffb199]">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF8278] via-[#FFA89F] to-[#FFE2DE]">
                       Online IELTS Mock Test
                     </span>{' '}
                     &amp; Preparation
                   </h1>
 
                   {/* Subtext */}
-                  <p className="mt-4 text-blue-100/90 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl font-normal">
-                    Complete IELTS preparation platform with <strong className="text-white font-semibold">real CD-IELTS mock tests</strong>, <strong className="text-white font-semibold">Band 8+ recorded video classes</strong>, and <strong className="text-white font-semibold">certified teacher writing &amp; speaking feedback</strong>.
+                  <p className="mt-4 text-blue-50 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl font-normal drop-shadow-sm">
+                    Complete IELTS preparation platform with <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">real CD-IELTS mock tests</strong>, <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">Band 8+ recorded video classes</strong>, and <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">certified teacher writing &amp; speaking feedback</strong>.
                   </p>
 
                   {/* CTA Actions */}
                   <div className="mt-7 flex flex-wrap items-center gap-3.5">
                     <Link
                       to="/register"
-                      className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-6 py-3.5 rounded-xl transition-all shadow-xl shadow-[#EE6055]/35 hover:shadow-[#EE6055]/55 hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm tracking-wide uppercase"
+                      className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-6 py-3.5 rounded-xl transition-all shadow-xl shadow-[#EE6055]/40 hover:shadow-[#EE6055]/60 hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm tracking-wide uppercase border border-white/20"
                     >
                       START YOUR IELTS JOURNEY <ArrowRight className="h-4 w-4" />
                     </Link>
                     <Link
                       to="/login"
-                      className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold px-5 py-3.5 rounded-xl transition-all text-xs sm:text-sm backdrop-blur-sm"
+                      className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-3.5 rounded-xl transition-all text-xs sm:text-sm backdrop-blur-md shadow-sm"
                     >
                       <Play className="h-4 w-4 fill-white" /> See Platform Demo
                     </Link>
@@ -303,38 +307,43 @@ export default function FeaturesPage() {
                 <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center lg:items-end justify-end self-end lg:-mb-10 lg:-mr-6 xl:-mr-8">
                   <div className="relative flex flex-col items-center">
                     {/* Soft ambient back glow behind the owl's head */}
-                    <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-gradient-to-b from-[#EE6055]/20 via-blue-400/20 to-transparent blur-2xl" />
+                    <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-52 h-52 rounded-full bg-gradient-to-b from-[#EE6055]/30 via-sky-300/25 to-transparent blur-3xl" />
 
                     {/* Mascot with subtle ambient lighting */}
                     <img
                       src="/images/feedback/writing-feedback-overall-mascot-natural.png"
                       alt="Jawaaf IELTS Mascot"
-                      className="relative z-10 w-56 h-auto sm:w-64 md:w-72 lg:w-80 xl:w-[340px] max-w-full object-contain select-none filter drop-shadow-[0_15px_25px_rgba(0,0,0,0.5)] hover:scale-[1.02] transition-transform duration-500"
+                      className="relative z-10 w-56 h-auto sm:w-64 md:w-72 lg:w-80 xl:w-[340px] max-w-full object-contain select-none filter drop-shadow-[0_18px_30px_rgba(4,18,48,0.5)] hover:scale-[1.02] transition-transform duration-500"
                     />
 
                     {/* Natural Grounding Contact Shadow under the wooden desk */}
-                    <div className="w-[88%] h-4 bg-black/60 blur-md rounded-full -mt-3 relative z-0 pointer-events-none" />
+                    <div className="w-[88%] h-4 bg-[#051533]/80 blur-md rounded-full -mt-3 relative z-0 pointer-events-none" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ── CARD 2: 4 STATS CARDS (2x2 Grid / 4-Col Desktop) ── */}
+            {/* ── CARD 2: 4 STATS CARDS (Modern Luminous Glass Cards) ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
-              {stats.map((s) => (
+              {[
+                { value: '50,000+', label: 'Students Prepared', icon: <Users className="h-5 w-5 text-sky-200" />, badgeBg: 'bg-sky-400/25 border-sky-300/30' },
+                { value: '1,000+', label: 'Mock Tests Taken', icon: <BarChart3 className="h-5 w-5 text-[#FFB0A8]" />, badgeBg: 'bg-[#EE6055]/25 border-[#EE6055]/30' },
+                { value: '98%', label: 'Success Rate', icon: <Award className="h-5 w-5 text-emerald-200" />, badgeBg: 'bg-emerald-400/25 border-emerald-300/30' },
+                { value: '4.8/5', label: 'Student Rating', icon: <Star className="h-5 w-5 text-amber-200 fill-amber-300" />, badgeBg: 'bg-amber-400/25 border-amber-300/30' },
+              ].map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-2xl bg-[#091730]/90 border border-white/10 p-4 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left backdrop-blur-md hover:border-blue-400/30 hover:bg-[#0c1f3f] transition-all shadow-lg group"
+                  className="rounded-2xl bg-white/[0.12] hover:bg-white/[0.18] border border-white/20 p-4 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left backdrop-blur-md transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 group"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-blue-300 group-hover:text-white transition-colors">
+                    <span className={`p-2 rounded-xl border ${s.badgeBg} shadow-sm group-hover:scale-110 transition-transform`}>
                       {s.icon}
                     </span>
                   </div>
-                  <span className="text-2xl sm:text-3xl font-black text-white tracking-tight group-hover:scale-105 transition-transform">
+                  <span className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-sm">
                     {s.value}
                   </span>
-                  <span className="text-[11px] sm:text-xs text-slate-300/80 font-medium mt-0.5">
+                  <span className="text-xs sm:text-sm text-blue-100 font-medium mt-0.5">
                     {s.label}
                   </span>
                 </div>
@@ -342,7 +351,7 @@ export default function FeaturesPage() {
             </div>
 
             {/* ── CARD 3: 3 SIMPLE STEPS ONBOARDING (Clean White Card) ── */}
-            <div className="mt-4 sm:mt-6 bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-slate-200/90 text-[#05162E]">
+            <div className="mt-4 sm:mt-6 bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_-15px_rgba(5,20,50,0.35)] border border-slate-100 text-[#05162E]">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6 sm:mb-8 pb-5 border-b border-slate-100 text-center md:text-left">
                 <div>
                   <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20 mb-2">
