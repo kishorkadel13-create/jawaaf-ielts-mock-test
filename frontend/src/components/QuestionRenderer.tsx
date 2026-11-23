@@ -266,6 +266,28 @@ export const QuestionRenderer = ({ question, value, onChange, mode = 'light', on
     return renderShortAnswer();
   }
 
+  // ─── MAP / PLAN LABELLING (Listening): question text + letter dropdown ───
+  if (question_type === 'MAP_LABELLING') {
+    const letters = options.length > 0 ? options : ['A','B','C','D','E','F','G','H','I','J'];
+    return (
+      <div className="flex flex-col gap-3">
+        <div className={`text-[15px] ${bodyTextClass} font-medium leading-relaxed`}>
+          {renderQuestionText(`question-${question.id}-map`)}
+        </div>
+        <select
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full max-w-[180px] border-2 px-4 py-2.5 rounded-xl outline-none transition-all font-bold text-[14px] ${inputClass}`}
+        >
+          <option value="">— Select Letter —</option>
+          {letters.map((letter: string) => (
+            <option key={letter} value={letter}>{letter}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   // Summary Completion with Options: dropdowns inside the summary blanks
   if (question_type === 'SUMMARY_COMPLETION_OPTIONS') {
     return renderInlineDropdowns();

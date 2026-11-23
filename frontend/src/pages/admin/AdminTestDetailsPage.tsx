@@ -576,6 +576,7 @@ export default function AdminTestDetailsPage() {
     if (['SUMMARY_COMPLETION_OPTIONS', 'MULTI_SELECT'].includes(type)) return 'MULTI_SELECT';
     if (['SINGLE_MCQ', 'SENTENCE_COMPLETION'].includes(type)) return 'SINGLE_MCQ';
     if (['MATCHING', 'MATCHING_INFORMATION', 'MATCHING_HEADINGS'].includes(type)) return 'MATCHING';
+    if (type === 'MAP_LABELLING') return 'SINGLE_MCQ'; // stored as single-select in DB
     return type; // TRUE_FALSE_NOT_GIVEN, YES_NO_NOT_GIVEN fall through
   };
 

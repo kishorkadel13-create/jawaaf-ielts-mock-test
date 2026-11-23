@@ -1414,6 +1414,16 @@ export default function ExamInterface() {
                             ) : (
                               <>
                                 <QuestionInstructionCard instruction={block.instruction} />
+                                {block.questions[0]?.question_type === 'MAP_LABELLING' && block.questions[0]?.extra_data_json?.map_image_url && (
+                                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm my-4">
+                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3">🗺️ Map / Plan — Label the locations</p>
+                                    <img
+                                      src={block.questions[0].extra_data_json.map_image_url}
+                                      alt="Map to label"
+                                      className="w-full max-h-96 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                                    />
+                                  </div>
+                                )}
                                 {block.questions.map((question: any) => (
                                   <div
                                     key={question.id}
@@ -1798,6 +1808,16 @@ export default function ExamInterface() {
                             ) : (
                               <>
                                 <QuestionInstructionCard instruction={block.instruction} />
+                                {block.questions[0]?.question_type === 'MAP_LABELLING' && block.questions[0]?.extra_data_json?.map_image_url && (
+                                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm my-4">
+                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3">🗺️ Map / Plan — Label the locations</p>
+                                    <img
+                                      src={block.questions[0].extra_data_json.map_image_url}
+                                      alt="Map to label"
+                                      className="w-full max-h-96 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                                    />
+                                  </div>
+                                )}
                                 {block.questions.map((question: any) => (
                                   <div
                                     key={question.id}
