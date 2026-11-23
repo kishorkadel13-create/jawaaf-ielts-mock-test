@@ -254,13 +254,14 @@ export default function FeaturesPage() {
 
             {/* ── CARD 1: HERO CONTAINER (Top Card with Mascot) ── */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#122b54] via-[#163a72] to-[#0c1f40] border border-blue-400/25 p-6 sm:p-8 md:p-10 shadow-2xl">
-              {/* Subtle inner gradient flare */}
-              <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[#EE6055]/20 blur-3xl" />
-              <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+              {/* Natural depth gradients (ambient floor and gentle backlighting) */}
+              <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-400/15 blur-3xl" />
+              <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-[#EE6055]/15 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#07152d]/90 via-[#0b2046]/40 to-transparent z-0" />
 
-              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                {/* Left Content (8 cols on lg) */}
-                <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-start text-left">
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                {/* Left Content (7-8 cols on lg) */}
+                <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-start text-left pb-2 sm:pb-4">
                   {/* Eyebrow Tag */}
                   <div className="inline-flex items-center gap-2 bg-[#EE6055]/20 border border-[#EE6055]/40 rounded-full px-3.5 py-1 mb-4 shadow-sm">
                     <Zap className="h-3.5 w-3.5 text-[#EE6055]" />
@@ -298,15 +299,21 @@ export default function FeaturesPage() {
                   </div>
                 </div>
 
-                {/* Right Content: Mascot Image (4 cols on lg) */}
-                <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
-                  <div className="relative group">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EE6055]/20 via-blue-400/15 to-transparent blur-3xl transform group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+                {/* Right Content: Mascot Image Grounded Seamlessly */}
+                <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center lg:items-end justify-end self-end lg:-mb-10 lg:-mr-6 xl:-mr-8">
+                  <div className="relative flex flex-col items-center">
+                    {/* Soft ambient back glow behind the owl's head */}
+                    <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-gradient-to-b from-[#EE6055]/20 via-blue-400/20 to-transparent blur-2xl" />
+
+                    {/* Mascot with subtle ambient lighting */}
                     <img
                       src="/images/feedback/writing-feedback-overall-mascot-natural.png"
                       alt="Jawaaf IELTS Mascot"
-                      className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_25px_40px_rgba(0,0,0,0.4)] select-none group-hover:scale-105 transition-transform duration-500"
+                      className="relative z-10 w-56 h-auto sm:w-64 md:w-72 lg:w-80 xl:w-[340px] max-w-full object-contain select-none filter drop-shadow-[0_15px_25px_rgba(0,0,0,0.5)] hover:scale-[1.02] transition-transform duration-500"
                     />
+
+                    {/* Natural Grounding Contact Shadow under the wooden desk */}
+                    <div className="w-[88%] h-4 bg-black/60 blur-md rounded-full -mt-3 relative z-0 pointer-events-none" />
                   </div>
                 </div>
               </div>
