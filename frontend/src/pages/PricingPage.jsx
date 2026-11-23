@@ -392,9 +392,9 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 2: THE 2 SUBSCRIPTION PLANS (User Specified Content) ── */}
-        <section id="pricing-plans" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20 scroll-mt-6" aria-label="Subscription Pricing Packages">
-          <div className="text-center mb-12">
+        {/* ── SECTION 2: THE 2 SUBSCRIPTION PLANS (User Specified Content - Optimized 2-Column Grid) ── */}
+        <section id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 scroll-mt-6" aria-label="Subscription Pricing Packages">
+          <div className="text-center mb-10 md:mb-12">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-[#1E3A6E] bg-blue-100/80 px-3.5 py-1 rounded-full mb-3 border border-blue-200">
               <Calendar className="h-3.5 w-3.5 text-[#1E3A6E]" /> DURATION-BASED SUBSCRIPTION
             </span>
@@ -406,12 +406,13 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8 items-stretch">
 
             {/* ── CARD 1: ONLINE PRO ACCESS (NPR 6,500 | 90 DAYS) ── */}
-            <div className="relative rounded-3xl bg-white border border-slate-200 shadow-xl p-7 sm:p-9 flex flex-col justify-between hover:border-[#1E3A6E]/40 hover:shadow-2xl transition-all">
+            <div className="relative rounded-3xl bg-white border border-slate-200/90 shadow-xl p-6 sm:p-7 xl:p-8 flex flex-col justify-between hover:border-[#1E3A6E]/40 hover:shadow-2xl transition-all">
               <div>
-                <div className="flex items-center justify-between mb-4">
+                {/* Header Badges */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-[#1E3A6E] bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
                     90 Days Online Plan
                   </span>
@@ -421,181 +422,316 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-black text-[#05162E] tracking-tight mb-2">
+                {/* Title & Subtitle */}
+                <h3 className="text-2xl sm:text-[26px] font-black text-[#05162E] tracking-tight">
                   Online Pro Access
                 </h3>
-                <p className="text-xs sm:text-sm font-semibold text-[#1E3A6E] mb-3">
+                <p className="text-xs sm:text-sm font-semibold text-[#1E3A6E] mb-2">
                   Complete IELTS Preparation Course
                 </p>
 
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3">
-                  Prepare for IELTS with Jawaaf&apos;s comprehensive online IELTS preparation platform. Designed for students preparing for IELTS Academic and General Training, Online Pro provides everything you need to practise IELTS Listening, Reading, Writing and Speaking from anywhere.
-                </p>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
-                  Get access to IELTS online classes, recorded video lessons, full-length IELTS mock tests and realistic computer-delivered IELTS practice through one integrated learning platform.
+                {/* Short Description */}
+                <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                  Prepare for IELTS with Jawaaf&apos;s comprehensive online platform. Designed for Academic and General Training with online classes, recorded video lessons, full-length mock tests, and realistic computer-delivered practice from anywhere.
                 </p>
 
-                {/* Price Display */}
-                <div className="flex items-baseline gap-2 pb-6 border-b border-slate-100 mb-6">
-                  <span className="text-xs sm:text-sm font-bold text-slate-400">NPR</span>
-                  <span className="text-4xl sm:text-5xl font-black text-[#05162E] tracking-tight">6,500</span>
-                  <span className="text-xs text-slate-500 font-medium">/ 90 Days Full Access (~Rs. 72/day)</span>
+                {/* Price & Primary Top Action */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/70 mb-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs font-bold text-slate-400">NPR</span>
+                    <span className="text-3xl sm:text-4xl font-black text-[#05162E] tracking-tight">6,500</span>
+                    <span className="text-[11px] text-slate-500 font-medium">/ 90 Days (~Rs. 72/day)</span>
+                  </div>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center justify-center gap-1.5 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow text-xs sm:text-sm whitespace-nowrap"
+                  >
+                    Enroll Now <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
 
-                {/* Included Modules Accordion / List */}
-                <p className="text-xs font-black uppercase tracking-wider text-[#1E3A6E] mb-4">
-                  WHAT&apos;S INCLUDED IN THE ONLINE IELTS PREPARATION PLAN:
-                </p>
+                {/* Section Header */}
+                <div className="flex items-center gap-2 mb-3.5 pb-2 border-b border-slate-100">
+                  <Sparkles className="h-3.5 w-3.5 text-[#EE6055]" />
+                  <p className="text-xs font-black uppercase tracking-wider text-[#1E3A6E]">
+                    WHAT&apos;S INCLUDED IN THE ONLINE IELTS PREPARATION PLAN:
+                  </p>
+                </div>
 
-                <div className="space-y-4 text-xs sm:text-sm text-slate-700 mb-8">
+                {/* 2-Column Responsive Feature Grid (Utilizes side-side space) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-6">
                   {/* 1. Listening */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>1. IELTS Listening Practice &amp; Mock Tests</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <Headphones className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">1. Listening Practice &amp; Mocks</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Full-length Listening mock tests</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Section-wise IELTS Listening practice</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Continuous audio playback simulation</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Realistic computer-based test experience</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Full-length IELTS Listening mock tests.</li>
-                      <li>Section-wise IELTS Listening practice.</li>
-                      <li>Continuous audio playback simulation.</li>
-                      <li>IELTS Listening question types and practice exercises.</li>
-                      <li>Realistic computer-based IELTS Listening test experience.</li>
-                    </ul>
                   </div>
 
                   {/* 2. Reading */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>2. IELTS Reading Practice – Academic &amp; General Training</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">2. Reading Practice (Acad &amp; GT)</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Complete Academic &amp; General modules</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Full-length Reading mock tests</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Individual passage-wise practice</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Automatic answer evaluation</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Complete IELTS Academic and General Training Reading modules.</li>
-                      <li>Full-length IELTS Reading mock tests.</li>
-                      <li>Individual passage-wise practice.</li>
-                      <li>Multiple IELTS Reading question types.</li>
-                      <li>Practice tests with automatic answer evaluation where supported.</li>
-                    </ul>
                   </div>
 
                   {/* 3. Writing */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>3. IELTS Writing Practice &amp; AI-Powered Evaluation</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <FileText className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">3. Writing Practice &amp; AI Evaluation</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Academic &amp; GT Task 1 and Task 2</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>AI-powered IELTS Writing evaluation</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Estimated band score &amp; feedback</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Detailed improvement insights</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>IELTS Academic Writing Task 1 and Task 2.</li>
-                      <li>IELTS General Training Writing Task 1 and Task 2.</li>
-                      <li>AI-powered IELTS Writing evaluation.</li>
-                      <li>Estimated IELTS Writing band score and performance feedback.</li>
-                      <li>Detailed improvement insights to develop IELTS writing skills.</li>
-                    </ul>
                   </div>
 
                   {/* 4. Speaking */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>4. IELTS Speaking Preparation</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">4. Speaking Preparation</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Speaking Part 1, Part 2 &amp; Part 3 prep</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Practice materials &amp; resources</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Recorded IELTS Speaking lessons</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Fluency &amp; vocabulary guidance</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>IELTS Speaking Part 1, Part 2 and Part 3 preparation.</li>
-                      <li>Speaking practice materials and learning resources.</li>
-                      <li>Recorded IELTS Speaking lessons.</li>
-                      <li>Guidance on fluency, vocabulary and speaking preparation.</li>
-                    </ul>
                   </div>
 
                   {/* 5. Video Classes */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>5. IELTS Video Classes &amp; Recorded Courses</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <Play className="h-3.5 w-3.5 fill-[#1E3A6E]" />
+                        </span>
+                        <span className="leading-snug">5. Video Classes &amp; Courses</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Recorded classes for Listening &amp; Reading</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Writing Task 1 &amp; Task 2 tutorials</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Speaking preparation video strategies</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Structured video learning library</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Recorded IELTS Listening classes.</li>
-                      <li>IELTS Reading video lessons.</li>
-                      <li>IELTS Writing Task 1 and Task 2 tutorials.</li>
-                      <li>IELTS Speaking preparation videos.</li>
-                      <li>Structured video-based IELTS learning resources.</li>
-                    </ul>
                   </div>
 
                   {/* 6. Full Mock Tests */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>6. Full-Length IELTS Mock Tests &amp; Practice Tests</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <Award className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">6. Full Mock &amp; Practice Tests</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Complete IELTS mock examinations</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Individual skill practice tests</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Academic &amp; GT test simulation</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Automatic score calculation</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Complete IELTS mock examinations.</li>
-                      <li>Individual IELTS Listening, Reading and Writing practice tests.</li>
-                      <li>IELTS Academic and General Training practice.</li>
-                      <li>Realistic computer-delivered IELTS test simulation.</li>
-                      <li>Automatic score calculation where supported.</li>
-                    </ul>
                   </div>
 
                   {/* 7. Analytics */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>7. AI-Powered IELTS Performance Analytics</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <BarChart3 className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">7. AI Performance Analytics</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Analyse IELTS practice performance</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Identify weak question types</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Track mock test progression</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Review mistakes &amp; improvements</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Analyse IELTS practice performance.</li>
-                      <li>Identify weak question types.</li>
-                      <li>Track mock test performance.</li>
-                      <li>Review mistakes and understand improvement areas.</li>
-                      <li>Data-driven IELTS preparation insights.</li>
-                    </ul>
                   </div>
 
                   {/* 8. Simulator */}
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
-                      <span>8. Realistic CD-IELTS Computer Simulator</span>
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 hover:bg-white hover:border-[#1E3A6E]/30 hover:shadow-sm transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[#05162E] text-xs mb-1.5 pb-1 border-b border-slate-200/50">
+                        <span className="p-1 rounded-md bg-[#1E3A6E]/10 text-[#1E3A6E]">
+                          <Laptop className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">8. CD-IELTS Computer Simulator</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-600 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Computer-delivered exam interface</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Built-in examination timer</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Digital notepad &amp; text highlighting</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#1E3A6E] font-bold">•</span>
+                          <span>Split-screen exam layout</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
-                      <li>Computer-delivered IELTS examination interface.</li>
-                      <li>Built-in examination timer.</li>
-                      <li>Digital notepad and text highlighting.</li>
-                      <li>Split-screen examination layout.</li>
-                      <li>Question navigation and answer tracking.</li>
-                      <li>Exam-style practice environment.</li>
-                    </ul>
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-center text-xs text-[#1E3A6E] font-bold mb-6">
-                  Subscription Duration: 90 Days
+                {/* Duration Badge */}
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-center text-xs text-[#1E3A6E] font-bold mb-5 flex items-center justify-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Subscription Duration: 90 Days Full Access</span>
                 </div>
               </div>
 
+              {/* Bottom CTA Button */}
               <div>
                 <Link
                   to="/register"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-sm uppercase tracking-wider"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-xs sm:text-sm uppercase tracking-wider"
                 >
                   Enroll in Online Pro (NPR 6,500) <ArrowRight className="h-4 w-4" />
                 </Link>
-                <p className="text-center text-[11px] text-slate-400 mt-2.5">
+                <p className="text-center text-[11px] text-slate-400 mt-2">
                   Instant portal access upon payment verification • No credit card required to register
                 </p>
               </div>
             </div>
 
             {/* ── CARD 2: PREMIUM IELTS MENTORSHIP (NPR 10,000 | 90 DAYS) ── */}
-            <div className="relative rounded-3xl bg-gradient-to-b from-[#0A224D] via-[#103063] to-[#0A1E45] border-2 border-[#EE6055] shadow-2xl p-7 sm:p-9 flex flex-col justify-between text-white overflow-hidden group">
+            <div className="relative rounded-3xl bg-gradient-to-b from-[#0A224D] via-[#103063] to-[#0A1E45] border-2 border-[#EE6055] shadow-2xl p-6 sm:p-7 xl:p-8 flex flex-col justify-between text-white overflow-hidden group">
               {/* Recommended Badge */}
-              <div className="absolute top-0 right-0 bg-[#EE6055] text-white text-[11px] font-black uppercase tracking-widest py-1.5 px-6 rounded-bl-2xl shadow-md flex items-center gap-1.5">
+              <div className="absolute top-0 right-0 bg-[#EE6055] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest py-1.5 px-5 sm:px-6 rounded-bl-2xl shadow-md flex items-center gap-1.5 z-10">
                 <Sparkles className="h-3 w-3" /> RECOMMENDED FOR BAND 7.5+
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-4">
+                {/* Header Badges */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-[#FF9E96] bg-[#EE6055]/20 border border-[#EE6055]/30 px-3 py-1 rounded-full">
                     Online &amp; Physical Mentorship
                   </span>
@@ -605,137 +741,245 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-black text-white tracking-tight mb-2">
+                {/* Title & Subtitle */}
+                <h3 className="text-2xl sm:text-[26px] font-black text-white tracking-tight">
                   Premium IELTS Mentorship
                 </h3>
-                <p className="text-xs sm:text-sm font-semibold text-[#FFA89F] mb-3">
+                <p className="text-xs sm:text-sm font-semibold text-[#FFA89F] mb-2">
                   Online &amp; Physical IELTS Preparation
                 </p>
 
-                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed mb-3">
-                  Take your IELTS preparation to the next level with Jawaaf&apos;s Premium IELTS Mentorship programme. Get complete access to our online IELTS preparation platform combined with scheduled physical IELTS classes, experienced instructor guidance and personalised learning support at Putalisadak, Kathmandu.
-                </p>
-                <p className="text-xs sm:text-sm text-blue-200/90 leading-relaxed mb-6">
-                  This programme combines online IELTS mock tests, recorded video classes, AI-powered writing evaluation and face-to-face IELTS coaching to provide a comprehensive IELTS preparation experience.
+                {/* Short Description */}
+                <p className="text-xs text-blue-100 leading-relaxed mb-4">
+                  Take your IELTS preparation to the next level with complete online platform access combined with scheduled physical classes, experienced instructor guidance, 1-on-1 speaking, and paper evaluation at Putalisadak, Kathmandu.
                 </p>
 
-                {/* Price Display */}
-                <div className="flex items-baseline gap-2 pb-6 border-b border-white/15 mb-6">
-                  <span className="text-xs sm:text-sm font-bold text-blue-200">NPR</span>
-                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">10,000</span>
-                  <span className="text-xs text-blue-200 font-medium">/ 90 Days Full Access (~Rs. 111/day)</span>
+                {/* Price & Primary Top Action */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-md mb-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs font-bold text-blue-200">NPR</span>
+                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">10,000</span>
+                    <span className="text-[11px] text-blue-200 font-medium">/ 90 Days (~Rs. 111/day)</span>
+                  </div>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center justify-center gap-1.5 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-[#EE6055]/30 text-xs sm:text-sm whitespace-nowrap"
+                  >
+                    Enroll Now <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
 
-                {/* Included Features List */}
-                <p className="text-xs font-black uppercase tracking-wider text-[#FFB0A8] mb-4">
-                  EVERYTHING INCLUDED IN ONLINE PRO, PLUS:
-                </p>
+                {/* Section Header */}
+                <div className="flex items-center gap-2 mb-3.5 pb-2 border-b border-white/10">
+                  <Sparkles className="h-3.5 w-3.5 text-[#EE6055]" />
+                  <p className="text-xs font-black uppercase tracking-wider text-[#FFB0A8]">
+                    EVERYTHING INCLUDED IN ONLINE PRO, PLUS:
+                  </p>
+                </div>
 
-                <div className="space-y-4 text-xs sm:text-sm text-blue-50 mb-8">
+                {/* 2-Column Responsive Feature Grid (Utilizes side-side space) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4">
                   {/* 1. Physical Coaching */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>1. Physical IELTS Coaching Classes</span>
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <Building2 className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">1. Physical Coaching Classes</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Scheduled face-to-face sessions</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Instructor-led L, R, W &amp; S classes</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Structured classroom learning</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Exam technique guidance</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>Scheduled face-to-face IELTS classroom sessions.</li>
-                      <li>Instructor-led IELTS Listening, Reading, Writing and Speaking classes.</li>
-                      <li>Structured IELTS preparation and classroom learning.</li>
-                      <li>Practical guidance on IELTS examination techniques.</li>
-                    </ul>
                   </div>
 
                   {/* 2. Personal Instructor Guidance */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>2. Personal IELTS Instructor Guidance</span>
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <Users className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">2. Personal Instructor Guidance</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Direct learning guidance from mentors</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Identify preparation weaknesses</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Band score improvement roadmaps</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Difficult question assistance</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>Direct learning guidance from IELTS instructors.</li>
-                      <li>Personal support to identify IELTS preparation weaknesses.</li>
-                      <li>Guidance on IELTS band score improvement.</li>
-                      <li>Instructor assistance with difficult question types and examination strategies.</li>
-                    </ul>
                   </div>
 
                   {/* 3. Face-to-Face Speaking */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>3. Face-to-Face IELTS Speaking Practice</span>
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">3. Face-to-Face Speaking Practice</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Physical Speaking practice sessions</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Part 1, Part 2 &amp; Part 3 preparation</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Mock interviews with instructors</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Fluency &amp; pronunciation coaching</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>Physical IELTS Speaking practice sessions.</li>
-                      <li>IELTS Speaking Part 1, Part 2 and Part 3 preparation.</li>
-                      <li>Mock speaking interviews with instructors.</li>
-                      <li>Guidance on fluency, pronunciation and vocabulary.</li>
-                    </ul>
                   </div>
 
-                  {/* 4. Physical Writing */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>4. Physical IELTS Writing Evaluation</span>
+                  {/* 4. Physical Writing Evaluation */}
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">4. Physical Writing Evaluation</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Instructor-reviewed Task 1 &amp; Task 2</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Hand-checked essays with feedback</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Assessment criteria guidance</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Suggestions for grammar &amp; vocabulary</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>Instructor-reviewed IELTS Writing Task 1 and Task 2.</li>
-                      <li>Hand-checked essays with detailed feedback.</li>
-                      <li>Guidance on IELTS Writing assessment criteria.</li>
-                      <li>Practical suggestions to improve coherence, vocabulary, grammar and task achievement.</li>
-                    </ul>
                   </div>
 
                   {/* 5. Lab Access */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>5. IELTS Computer Lab Access</span>
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <Laptop className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">5. IELTS Computer Lab Access</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Physical lab at Putalisadak, Kathmandu</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Real computer-delivered UI practice</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Practical mock test exam sessions</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Exam tools &amp; navigation experience</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>Physical computer lab practice at Putalisadak, Kathmandu.</li>
-                      <li>Familiarisation with the computer-delivered IELTS examination interface.</li>
-                      <li>Practical IELTS mock test sessions.</li>
-                      <li>Experience with computer-based examination tools and navigation.</li>
-                    </ul>
                   </div>
 
-                  {/* 6. Complete Online Platform */}
-                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
-                      <span>6. Complete Online IELTS Learning Platform</span>
+                  {/* 6. Complete Online Platform Included */}
+                  <div className="rounded-xl border border-white/15 bg-white/[0.08] p-3 hover:bg-white/[0.12] hover:border-white/30 hover:shadow-sm transition-all flex flex-col justify-between backdrop-blur-md">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-white text-xs mb-1.5 pb-1 border-b border-white/10">
+                        <span className="p-1 rounded-md bg-[#EE6055]/20 text-[#FF9E96]">
+                          <GraduationCap className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="leading-snug">6. Complete Online Learning</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-blue-100 leading-snug">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>90 days full online portal access</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Full-length mocks &amp; section practice</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>Academic &amp; GT video courses</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-[#EE6055] font-bold">•</span>
+                          <span>AI-powered Writing &amp; analytics</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
-                      <li>90 days of online portal access.</li>
-                      <li>Full-length IELTS mock tests and section-wise practice.</li>
-                      <li>IELTS Academic and General Training modules.</li>
-                      <li>Recorded IELTS video classes.</li>
-                      <li>AI-powered IELTS Writing evaluation &amp; performance analytics.</li>
-                      <li>Listening, Reading, Writing and Speaking preparation.</li>
-                    </ul>
                   </div>
                 </div>
 
-                <div className="p-3 bg-white/10 border border-white/20 rounded-xl text-center text-xs text-white font-bold mb-3">
-                  Subscription Duration: 90 Days
+                {/* Duration Badge & Timetable Notice */}
+                <div className="p-2.5 bg-white/10 border border-white/20 rounded-xl text-center text-xs text-white font-bold mb-2 flex items-center justify-center gap-2">
+                  <Clock className="h-4 w-4 text-sky-300" />
+                  <span>Subscription Duration: 90 Days Full Access</span>
                 </div>
 
-                <p className="text-[11px] text-blue-200/80 italic text-center mb-6">
+                <p className="text-[11px] text-blue-200/80 italic text-center mb-5">
                   *Physical classroom sessions and instructor-guided activities are conducted according to the academy&apos;s scheduled timetable at Putalisadak, Kathmandu.*
                 </p>
               </div>
 
+              {/* Bottom CTA Button */}
               <div>
                 <Link
                   to="/register"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-xl shadow-[#EE6055]/30 hover:scale-[1.01] text-sm uppercase tracking-wider"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-xl shadow-[#EE6055]/30 hover:scale-[1.01] text-xs sm:text-sm uppercase tracking-wider"
                 >
                   Join Premium Mentorship (NPR 10,000) <ArrowRight className="h-4 w-4" />
                 </Link>
-                <p className="text-center text-[11px] text-blue-200 mt-2.5">
+                <p className="text-center text-[11px] text-blue-200 mt-2">
                   Visit Putalisadak Office or enroll online • Limited batch capacity
                 </p>
               </div>
