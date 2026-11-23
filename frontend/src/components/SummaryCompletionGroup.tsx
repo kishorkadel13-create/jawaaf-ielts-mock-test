@@ -428,11 +428,10 @@ export const SummaryCompletionGroup = ({
                 </div>
               )}
               {dropdownOptionBank.length > 0 && (
-                <div className={`mt-3.5 rounded-xl border p-3.5 ${
-                  isDark
-                    ? 'border-slate-700 bg-slate-950/40 text-slate-200'
-                    : 'border-[#1E3A6E]/15 bg-[#EFF4FB] text-[#05162E]'
-                }`}>
+                <div className={`mt-3.5 rounded-xl border p-3.5 ${isDark
+                  ? 'border-slate-700 bg-slate-950/40 text-slate-200'
+                  : 'border-[#1E3A6E]/15 bg-[#EFF4FB] text-[#05162E]'
+                  }`}>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {dropdownOptionBank.map((option: { letter: string; text: string }) => (
                       <div key={option.letter} className="grid grid-cols-[28px_1fr] gap-2 text-[14px] leading-[1.25]">
@@ -471,9 +470,8 @@ export const SummaryCompletionGroup = ({
                             <tr key={rowIndex}>
                               <td
                                 colSpan={row.length}
-                                className={`border px-3.5 py-2.5 text-[16px] font-bold leading-tight ${
-                                  isDark ? 'border-slate-700 bg-slate-950/40 text-white' : 'border-slate-200 bg-white text-[#05162E]'
-                                }`}
+                                className={`border px-3.5 py-2.5 text-[16px] font-bold leading-tight ${isDark ? 'border-slate-700 bg-slate-950/40 text-white' : 'border-slate-200 bg-white text-[#05162E]'
+                                  }`}
                               >
                                 {renderFormattedBlockText(title, `table-title-${segmentIndex}-${rowIndex}`)}
                               </td>
@@ -488,13 +486,11 @@ export const SummaryCompletionGroup = ({
                             {row.map((cell, cellIndex) => (
                               <td
                                 key={cellIndex}
-                                className={`align-middle border px-3 py-2 leading-[1.25] whitespace-pre-wrap ${
-                                  isDark
-                                    ? 'border-slate-700 bg-slate-950/40'
-                                    : 'border-slate-200 bg-white'
-                                } ${headerRow ? 'text-center text-[15px] font-bold' : 'text-[14.5px] font-medium'} ${
-                                  cellIndex === 0 ? 'w-[15%]' : cellIndex === 1 ? 'w-[25%]' : 'w-[30%]'
-                                }`}
+                                className={`align-middle border px-3 py-2 leading-[1.25] whitespace-pre-wrap ${isDark
+                                  ? 'border-slate-700 bg-slate-950/40'
+                                  : 'border-slate-200 bg-white'
+                                  } ${headerRow ? 'text-center text-[15px] font-bold' : 'text-[14.5px] font-medium'} ${cellIndex === 0 ? 'w-[15%]' : cellIndex === 1 ? 'w-[25%]' : 'w-[30%]'
+                                  }`}
                               >
                                 {renderTextWithBlanks(cell, `${segmentIndex}-${rowIndex}-${cellIndex}`)}
                               </td>

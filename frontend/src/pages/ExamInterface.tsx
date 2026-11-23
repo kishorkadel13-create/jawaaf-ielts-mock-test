@@ -1200,7 +1200,7 @@ export default function ExamInterface() {
         <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#F4F7FB] pb-24 lg:flex-row lg:overflow-hidden lg:pb-0">
           {/* LEFT: Audio Deck Card */}
           <div className="w-full lg:w-[44%] xl:w-[40%] flex-shrink-0 flex flex-col p-4 lg:p-6 lg:pr-3">
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between h-auto lg:h-[calc(100vh-140px)] sticky top-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col h-auto lg:h-[calc(100vh-140px)] sticky top-4">
               {/* Top Navy Banner */}
               <div className="bg-[#0B1E48] text-white px-5 py-3.5 flex items-center gap-3.5 shrink-0">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
@@ -1243,7 +1243,7 @@ export default function ExamInterface() {
               />
 
               {/* Center Player Widget */}
-              <div className="flex-1 px-5 pt-4 pb-2 flex flex-col items-center justify-center text-center">
+              <div className="px-5 pt-5 pb-3 flex flex-col items-center text-center">
                 <div className="relative flex items-center justify-center my-2">
                   {/* Outer Pulsing Ring */}
                   <div className={`w-36 h-36 rounded-full bg-[#EBF3FE] border border-blue-100 flex items-center justify-center transition-all duration-700 ${audioPlaying ? 'scale-105 animate-pulse' : ''}`}>
@@ -1299,14 +1299,14 @@ export default function ExamInterface() {
               </div>
 
               {/* Bottom Landmark Illustration Banner (Seamless natural fit) */}
-              <div className="relative w-full h-44 sm:h-48 md:h-52 lg:h-56 xl:h-60 overflow-hidden shrink-0 mt-auto select-none pointer-events-none">
+              <div className="relative w-full overflow-hidden shrink-0 select-none pointer-events-none" style={{height: 'clamp(140px, 35%, 220px)'}}>
                 <img
                   src="/banner-asset.png"
                   alt="Landmarks Banner"
                   className="w-full h-full object-cover object-bottom block"
                 />
                 {/* Soft gradient to seamlessly blend the top of illustration into white card background */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white via-white/50 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white via-white/50 to-transparent" />
               </div>
             </div>
           </div>

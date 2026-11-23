@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import JawaafLogo from '../components/JawaafLogo';
 import {
   Headphones, BookOpen, PenLine, Mic2, Video, MessageSquareText,
   CheckCircle, ChevronDown, ChevronUp, Star, Award, Clock, BarChart3,
-  Zap, Users, Globe, ShieldCheck, ArrowRight, Play
+  Zap, Users, Globe, ShieldCheck, ArrowRight, Play, ArrowLeft, Sparkles
 } from 'lucide-react';
 
 /* ─────────────────────────── DATA ─────────────────────────── */
@@ -216,70 +217,179 @@ export default function FeaturesPage() {
 
       <div className="min-h-screen bg-[#F4F7FB]">
 
-        {/* ── HERO ── */}
-        <section className="relative bg-gradient-to-br from-[#05162E] via-[#0B2558] to-[#1E3A6E] overflow-hidden">
-          {/* decorative blobs */}
-          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#EE6055]/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
+        {/* ── 1ST VIEW: UNIFIED HERO & ONBOARDING CANVAS ── */}
+        <section className="relative bg-[#071328] py-8 sm:py-12 md:py-16 overflow-hidden">
+          {/* Subtle ambient lighting effects */}
+          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#1E3A6E]/30 blur-[120px] pointer-events-none" />
+          <div className="absolute top-1/3 -left-32 w-[450px] h-[450px] rounded-full bg-[#EE6055]/15 blur-[130px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
 
-          <div className="relative max-w-6xl mx-auto px-6 py-20 md:py-28">
-            {/* Back link */}
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-blue-300 hover:text-white text-sm font-medium mb-10 transition-colors"
-            >
-              ← Back to Home
-            </Link>
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+            {/* Top Navigation & Brand Header */}
+            <header className="flex items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-white/10">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-sm"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Home</span>
+              </Link>
 
-            <div className="max-w-3xl">
-              {/* eyebrow */}
-              <div className="inline-flex items-center gap-2 bg-[#EE6055]/15 border border-[#EE6055]/30 rounded-full px-4 py-1.5 mb-6">
-                <Zap className="h-3.5 w-3.5 text-[#EE6055]" />
-                <span className="text-[#EE6055] text-xs font-bold uppercase tracking-widest">Platform Features</span>
-              </div>
+              {/* Jawaaf Logo */}
+              <Link to="/" className="flex items-center group transition-transform hover:scale-[1.02]">
+                <JawaafLogo isWhite={true} className="h-8 sm:h-10 md:h-11 w-auto" />
+              </Link>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight">
-                Nepal's #1 Platform for{' '}
-                <span className="text-[#EE6055]">Online IELTS Mock Test</span>{' '}
-                &amp; Preparation
-              </h1>
-              <p className="mt-5 text-blue-200 text-base md:text-lg leading-relaxed max-w-2xl">
-                From <strong className="text-white">computer-based IELTS mock tests</strong> to{' '}
-                <strong className="text-white">Band 8+ video classes</strong> and{' '}
-                <strong className="text-white">expert writing evaluation</strong> — Jawaaf IELTS Lab is the most
-                complete <strong className="text-white">online IELTS preparation platform in Nepal</strong>, trusted by
-                50,000+ students from Kathmandu to Pokhara.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="flex items-center gap-2.5">
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-[#EE6055]/30 text-sm"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] to-[#d94f46] hover:brightness-110 px-3.5 sm:px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/25 transition-all"
                 >
-                  Start Free IELTS Mock Test <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
-                >
-                  <Play className="h-4 w-4" /> See Platform Demo
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Free Demo Mock Test</span>
+                  <span className="sm:hidden">Try Free</span>
                 </Link>
               </div>
-            </div>
-          </div>
-        </section>
+            </header>
 
-        {/* ── STATS BAR ── */}
-        <section className="bg-white border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-slate-200">
+            {/* ── CARD 1: HERO CONTAINER (Top Card with Mascot) ── */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#122b54] via-[#163a72] to-[#0c1f40] border border-blue-400/25 p-6 sm:p-8 md:p-10 shadow-2xl">
+              {/* Subtle inner gradient flare */}
+              <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[#EE6055]/20 blur-3xl" />
+              <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left Content (8 cols on lg) */}
+                <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-start text-left">
+                  {/* Eyebrow Tag */}
+                  <div className="inline-flex items-center gap-2 bg-[#EE6055]/20 border border-[#EE6055]/40 rounded-full px-3.5 py-1 mb-4 shadow-sm">
+                    <Zap className="h-3.5 w-3.5 text-[#EE6055]" />
+                    <span className="text-[#EE6055] text-[11px] sm:text-xs font-black uppercase tracking-widest">PLATFORM FEATURES</span>
+                  </div>
+
+                  {/* Main Title with Primary SEO Keywords */}
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-black text-white leading-[1.18] tracking-tight">
+                    Nepal's #1 Platform for{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#EE6055] via-[#ff786e] to-[#ffb199]">
+                      Online IELTS Mock Test
+                    </span>{' '}
+                    &amp; Preparation
+                  </h1>
+
+                  {/* Subtext */}
+                  <p className="mt-4 text-blue-100/90 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl font-normal">
+                    Complete IELTS preparation platform with <strong className="text-white font-semibold">real CD-IELTS mock tests</strong>, <strong className="text-white font-semibold">Band 8+ recorded video classes</strong>, and <strong className="text-white font-semibold">certified teacher writing &amp; speaking feedback</strong>.
+                  </p>
+
+                  {/* CTA Actions */}
+                  <div className="mt-7 flex flex-wrap items-center gap-3.5">
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-6 py-3.5 rounded-xl transition-all shadow-xl shadow-[#EE6055]/35 hover:shadow-[#EE6055]/55 hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm tracking-wide uppercase"
+                    >
+                      START YOUR IELTS JOURNEY <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold px-5 py-3.5 rounded-xl transition-all text-xs sm:text-sm backdrop-blur-sm"
+                    >
+                      <Play className="h-4 w-4 fill-white" /> See Platform Demo
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Right Content: Mascot Image (4 cols on lg) */}
+                <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
+                  <div className="relative group">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EE6055]/30 via-blue-400/20 to-transparent blur-2xl transform group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+                    <img
+                      src="/images/feedback/writing-feedback-overall-mascot.png"
+                      alt="Jawaaf IELTS Mascot"
+                      className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.6)] select-none group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── CARD 2: 4 STATS CARDS (2x2 Grid / 4-Col Desktop) ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
               {stats.map((s) => (
-                <div key={s.label} className="flex flex-col items-center text-center px-4">
-                  <span className="text-[#1E3A6E] mb-1">{s.icon}</span>
-                  <span className="text-2xl font-extrabold text-[#05162E]">{s.value}</span>
-                  <span className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</span>
+                <div
+                  key={s.label}
+                  className="rounded-2xl bg-[#091730]/90 border border-white/10 p-4 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left backdrop-blur-md hover:border-blue-400/30 hover:bg-[#0c1f3f] transition-all shadow-lg group"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-blue-300 group-hover:text-white transition-colors">
+                      {s.icon}
+                    </span>
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-white tracking-tight group-hover:scale-105 transition-transform">
+                    {s.value}
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-slate-300/80 font-medium mt-0.5">
+                    {s.label}
+                  </span>
                 </div>
               ))}
+            </div>
+
+            {/* ── CARD 3: 3 SIMPLE STEPS ONBOARDING (Clean White Card) ── */}
+            <div className="mt-4 sm:mt-6 bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-slate-200/90 text-[#05162E]">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6 sm:mb-8 pb-5 border-b border-slate-100 text-center md:text-left">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20 mb-2">
+                    <Sparkles className="h-3 w-3" /> Quick 3-Step Setup
+                  </span>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#05162E] tracking-tight">
+                    Start Your IELTS Journey in 3 Simple Steps
+                  </h2>
+                </div>
+                <p className="text-slate-500 text-xs sm:text-sm max-w-md font-medium">
+                  Get started with the best online IELTS preparation platform in Nepal — in minutes.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                {/* Step 1 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#1E3A6E]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#1E3A6E] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    01
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Register Free
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Create your free Jawaaf IELTS Lab account in 30 seconds. No credit card required. Get immediate access to your demo mock test.
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#0B2558]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#0B2558] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    02
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Take a Mock Test
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Experience a full-length CD-IELTS mock test or practice section-wise — Listening with real audio, Reading, Writing, or Speaking.
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#EE6055]/40 hover:shadow-lg transition-all flex flex-col text-left">
+                  <div className="w-11 h-11 rounded-xl bg-[#EE6055] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
+                    03
+                  </div>
+                  <h3 className="font-extrabold text-[#05162E] text-base sm:text-lg mb-1.5">
+                    Get Expert Feedback
+                  </h3>
+                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Receive instant band score calculation, skill analytics, and detailed human instructor evaluations for Writing Task 1 &amp; 2.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -401,32 +511,6 @@ export default function FeaturesPage() {
           </div>
         </section>
 
-        {/* ── HOW IT WORKS ── */}
-        <section className="bg-white py-16 md:py-20">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] mb-3">
-              Start Your IELTS Journey in 3 Simple Steps
-            </h2>
-            <p className="text-slate-500 mb-12 text-base">
-              Get started with the best online IELTS preparation platform in Nepal — in minutes.
-            </p>
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { step: '01', title: 'Register Free', desc: 'Create your free Jawaaf IELTS Lab account. No credit card required. Get instant access to your demo mock test.' },
-                { step: '02', title: 'Take a Mock Test', desc: 'Start a full-length computer-based IELTS mock test or practice by section — Listening, Reading, Writing, or Speaking.' },
-                { step: '03', title: 'Get Expert Feedback', desc: 'Receive your instant band score result, detailed analysis, and human instructor feedback on your writing and speaking.' },
-              ].map((s) => (
-                <div key={s.step} className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-[#1E3A6E] text-white text-2xl font-extrabold flex items-center justify-center mb-4 shadow-md">
-                    {s.step}
-                  </div>
-                  <h3 className="font-bold text-[#05162E] text-lg mb-2">{s.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* ── FAQ ── */}
         <section className="bg-[#F4F7FB] py-16 md:py-20" aria-label="Frequently Asked Questions">
