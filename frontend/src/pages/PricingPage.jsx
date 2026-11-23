@@ -82,8 +82,8 @@ export default function PricingPage() {
       },
       {
         '@type': 'Product',
-        'name': 'Jawaaf IELTS Lab — 90 Days Online Pro Plan',
-        'description': '90 Days full online access to computer-based IELTS mock tests, updated recorded video classes, and section-wise practice tests for both Academic and General Training.',
+        'name': 'Jawaaf IELTS Lab — Online Pro Access – Complete IELTS Preparation Course',
+        'description': '90 Days full access to online IELTS classes, recorded video lessons, full-length IELTS mock tests and realistic computer-delivered IELTS practice for Academic and General Training.',
         'offers': {
           '@type': 'Offer',
           'price': '6500',
@@ -94,11 +94,11 @@ export default function PricingPage() {
       },
       {
         '@type': 'Product',
-        'name': 'Jawaaf IELTS Lab — 150 Days Hybrid & Physical Mentorship Plan',
-        'description': '150 Days extended access with in-person instructor meetings at Putalisadak Kathmandu, 1-on-1 physical speaking mock tests, physical writing evaluation, and computer lab access.',
+        'name': 'Jawaaf IELTS Lab — Premium IELTS Mentorship – Online & Physical IELTS Preparation',
+        'description': '90 Days full access to online IELTS platform combined with scheduled physical IELTS classes, experienced instructor guidance and personalised learning support at Putalisadak, Kathmandu.',
         'offers': {
           '@type': 'Offer',
-          'price': '11500',
+          'price': '10000',
           'priceCurrency': 'NPR',
           'availability': 'https://schema.org/InStock',
           'url': 'https://jawaaf.com/pricing'
@@ -112,23 +112,23 @@ export default function PricingPage() {
             'name': 'What is the IELTS preparation course fee in Nepal at Jawaaf IELTS Lab?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'Jawaaf IELTS Lab offers two subscription packages: the 90-Day Online Pro Plan at NPR 6,500 and the 150-Day Hybrid & Physical Mentorship Plan at NPR 11,500 with physical instructor sessions in Putalisadak, Kathmandu.'
+              'text': 'Jawaaf IELTS Lab offers two comprehensive preparation packages: Online Pro Access (90 Days Full Online Access) at NPR 6,500 and Premium IELTS Mentorship (90 Days Online & Physical Coaching at Putalisadak, Kathmandu) at NPR 10,000.'
             }
           },
           {
             '@type': 'Question',
-            'name': 'What is included in the 90 Days Online IELTS course?',
+            'name': 'What is included in the Online Pro Access plan?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'The 90-Day Plan includes 24/7 online portal access, updated Band 8+ video lectures for all 4 skills, full-length CD-IELTS computer-based mock tests, 1,000+ section-wise questions, automated AI scoring, and practice for both Academic and General Training.'
+              'text': 'Online Pro Access includes 90 days of 24/7 online portal access, recorded video courses for all 4 skills, full-length CD-IELTS computer mock tests, section-wise practice, AI-powered writing evaluation, continuous audio playback simulation, and performance analytics for Academic and General Training.'
             }
           },
           {
             '@type': 'Question',
-            'name': 'What are the benefits of the 150 Days Hybrid package?',
+            'name': 'What are the benefits of the Premium IELTS Mentorship package?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'The 150-Day Hybrid package gives you complete online portal access plus physical face-to-face meetings with master instructors at Putalisadak, in-person 1-on-1 speaking mock interviews, physical writing paper corrections, and physical lab access.'
+              'text': 'Premium IELTS Mentorship gives you complete online portal access plus scheduled physical face-to-face IELTS classroom sessions with master instructors at Putalisadak, physical 1-on-1 speaking mock interviews, hand-checked paper writing evaluation, and physical computer lab access.'
             }
           },
           {
@@ -136,7 +136,7 @@ export default function PricingPage() {
             'name': 'Are both Academic and General Training covered?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'Yes! Both the 90-Day and 150-Day packages include complete, dedicated materials, mock tests, and video courses for both IELTS Academic (university study) and IELTS General Training (migration and work visa).'
+              'text': 'Yes! Both packages include complete, dedicated materials, mock tests, and video courses for both IELTS Academic (university study) and IELTS General Training (migration and work visa).'
             }
           }
         ]
@@ -146,57 +146,53 @@ export default function PricingPage() {
 
   const faqs = [
     {
-      q: 'What is the difference between the 90-Day and 150-Day packages?',
-      a: 'The 90-Day Plan is 100% online, ideal for students across Nepal or abroad who want comprehensive recorded classes, full CD-IELTS mock tests, and section practice at their own schedule. The 150-Day Hybrid Plan includes everything in the online plan PLUS physical face-to-face meetings with our senior instructors at Putalisadak Kathmandu, in-person 1-on-1 speaking mock interviews with examiner feedback, hand-graded paper writing checks, and computer lab access.'
+      q: 'What is the difference between Online Pro Access and Premium IELTS Mentorship?',
+      a: 'Online Pro Access (NPR 6,500 | 90 Days) is 100% online, ideal for students across Nepal or abroad who want comprehensive recorded video classes, full-length CD-IELTS mock tests, section-wise practice, and AI-powered writing evaluation. Premium IELTS Mentorship (NPR 10,000 | 90 Days) includes everything in Online Pro PLUS scheduled physical face-to-face classroom sessions at Putalisadak Kathmandu, in-person 1-on-1 speaking mock interviews with examiner feedback, hand-graded paper writing checks, and computer lab access.'
     },
     {
-      q: 'How does the Computer-Based (CD-IELTS) test simulator help me?',
-      a: 'Practicing on paper cannot prepare you for the real CD-IELTS interface. Our simulator reproduces the exact screen layout, countdown timer, text highlighter, instant notepad, split screen passage viewer, and continuous audio playback used by IDP and British Council in Nepal. You enter the actual exam room completely confident and familiar.'
+      q: 'How does the Realistic CD-IELTS Computer Simulator help me?',
+      a: 'Practicing on paper cannot prepare you for the real computer-delivered IELTS interface. Our simulator reproduces the exact screen layout, examination timer, text highlighter, instant digital notepad, split screen passage viewer, and continuous audio playback used by IDP and British Council in Nepal.'
     },
     {
       q: 'Are both IELTS Academic and General Training modules covered?',
       a: 'Yes, absolutely! Both modules are fully supported. Whether you are preparing for IELTS Academic for university abroad or General Training for Australia/Canada PR and work visas, you get dedicated video lessons, Task 1 differences (Graph vs Letter), Reading passages, and tailored mock exams.'
     },
     {
-      q: 'How are the video recorded classes structured?',
-      a: 'Our video classes are self-paced, updated for 2026 test patterns, and taught by certified IELTS trainers with 8.5+ band scores. They cover foundation concepts, step-by-step strategies for True/False/Not Given, Headings, Map Labelling, Task 1 structure, Task 2 essay templates, and Band 8 Speaking fluency frameworks.'
+      q: 'How does the AI-powered Writing Evaluation work?',
+      a: 'Our AI Writing evaluator assesses your Academic and General Training essays instantly based on official IELTS descriptors: Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. In the Premium Mentorship plan, you also get physical hand-checked reviews by certified human instructors.'
     },
     {
       q: 'What payment methods do you accept?',
       a: 'We accept eSewa, Khalti, Fonepay QR, Direct Bank Transfer (any Nepali bank), and Cash or Card payments physically at our office in Putalisadak, Kathmandu. Your account is activated immediately upon payment verification.'
     },
     {
-      q: 'Can I upgrade from the 90-Day Online Plan to the 150-Day Hybrid Plan later?',
-      a: 'Yes! You can upgrade anytime within your 90-day subscription period by simply paying the fee difference. Your account will automatically be extended and you will gain access to in-person instructor sessions at Putalisadak.'
-    },
-    {
       q: 'Where is Jawaaf Consulting Academy physically located in Kathmandu?',
       a: 'We are conveniently located at the educational hub of Nepal: Putalisadak, Kathmandu (opposite to Star Mall / near Kumari Bank). You can visit our office Sunday to Friday, 7:00 AM to 6:00 PM, or call us at 01-4647115.'
     },
     {
-      q: 'Can I test the platform for free before paying?',
-      a: 'Yes! You can take our Free Demo Mock Test without paying or providing payment details. Experience the real timer, listening audio player, reading passages, and writing interface to see why thousands of Nepali students trust Jawaaf IELTS Lab.'
+      q: 'Can I test the platform for free before enrolling?',
+      a: 'Yes! You can take our Free Demo Mock Test without paying or entering payment details. Experience the real timer, listening audio player, reading passages, and writing interface to see why thousands of Nepali students trust Jawaaf IELTS Lab.'
     }
   ];
 
   return (
     <>
       <Helmet>
-        <title>Pricing &amp; Packages — Jawaaf IELTS Lab | IELTS Preparation Course Fee in Nepal</title>
+        <title>Pricing &amp; Packages — Jawaaf IELTS Lab | Online IELTS Preparation Course Fee Nepal</title>
         <meta
           name="description"
-          content="Transparent and affordable IELTS course fees in Nepal. Choose between 90-Day Online Access (NPR 6,500) and 150-Day Hybrid Mentorship with in-person instructor feedback in Putalisadak Kathmandu (NPR 11,500). Real CD-IELTS mock tests & Band 8+ video classes."
+          content="Affordable IELTS course fees in Nepal. Online Pro Access (NPR 6,500 | 90 Days) and Premium IELTS Mentorship with physical coaching in Putalisadak Kathmandu (NPR 10,000 | 90 Days). Real CD-IELTS mock tests, Band 8+ video classes & AI evaluation."
         />
         <meta
           name="keywords"
-          content="IELTS preparation course fee in Nepal, IELTS course price Kathmandu, IELTS mock test price Nepal, Jawaaf IELTS Lab pricing, 90 days IELTS preparation fee Nepal, 150 days IELTS class Nepal, IELTS Putalisadak fee, computer based IELTS mock test price, IELTS academic and general training price Nepal"
+          content="IELTS preparation course fee in Nepal, IELTS course price Kathmandu, IELTS mock test price Nepal, Online Pro Access IELTS, Premium IELTS Mentorship Nepal, 90 days IELTS preparation fee Nepal, IELTS Putalisadak fee, computer based IELTS mock test price, IELTS academic and general training price Nepal"
         />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://lab.jawaaf.com/pricing" />
         <meta property="og:title" content="Pricing &amp; Subscription Packages — Jawaaf IELTS Lab Nepal" />
         <meta
           property="og:description"
-          content="Choose your IELTS plan: 90 Days Online Access (Rs. 6,500) or 150 Days Hybrid with Physical Instructor Mentorship at Putalisadak (Rs. 11,500)."
+          content="Choose your IELTS plan: Online Pro Access (Rs. 6,500 | 90 Days) or Premium IELTS Mentorship with Physical Coaching at Putalisadak (Rs. 10,000 | 90 Days)."
         />
         <meta property="og:url" content="https://lab.jawaaf.com/pricing" />
         <meta property="og:type" content="website" />
@@ -205,12 +201,12 @@ export default function PricingPage() {
 
       <div className="min-h-screen bg-[#F4F7FB]">
 
-        {/* ── 1ST VIEW: UNIFIED HERO & ONBOARDING CANVAS (Identical to Features Page) ── */}
+        {/* ── 1ST VIEW: UNIFIED HERO & ONBOARDING CANVAS (Matches Features Page) ── */}
         <section className="relative bg-gradient-to-br from-[#0B2558] via-[#133A7C] to-[#0A1E45] py-8 sm:py-12 md:py-16 overflow-hidden">
           {/* Subtle dot matrix grid overlay for depth and SaaS elegance */}
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-          {/* Luminous atmospheric glowing lights (royal sapphire, warm coral, cyan) */}
+          {/* Luminous atmospheric glowing lights */}
           <div className="absolute -top-24 -right-24 w-[550px] h-[550px] rounded-full bg-sky-400/20 blur-[130px] pointer-events-none" />
           <div className="absolute top-1/4 -left-24 w-[480px] h-[480px] rounded-full bg-[#EE6055]/25 blur-[140px] pointer-events-none" />
           <div className="absolute bottom-10 right-1/3 w-[450px] h-[350px] rounded-full bg-blue-300/15 blur-[110px] pointer-events-none" />
@@ -277,7 +273,7 @@ export default function PricingPage() {
 
                   {/* Subtext */}
                   <p className="mt-4 text-blue-50 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl font-normal drop-shadow-sm">
-                    Select the ideal duration for your preparation. Includes <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">Band 8+ recorded video classes</strong>, <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">real CD-IELTS computer simulation</strong>, and <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">physical instructor mentorship in Putalisadak</strong>.
+                    Choose between <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">Online Pro Access (90 Days)</strong> or <strong className="text-white font-semibold underline decoration-white/30 underline-offset-2">Premium Mentorship (90 Days)</strong> with physical coaching at Putalisadak, Kathmandu. Covers both Academic and General Training.
                   </p>
 
                   {/* CTA Actions */}
@@ -300,17 +296,12 @@ export default function PricingPage() {
                 {/* Right Content: Mascot Image Grounded Seamlessly */}
                 <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center lg:items-end justify-end self-end lg:-mb-10 lg:-mr-6 xl:-mr-8">
                   <div className="relative flex flex-col items-center">
-                    {/* Soft ambient back glow behind the owl's head */}
                     <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-52 h-52 rounded-full bg-gradient-to-b from-[#EE6055]/30 via-sky-300/25 to-transparent blur-3xl" />
-
-                    {/* Mascot with subtle ambient lighting */}
                     <img
                       src="/images/feedback/writing-feedback-overall-mascot-natural.png"
                       alt="Jawaaf IELTS Mascot"
                       className="relative z-10 w-56 h-auto sm:w-64 md:w-72 lg:w-80 xl:w-[340px] max-w-full object-contain select-none filter drop-shadow-[0_18px_30px_rgba(4,18,48,0.5)] hover:scale-[1.02] transition-transform duration-500"
                     />
-
-                    {/* Natural Grounding Contact Shadow under the wooden desk */}
                     <div className="w-[88%] h-4 bg-[#051533]/80 blur-md rounded-full -mt-3 relative z-0 pointer-events-none" />
                   </div>
                 </div>
@@ -344,7 +335,7 @@ export default function PricingPage() {
               ))}
             </div>
 
-            {/* ── CARD 3: 3 SIMPLE ENROLLMENT STEPS (Identical White Container to Features Page) ── */}
+            {/* ── CARD 3: 3 SIMPLE ENROLLMENT STEPS ── */}
             <div className="mt-4 sm:mt-6 bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_-15px_rgba(5,20,50,0.35)] border border-slate-100 text-[#05162E]">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6 sm:mb-8 pb-5 border-b border-slate-100 text-center md:text-left">
                 <div>
@@ -361,7 +352,6 @@ export default function PricingPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                {/* Step 1 */}
                 <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#1E3A6E]/40 hover:shadow-lg transition-all flex flex-col text-left">
                   <div className="w-11 h-11 rounded-xl bg-[#1E3A6E] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
                     01
@@ -370,11 +360,10 @@ export default function PricingPage() {
                     Select Your Plan
                   </h3>
                   <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                    Choose either the 90-Day Online Plan for self-paced study or the 150-Day Hybrid Plan with face-to-face mentor sessions.
+                    Choose either the 90-Day Online Pro Access for self-paced study or the 90-Day Premium Mentorship with physical coaching.
                   </p>
                 </div>
 
-                {/* Step 2 */}
                 <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#0B2558]/40 hover:shadow-lg transition-all flex flex-col text-left">
                   <div className="w-11 h-11 rounded-xl bg-[#0B2558] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
                     02
@@ -387,7 +376,6 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                {/* Step 3 */}
                 <div className="group rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 sm:p-6 hover:border-[#EE6055]/40 hover:shadow-lg transition-all flex flex-col text-left">
                   <div className="w-11 h-11 rounded-xl bg-[#EE6055] text-white font-black text-sm flex items-center justify-center shadow-md mb-3.5 group-hover:scale-110 transition-transform">
                     03
@@ -396,7 +384,7 @@ export default function PricingPage() {
                     Start Prep Immediately
                   </h3>
                   <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                    Unlock all CD-IELTS computer mock tests, updated Band 8+ video courses, and schedule teacher evaluations.
+                    Unlock all CD-IELTS computer mock tests, recorded courses, AI writing feedback, and schedule instructor sessions.
                   </p>
                 </div>
               </div>
@@ -404,7 +392,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 2: THE 2 SUBSCRIPTION PLANS (Direct Comparison) ── */}
+        {/* ── SECTION 2: THE 2 SUBSCRIPTION PLANS (User Specified Content) ── */}
         <section id="pricing-plans" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20 scroll-mt-6" aria-label="Subscription Pricing Packages">
           <div className="text-center mb-12">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-[#1E3A6E] bg-blue-100/80 px-3.5 py-1 rounded-full mb-3 border border-blue-200">
@@ -420,7 +408,7 @@ export default function PricingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
 
-            {/* ── CARD 1: 90 DAYS ONLINE ACCESS (NPR 6,500) ── */}
+            {/* ── CARD 1: ONLINE PRO ACCESS (NPR 6,500 | 90 DAYS) ── */}
             <div className="relative rounded-3xl bg-white border border-slate-200 shadow-xl p-7 sm:p-9 flex flex-col justify-between hover:border-[#1E3A6E]/40 hover:shadow-2xl transition-all">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -429,82 +417,177 @@ export default function PricingPage() {
                   </span>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
                     <Clock className="h-3.5 w-3.5 text-slate-400" />
-                    <span>3 Full Months Access</span>
+                    <span>90 Days Full Access</span>
                   </div>
                 </div>
 
                 <h3 className="text-2xl font-black text-[#05162E] tracking-tight mb-2">
                   Online Pro Access
                 </h3>
+                <p className="text-xs sm:text-sm font-semibold text-[#1E3A6E] mb-3">
+                  Complete IELTS Preparation Course
+                </p>
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3">
+                  Prepare for IELTS with Jawaaf&apos;s comprehensive online IELTS preparation platform. Designed for students preparing for IELTS Academic and General Training, Online Pro provides everything you need to practise IELTS Listening, Reading, Writing and Speaking from anywhere.
+                </p>
                 <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
-                  Perfect for self-motivated students across Nepal and abroad who need flexible online practice, recorded video classes, and CD-IELTS computer simulation.
+                  Get access to IELTS online classes, recorded video lessons, full-length IELTS mock tests and realistic computer-delivered IELTS practice through one integrated learning platform.
                 </p>
 
                 {/* Price Display */}
                 <div className="flex items-baseline gap-2 pb-6 border-b border-slate-100 mb-6">
                   <span className="text-xs sm:text-sm font-bold text-slate-400">NPR</span>
                   <span className="text-4xl sm:text-5xl font-black text-[#05162E] tracking-tight">6,500</span>
-                  <span className="text-xs text-slate-500 font-medium">/ 90 days total (~Rs. 72/day)</span>
+                  <span className="text-xs text-slate-500 font-medium">/ 90 Days Full Access (~Rs. 72/day)</span>
                 </div>
 
-                {/* Included Features List */}
-                <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3.5">
-                  What&apos;s Included:
+                {/* Included Modules Accordion / List */}
+                <p className="text-xs font-black uppercase tracking-wider text-[#1E3A6E] mb-4">
+                  WHAT&apos;S INCLUDED IN THE ONLINE IELTS PREPARATION PLAN:
                 </p>
-                <ul className="space-y-3 text-sm text-slate-700 mb-8">
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>90 Days 24/7 Online Portal Access</strong> from any device</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>Band 8+ Updated Video Courses</strong> for Listening, Reading, Writing &amp; Speaking</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>Both Modules Covered:</strong> Dedicated tracks for Academic and General Training</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>Real CD-IELTS Computer Simulator:</strong> Exact timer, text highlighter, notepad &amp; split screen</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>One Continuous Listening Audio:</strong> Locked playback just like the actual British Council/IDP test</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>Full Mock Tests &amp; Section-Wise Practice</strong> with instant score calculation</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#1E3A6E] shrink-0 mt-0.5" />
-                    <span><strong>AI-Powered Analytics:</strong> Identify your weak question types in real-time</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-slate-400">
-                    <X className="h-4 w-4 text-slate-300 shrink-0 mt-0.5" />
-                    <span className="line-through">In-person physical instructor meetings at Putalisadak</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-slate-400">
-                    <X className="h-4 w-4 text-slate-300 shrink-0 mt-0.5" />
-                    <span className="line-through">Physical 1-on-1 speaking interview with human examiner</span>
-                  </li>
-                </ul>
+
+                <div className="space-y-4 text-xs sm:text-sm text-slate-700 mb-8">
+                  {/* 1. Listening */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>1. IELTS Listening Practice &amp; Mock Tests</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Full-length IELTS Listening mock tests.</li>
+                      <li>Section-wise IELTS Listening practice.</li>
+                      <li>Continuous audio playback simulation.</li>
+                      <li>IELTS Listening question types and practice exercises.</li>
+                      <li>Realistic computer-based IELTS Listening test experience.</li>
+                    </ul>
+                  </div>
+
+                  {/* 2. Reading */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>2. IELTS Reading Practice – Academic &amp; General Training</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Complete IELTS Academic and General Training Reading modules.</li>
+                      <li>Full-length IELTS Reading mock tests.</li>
+                      <li>Individual passage-wise practice.</li>
+                      <li>Multiple IELTS Reading question types.</li>
+                      <li>Practice tests with automatic answer evaluation where supported.</li>
+                    </ul>
+                  </div>
+
+                  {/* 3. Writing */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>3. IELTS Writing Practice &amp; AI-Powered Evaluation</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>IELTS Academic Writing Task 1 and Task 2.</li>
+                      <li>IELTS General Training Writing Task 1 and Task 2.</li>
+                      <li>AI-powered IELTS Writing evaluation.</li>
+                      <li>Estimated IELTS Writing band score and performance feedback.</li>
+                      <li>Detailed improvement insights to develop IELTS writing skills.</li>
+                    </ul>
+                  </div>
+
+                  {/* 4. Speaking */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>4. IELTS Speaking Preparation</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>IELTS Speaking Part 1, Part 2 and Part 3 preparation.</li>
+                      <li>Speaking practice materials and learning resources.</li>
+                      <li>Recorded IELTS Speaking lessons.</li>
+                      <li>Guidance on fluency, vocabulary and speaking preparation.</li>
+                    </ul>
+                  </div>
+
+                  {/* 5. Video Classes */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>5. IELTS Video Classes &amp; Recorded Courses</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Recorded IELTS Listening classes.</li>
+                      <li>IELTS Reading video lessons.</li>
+                      <li>IELTS Writing Task 1 and Task 2 tutorials.</li>
+                      <li>IELTS Speaking preparation videos.</li>
+                      <li>Structured video-based IELTS learning resources.</li>
+                    </ul>
+                  </div>
+
+                  {/* 6. Full Mock Tests */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>6. Full-Length IELTS Mock Tests &amp; Practice Tests</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Complete IELTS mock examinations.</li>
+                      <li>Individual IELTS Listening, Reading and Writing practice tests.</li>
+                      <li>IELTS Academic and General Training practice.</li>
+                      <li>Realistic computer-delivered IELTS test simulation.</li>
+                      <li>Automatic score calculation where supported.</li>
+                    </ul>
+                  </div>
+
+                  {/* 7. Analytics */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>7. AI-Powered IELTS Performance Analytics</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Analyse IELTS practice performance.</li>
+                      <li>Identify weak question types.</li>
+                      <li>Track mock test performance.</li>
+                      <li>Review mistakes and understand improvement areas.</li>
+                      <li>Data-driven IELTS preparation insights.</li>
+                    </ul>
+                  </div>
+
+                  {/* 8. Simulator */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
+                    <div className="flex items-center gap-2 font-bold text-[#05162E] mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#1E3A6E] shrink-0" />
+                      <span>8. Realistic CD-IELTS Computer Simulator</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-slate-600 text-xs">
+                      <li>Computer-delivered IELTS examination interface.</li>
+                      <li>Built-in examination timer.</li>
+                      <li>Digital notepad and text highlighting.</li>
+                      <li>Split-screen examination layout.</li>
+                      <li>Question navigation and answer tracking.</li>
+                      <li>Exam-style practice environment.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-center text-xs text-[#1E3A6E] font-bold mb-6">
+                  Subscription Duration: 90 Days
+                </div>
               </div>
 
               <div>
                 <Link
                   to="/register"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A6E] hover:bg-[#0B2558] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-sm uppercase tracking-wider"
                 >
-                  Enroll in 90-Day Online Plan <ArrowRight className="h-4 w-4" />
+                  Enroll in Online Pro (NPR 6,500) <ArrowRight className="h-4 w-4" />
                 </Link>
                 <p className="text-center text-[11px] text-slate-400 mt-2.5">
-                  Instant access upon payment verification • No card required to register
+                  Instant portal access upon payment verification • No credit card required to register
                 </p>
               </div>
             </div>
 
-            {/* ── CARD 2: 150 DAYS HYBRID & PHYSICAL MENTORSHIP (NPR 11,500) ── */}
+            {/* ── CARD 2: PREMIUM IELTS MENTORSHIP (NPR 10,000 | 90 DAYS) ── */}
             <div className="relative rounded-3xl bg-gradient-to-b from-[#0A224D] via-[#103063] to-[#0A1E45] border-2 border-[#EE6055] shadow-2xl p-7 sm:p-9 flex flex-col justify-between text-white overflow-hidden group">
               {/* Recommended Badge */}
               <div className="absolute top-0 right-0 bg-[#EE6055] text-white text-[11px] font-black uppercase tracking-widest py-1.5 px-6 rounded-bl-2xl shadow-md flex items-center gap-1.5">
@@ -514,73 +597,146 @@ export default function PricingPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-black uppercase tracking-wider text-[#FF9E96] bg-[#EE6055]/20 border border-[#EE6055]/30 px-3 py-1 rounded-full">
-                    150 Days Hybrid Mentorship
+                    Online &amp; Physical Mentorship
                   </span>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-200 bg-white/10 px-2.5 py-1 rounded-lg">
                     <Calendar className="h-3.5 w-3.5 text-sky-300" />
-                    <span>5 Full Months Access</span>
+                    <span>90 Days Full Access</span>
                   </div>
                 </div>
 
                 <h3 className="text-2xl font-black text-white tracking-tight mb-2">
-                  Hybrid &amp; Physical Mentorship
+                  Premium IELTS Mentorship
                 </h3>
-                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed mb-6">
-                  The ultimate preparation experience: full online portal access PLUS physical face-to-face mentorship, speaking interviews, and essay correction at Putalisadak.
+                <p className="text-xs sm:text-sm font-semibold text-[#FFA89F] mb-3">
+                  Online &amp; Physical IELTS Preparation
+                </p>
+
+                <p className="text-xs sm:text-sm text-blue-100 leading-relaxed mb-3">
+                  Take your IELTS preparation to the next level with Jawaaf&apos;s Premium IELTS Mentorship programme. Get complete access to our online IELTS preparation platform combined with scheduled physical IELTS classes, experienced instructor guidance and personalised learning support at Putalisadak, Kathmandu.
+                </p>
+                <p className="text-xs sm:text-sm text-blue-200/90 leading-relaxed mb-6">
+                  This programme combines online IELTS mock tests, recorded video classes, AI-powered writing evaluation and face-to-face IELTS coaching to provide a comprehensive IELTS preparation experience.
                 </p>
 
                 {/* Price Display */}
                 <div className="flex items-baseline gap-2 pb-6 border-b border-white/15 mb-6">
                   <span className="text-xs sm:text-sm font-bold text-blue-200">NPR</span>
-                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">11,500</span>
-                  <span className="text-xs text-blue-200 font-medium">/ 150 days total (~Rs. 76/day)</span>
+                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">10,000</span>
+                  <span className="text-xs text-blue-200 font-medium">/ 90 Days Full Access (~Rs. 111/day)</span>
                 </div>
 
                 {/* Included Features List */}
-                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-200 mb-3.5">
-                  Everything in Online Pro, PLUS:
+                <p className="text-xs font-black uppercase tracking-wider text-[#FFB0A8] mb-4">
+                  EVERYTHING INCLUDED IN ONLINE PRO, PLUS:
                 </p>
-                <ul className="space-y-3 text-sm text-blue-50 mb-8">
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Extended 150 Days Access:</strong> 5 full months of unlimited portal preparation</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Physical Face-to-Face Meetings:</strong> Meet instructors in person at Putalisadak Kathmandu</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">1-on-1 In-Person Speaking Mocks:</strong> Live interviews with certified examiners &amp; fluency coaching</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Physical Writing Paper Evaluation:</strong> Hand-graded essay corrections with detailed band descriptors</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Putalisadak Lab &amp; Library Access:</strong> Practice in our quiet computer lab environment</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">All Video Courses &amp; CD-IELTS Mocks:</strong> Full access to all recorded classes and question banks</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle className="h-4 w-4 text-[#EE6055] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Direct Instructor WhatsApp Support:</strong> Clear doubts directly with senior IELTS mentors</span>
-                  </li>
-                </ul>
+
+                <div className="space-y-4 text-xs sm:text-sm text-blue-50 mb-8">
+                  {/* 1. Physical Coaching */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>1. Physical IELTS Coaching Classes</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>Scheduled face-to-face IELTS classroom sessions.</li>
+                      <li>Instructor-led IELTS Listening, Reading, Writing and Speaking classes.</li>
+                      <li>Structured IELTS preparation and classroom learning.</li>
+                      <li>Practical guidance on IELTS examination techniques.</li>
+                    </ul>
+                  </div>
+
+                  {/* 2. Personal Instructor Guidance */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>2. Personal IELTS Instructor Guidance</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>Direct learning guidance from IELTS instructors.</li>
+                      <li>Personal support to identify IELTS preparation weaknesses.</li>
+                      <li>Guidance on IELTS band score improvement.</li>
+                      <li>Instructor assistance with difficult question types and examination strategies.</li>
+                    </ul>
+                  </div>
+
+                  {/* 3. Face-to-Face Speaking */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>3. Face-to-Face IELTS Speaking Practice</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>Physical IELTS Speaking practice sessions.</li>
+                      <li>IELTS Speaking Part 1, Part 2 and Part 3 preparation.</li>
+                      <li>Mock speaking interviews with instructors.</li>
+                      <li>Guidance on fluency, pronunciation and vocabulary.</li>
+                    </ul>
+                  </div>
+
+                  {/* 4. Physical Writing */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>4. Physical IELTS Writing Evaluation</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>Instructor-reviewed IELTS Writing Task 1 and Task 2.</li>
+                      <li>Hand-checked essays with detailed feedback.</li>
+                      <li>Guidance on IELTS Writing assessment criteria.</li>
+                      <li>Practical suggestions to improve coherence, vocabulary, grammar and task achievement.</li>
+                    </ul>
+                  </div>
+
+                  {/* 5. Lab Access */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>5. IELTS Computer Lab Access</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>Physical computer lab practice at Putalisadak, Kathmandu.</li>
+                      <li>Familiarisation with the computer-delivered IELTS examination interface.</li>
+                      <li>Practical IELTS mock test sessions.</li>
+                      <li>Experience with computer-based examination tools and navigation.</li>
+                    </ul>
+                  </div>
+
+                  {/* 6. Complete Online Platform */}
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#EE6055] shrink-0" />
+                      <span>6. Complete Online IELTS Learning Platform</span>
+                    </div>
+                    <ul className="pl-6 space-y-1 list-disc text-blue-100 text-xs">
+                      <li>90 days of online portal access.</li>
+                      <li>Full-length IELTS mock tests and section-wise practice.</li>
+                      <li>IELTS Academic and General Training modules.</li>
+                      <li>Recorded IELTS video classes.</li>
+                      <li>AI-powered IELTS Writing evaluation &amp; performance analytics.</li>
+                      <li>Listening, Reading, Writing and Speaking preparation.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white/10 border border-white/20 rounded-xl text-center text-xs text-white font-bold mb-3">
+                  Subscription Duration: 90 Days
+                </div>
+
+                <p className="text-[11px] text-blue-200/80 italic text-center mb-6">
+                  *Physical classroom sessions and instructor-guided activities are conducted according to the academy&apos;s scheduled timetable at Putalisadak, Kathmandu.*
+                </p>
               </div>
 
               <div>
                 <Link
                   to="/register"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-xl shadow-[#EE6055]/30 hover:scale-[1.01] text-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-xl shadow-[#EE6055]/30 hover:scale-[1.01] text-sm uppercase tracking-wider"
                 >
-                  Join 150-Day Hybrid Mentorship <ArrowRight className="h-4 w-4" />
+                  Join Premium Mentorship (NPR 10,000) <ArrowRight className="h-4 w-4" />
                 </Link>
                 <p className="text-center text-[11px] text-blue-200 mt-2.5">
-                  Visit Putalisadak Office or register online • Seats filled on rolling basis
+                  Visit Putalisadak Office or enroll online • Limited batch capacity
                 </p>
               </div>
             </div>
@@ -667,31 +823,30 @@ export default function PricingPage() {
                 <tr className="bg-slate-50 border-b border-slate-200 text-[#05162E]">
                   <th className="py-4 px-4 sm:px-6 font-extrabold text-sm sm:text-base">Features &amp; Services</th>
                   <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#1E3A6E] text-sm sm:text-base">
-                    90 Days Online Pro<br />
-                    <span className="text-xs font-semibold text-slate-500">NPR 6,500</span>
+                    Online Pro Access<br />
+                    <span className="text-xs font-semibold text-slate-500">NPR 6,500 | 90 Days</span>
                   </th>
                   <th className="py-4 px-4 sm:px-6 font-extrabold text-center text-[#EE6055] text-sm sm:text-base bg-[#EE6055]/5">
-                    150 Days Hybrid Mentorship<br />
-                    <span className="text-xs font-semibold text-[#EE6055]">NPR 11,500</span>
+                    Premium IELTS Mentorship<br />
+                    <span className="text-xs font-semibold text-[#EE6055]">NPR 10,000 | 90 Days</span>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {[
-                  { feature: 'Access Duration', f1: '90 Days (3 Months)', f2: '150 Days (5 Months)' },
-                  { feature: 'CD-IELTS Computer Mock Tests', f1: 'Unlimited Access', f2: 'Unlimited Access' },
-                  { feature: 'Listening Audio Interface', f1: 'Locked Real Audio', f2: 'Locked Real Audio' },
-                  { feature: 'Reading Split-Screen Practice', f1: 'Included', f2: 'Included' },
-                  { feature: 'Writing Simulator (Word Count & Timer)', f1: 'Included', f2: 'Included' },
-                  { feature: 'Academic & General Training Tracks', f1: 'Both Included', f2: 'Both Included' },
-                  { feature: 'Updated Band 8+ Video Courses', f1: 'All 4 Skills', f2: 'All 4 Skills' },
-                  { feature: 'Section-wise Practice Banks', f1: '1,000+ Questions', f2: '1,000+ Questions' },
-                  { feature: 'Automated AI Band Estimation', f1: 'Instant', f2: 'Instant' },
-                  { feature: 'Physical Meetings with Mentors', f1: '—', f2: 'Putalisadak Office' },
-                  { feature: 'In-Person 1-on-1 Speaking Mocks', f1: '—', f2: 'Certified Human Examiner' },
-                  { feature: 'Physical Paper Writing Correction', f1: '—', f2: 'Certified Human Examiner' },
-                  { feature: 'Putalisadak Lab & Library Access', f1: '—', f2: 'Included' },
-                  { feature: 'Direct WhatsApp Teacher Support', f1: 'Standard', f2: 'Priority 1-on-1' }
+                  { feature: 'Subscription Duration', f1: '90 Days Full Access', f2: '90 Days Full Access' },
+                  { feature: 'Scheduled Physical Classroom Sessions', f1: '—', f2: 'Putalisadak Timetable' },
+                  { feature: 'Personal Instructor Guidance', f1: 'Online Support', f2: 'Face-to-Face & Priority' },
+                  { feature: 'Face-to-Face Speaking Practice', f1: '—', f2: 'In-Person with Instructors' },
+                  { feature: 'Physical Paper Writing Evaluation', f1: '—', f2: 'Hand-Checked Detailed Feedback' },
+                  { feature: 'Physical IELTS Computer Lab Access', f1: '—', f2: 'Putalisadak Lab' },
+                  { feature: 'AI-Powered IELTS Writing Evaluation', f1: 'Included', f2: 'Included' },
+                  { feature: 'Full-Length CD-IELTS Mock Tests', f1: 'Unlimited Access', f2: 'Unlimited Access' },
+                  { feature: 'Listening Continuous Audio Simulation', f1: 'Included', f2: 'Included' },
+                  { feature: 'Academic & General Training Modules', f1: 'Both Covered', f2: 'Both Covered' },
+                  { feature: 'Recorded Video Classes (All 4 Skills)', f1: 'All 4 Skills Included', f2: 'All 4 Skills Included' },
+                  { feature: 'AI Performance Analytics & Mistake Tracker', f1: 'Included', f2: 'Included' },
+                  { feature: 'CD-IELTS Examination Interface', f1: 'Split-Screen + Notepad', f2: 'Split-Screen + Notepad' }
                 ].map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                     <td className="py-3.5 px-4 sm:px-6 font-semibold text-[#05162E]">{row.feature}</td>
@@ -764,7 +919,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 6: FAQ ACCORDION (Matches FeaturesPage Component) ── */}
+        {/* ── SECTION 6: FAQ ACCORDION ── */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-label="Frequently Asked Questions">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05162E] tracking-tight">
@@ -782,7 +937,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 7: BOTTOM CTA BANNER (Identical to Features Page) ── */}
+        {/* ── SECTION 7: BOTTOM CTA BANNER ── */}
         <section className="bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] py-14 md:py-16 text-white text-center">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3">
@@ -808,7 +963,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 8: FOOTER (Matches Features Page Footer) ── */}
+        {/* ── SECTION 8: FOOTER ── */}
         <footer className="bg-[#05162E] py-12 text-slate-400 text-sm border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
