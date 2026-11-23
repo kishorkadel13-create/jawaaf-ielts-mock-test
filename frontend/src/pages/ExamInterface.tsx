@@ -1321,7 +1321,7 @@ export default function ExamInterface() {
               </div>
 
               {/* Bottom Landmark Illustration Banner (Seamless natural fit) */}
-              <div className="relative w-full overflow-hidden shrink-0 select-none pointer-events-none" style={{height: 'clamp(140px, 35%, 220px)'}}>
+              <div className="relative w-full overflow-hidden shrink-0 select-none pointer-events-none" style={{ height: 'clamp(140px, 35%, 220px)' }}>
                 <img
                   src="/banner-asset.png"
                   alt="Landmarks Banner"
