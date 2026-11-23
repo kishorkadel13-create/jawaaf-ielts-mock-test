@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useExamStore } from '../store/examStore';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
@@ -121,6 +121,8 @@ const PassageIntroCard = ({ title, instruction }: { title: string; instruction?:
 export default function ExamInterface() {
   const { id } = useParams(); // attempt_id
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDemoMode = id === 'demo' || location.pathname === '/demo-exam';
 
   const {
     activeTest,
@@ -208,16 +210,28 @@ export default function ExamInterface() {
       try {
         setLoading(true);
         setLoadError('');
-        // 1. Fetch active attempt
-        const { data: attempt } = await api.get(`/attempts/${id}/review`).catch(async () => {
-          // If no review exists, it means the attempt is in progress. Fetching current active attempt state.
-          const { data: list } = await api.get('/attempts/history');
-          const current = list.find((a: any) => a.id === id);
-          return { data: { attempt: current } } as any;
-        });
 
-        // 2. Fetch full test details
-        const { data: test } = await api.get(`/tests/${attempt.attempt.mock_test_id}`);
+        let test: any = null;
+        let attemptObj: any = null;
+
+        if (isDemoMode) {
+          const { data } = await api.get('/tests/public/demo');
+          test = data;
+          attemptObj = { id: 'demo', mock_test_id: test.id };
+        } else {
+          // 1. Fetch active attempt
+          const { data: attempt } = await api.get(`/attempts/${id}/review`).catch(async () => {
+            // If no review exists, it means the attempt is in progress. Fetching current active attempt state.
+            const { data: list } = await api.get('/attempts/history');
+            const current = list.find((a: any) => a.id === id);
+            return { data: { attempt: current } } as any;
+          });
+          attemptObj = attempt.attempt;
+
+          // 2. Fetch full test details
+          const { data: testData } = await api.get(`/tests/${attemptObj.mock_test_id}`);
+          test = testData;
+        }
 
         // Map DB types back to UI 13-types for student view
         if (test.sections) {
@@ -237,7 +251,7 @@ export default function ExamInterface() {
         const firstSectionNeedsAudio = firstSection?.type === 'listening';
 
         // 3. Initialize Zustand store. Listening tests wait for audio preload before the clock starts.
-        startExam(test, attempt.attempt, null, { isActive: !firstSectionNeedsAudio });
+        startExam(test, attemptObj, null, { isActive: !firstSectionNeedsAudio });
         setStartGateRequired(firstSectionNeedsAudio);
         setExamStartedByStudent(!firstSectionNeedsAudio);
         setLoading(false);
@@ -252,7 +266,7 @@ export default function ExamInterface() {
     return () => {
       resetExam();
     };
-  }, [id, startExam, resetExam]);
+  }, [id, startExam, resetExam, isDemoMode]);
 
   // Unified Countdown timer loop
   useEffect(() => {
@@ -556,8 +570,12 @@ export default function ExamInterface() {
     }
 
     await submitExam();
-    navigate(`/attempts/${id}/result`);
-  }, [activeSection?.type, activeSectionIndex, autosave, id, isLastSection, navigate, nextSection?.type, setActiveSection, submitExam]);
+    if (isDemoMode) {
+      navigate('/demo-result');
+    } else {
+      navigate(`/attempts/${id}/result`);
+    }
+  }, [activeSection?.type, activeSectionIndex, autosave, id, isLastSection, navigate, nextSection?.type, setActiveSection, submitExam, isDemoMode]);
 
   const handleSubmit = async () => {
     try {
@@ -620,9 +638,13 @@ export default function ExamInterface() {
 
   useEffect(() => {
     if (isFinished) {
-      navigate(`/attempts/${id}/result`);
+      if (isDemoMode) {
+        navigate('/demo-result');
+      } else {
+        navigate(`/attempts/${id}/result`);
+      }
     }
-  }, [id, isFinished, navigate]);
+  }, [id, isFinished, navigate, isDemoMode]);
 
   useEffect(() => {
     setHighlightedPassages({});

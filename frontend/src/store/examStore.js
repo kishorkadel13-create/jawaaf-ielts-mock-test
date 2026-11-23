@@ -149,6 +149,20 @@ export const useExamStore = create((set, get) => ({
     const { attemptId, answers, autosaveStatus, isFinished } = get();
     if (!attemptId || isFinished) return;
 
+    if (attemptId === 'demo') {
+      try {
+        localStorage.setItem('jawaaf_demo_exam_state', JSON.stringify({
+          answers,
+          secondsRemaining: get().secondsRemaining,
+          activeSectionIndex: get().activeSectionIndex
+        }));
+        set({ autosaveStatus: 'saved' });
+      } catch (err) {
+        set({ autosaveStatus: 'error' });
+      }
+      return;
+    }
+
     try {
       set({ autosaveStatus: 'saving' });
 
@@ -176,6 +190,27 @@ export const useExamStore = create((set, get) => ({
   submitExam: async (isAutomatic = false) => {
     const { attemptId, answers, isSubmitting, isFinished } = get();
     if (!attemptId || isSubmitting || isFinished) return null;
+
+    if (attemptId === 'demo') {
+      try {
+        set({ isSubmitting: true, isActive: false });
+        const { activeTest } = get();
+        localStorage.setItem('jawaaf_demo_submission', JSON.stringify({
+          testId: activeTest?.id || 'd0242c49-4214-4578-b7d2-1b10f3fdfca3',
+          testTitle: activeTest?.title || 'IELTS Demo Mock Test',
+          answers,
+          submittedAt: new Date().toISOString()
+        }));
+        set({
+          isFinished: true,
+          isSubmitting: false
+        });
+        return { isDemo: true };
+      } catch (err) {
+        set({ isSubmitting: false, isActive: true });
+        throw err;
+      }
+    }
 
     try {
       set({ isSubmitting: true, isActive: false });

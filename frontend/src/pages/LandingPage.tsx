@@ -161,7 +161,7 @@ export default function LandingPage() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
-                to="/register"
+                to="/demo-exam"
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1E3A6E] px-6 py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(30,58,110,0.30)] transition-all duration-200 hover:bg-[#162d57] sm:px-7"
               >
                 Start Free Mock Test →

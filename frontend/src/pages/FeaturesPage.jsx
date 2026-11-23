@@ -245,7 +245,7 @@ export default function FeaturesPage() {
 
               <div className="flex items-center gap-2.5">
                 <Link
-                  to="/register"
+                  to="/demo-exam"
                   className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#EE6055] via-[#f06e64] to-[#d94f46] hover:brightness-110 px-4 py-2 rounded-xl shadow-lg shadow-[#EE6055]/30 transition-all border border-white/20"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -289,7 +289,7 @@ export default function FeaturesPage() {
                   {/* CTA Actions */}
                   <div className="mt-7 flex flex-wrap items-center gap-3.5">
                     <Link
-                      to="/register"
+                      to="/demo-exam"
                       className="inline-flex items-center gap-2 bg-[#EE6055] hover:bg-[#d94f46] text-white font-extrabold px-6 py-3.5 rounded-xl transition-all shadow-xl shadow-[#EE6055]/40 hover:shadow-[#EE6055]/60 hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm tracking-wide uppercase border border-white/20"
                     >
                       START YOUR IELTS JOURNEY <ArrowRight className="h-4 w-4" />
@@ -559,7 +559,7 @@ export default function FeaturesPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
-                to="/register"
+                to="/demo-exam"
                 className="inline-flex items-center gap-2 bg-white text-[#EE6055] font-bold px-7 py-3 rounded-xl shadow hover:bg-slate-50 transition-colors text-sm"
               >
                 Start Free Mock Test <ArrowRight className="h-4 w-4" />

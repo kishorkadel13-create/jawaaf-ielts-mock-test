@@ -5,7 +5,8 @@ import {
   createTest, 
   updateTest, 
   deleteTest, 
-  duplicateTest 
+  duplicateTest,
+  getPublicDemoTest
 } from '../controllers/testController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
@@ -14,7 +15,10 @@ import { mockTestSchema } from '../models/types.js';
 
 const router = Router();
 
-// Apply auth middleware to all test routes
+// Public route for Free Demo Mock Test (NO auth required)
+router.get('/public/demo', getPublicDemoTest);
+
+// Apply auth middleware to all remaining test routes
 router.use(authMiddleware);
 
 // Student & Admin accessible

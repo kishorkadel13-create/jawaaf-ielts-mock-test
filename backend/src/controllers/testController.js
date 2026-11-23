@@ -451,3 +451,92 @@ export const duplicateTest = async (req, res) => {
     res.status(500).json({ error: 'DatabaseError', message: 'Failed to duplicate test.' });
   }
 };
+
+// Public endpoint for free demo mock test (no auth required)
+export const getPublicDemoTest = async (req, res) => {
+  try {
+    // 1. Fetch any published mock test marked as demo by admin (most recently updated first)
+    let { data: test, error: testError } = await supabaseAdmin
+      .from('mock_tests')
+      .select('*')
+      .eq('is_published', true)
+      .eq('is_demo', true)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!test) {
+      // Fallback: look for test d0242c49-4214-4578-b7d2-1b10f3fdfca3 or any published test
+      const { data: fallback } = await supabaseAdmin
+        .from('mock_tests')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      test = fallback;
+    }
+
+    if (!test) {
+      return res.status(404).json({ error: 'NotFoundError', message: 'No demo test available.' });
+    }
+
+    // 2. Fetch nested sections
+    const { data: sections, error: secError } = await supabaseAdmin
+      .from('test_sections')
+      .select('*')
+      .eq('mock_test_id', test.id)
+      .order('order_no', { ascending: true });
+
+    if (secError) throw secError;
+
+    // 3. Fetch nested question groups & questions
+    const sectionIds = (sections || []).map(s => s.id);
+    let questionGroups = [];
+    let questions = [];
+
+    if (sectionIds.length > 0) {
+      const { data: groups, error: grpError } = await supabaseAdmin
+        .from('question_groups')
+        .select('*')
+        .in('section_id', sectionIds)
+        .order('order_no', { ascending: true });
+
+      if (grpError) throw grpError;
+      questionGroups = groups || [];
+
+      const groupIds = questionGroups.map(g => g.id);
+      if (groupIds.length > 0) {
+        const { data: qList, error: qError } = await supabaseAdmin
+          .from('questions')
+          .select('id, group_id, question_number, question_type, question_text, options_json, order_no, extra_data_json')
+          .in('group_id', groupIds)
+          .order('question_number', { ascending: true });
+
+        if (qError) throw qError;
+        questions = qList || [];
+      }
+    }
+
+    const nestedSections = (sections || []).map(sec => {
+      const secGroups = questionGroups
+        .filter(g => g.section_id === sec.id)
+        .map(grp => {
+          const grpQuestions = questions.filter(q => q.group_id === grp.id);
+          return { ...grp, questions: grpQuestions };
+        });
+      return {
+        ...sec,
+        question_groups: secGroups
+      };
+    });
+
+    return res.status(200).json({
+      ...test,
+      sections: nestedSections
+    });
+  } catch (err) {
+    console.error('getPublicDemoTest Error:', err);
+    res.status(500).json({ error: 'DatabaseError', message: 'Failed to fetch demo test.' });
+  }
+};

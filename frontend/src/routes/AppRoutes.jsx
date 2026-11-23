@@ -19,6 +19,7 @@ const loadSettingsPage = () => import('../pages/SettingsPage');
 const loadAccessRequestPage = () => import('../pages/AccessRequestPage');
 const loadExamInterface = () => import('../pages/ExamInterface');
 const loadResultPage = () => import('../pages/ResultPage');
+const loadDemoResultPage = () => import('../pages/DemoResultPage');
 const loadWritingTask1FeedbackPage = () => import('../pages/feedback/writing-task-1');
 const loadWritingTask2FeedbackPage = () => import('../pages/feedback/writing-task-2');
 const loadTFNGMasteryPage = () => import('../pages/mastery/TFNGMasteryPage');
@@ -53,6 +54,7 @@ const SettingsPage = lazy(loadSettingsPage);
 const AccessRequestPage = lazy(loadAccessRequestPage);
 const ExamInterface = lazy(loadExamInterface);
 const ResultPage = lazy(loadResultPage);
+const DemoResultPage = lazy(loadDemoResultPage);
 const WritingTask1FeedbackPage = lazy(loadWritingTask1FeedbackPage);
 const WritingTask2FeedbackPage = lazy(loadWritingTask2FeedbackPage);
 const TFNGMasteryPage = lazy(loadTFNGMasteryPage);
@@ -97,6 +99,8 @@ export default function AppRoutes() {
       {/* Public Guest Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/demo-exam" element={<ExamInterface />} />
+      <Route path="/demo-result" element={<DemoResultPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
