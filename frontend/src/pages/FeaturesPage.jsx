@@ -301,11 +301,11 @@ export default function FeaturesPage() {
                 {/* Right Content: Mascot Image (4 cols on lg) */}
                 <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
                   <div className="relative group">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EE6055]/30 via-blue-400/20 to-transparent blur-2xl transform group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EE6055]/20 via-blue-400/15 to-transparent blur-3xl transform group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
                     <img
-                      src="/images/feedback/writing-feedback-overall-mascot.png"
+                      src="/images/feedback/writing-feedback-overall-mascot-natural.png"
                       alt="Jawaaf IELTS Mascot"
-                      className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.6)] select-none group-hover:scale-105 transition-transform duration-500"
+                      className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_25px_40px_rgba(0,0,0,0.4)] select-none group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 </div>
