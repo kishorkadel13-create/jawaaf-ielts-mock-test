@@ -1240,49 +1240,64 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Right Column: Putalisadak Office Card with Spacious, Natural JCA Building (7 of 12 columns) */}
-              <div className="lg:col-span-7 relative rounded-3xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-6 sm:p-8 lg:p-9 text-white shadow-2xl border border-white/10 flex flex-col justify-between overflow-hidden min-h-[380px] sm:min-h-[420px]">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center h-full">
+              {/* Right Column: Putalisadak Office Card with Seamless Full-Bleed Building Integration */}
+              <div className="lg:col-span-7 relative rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[400px] sm:min-h-[440px] flex flex-col justify-between border border-white/10">
+                
+                {/* Building Photo - Integrated Full-Bleed (Flush to Top, Right, Bottom with soft gradient blend) */}
+                <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
+                  {/* Left-edge soft gradient fade to blend building into navy blue background */}
+                  <div className="hidden sm:block absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/40 to-transparent z-10 pointer-events-none" />
                   
-                  {/* Office Info (Takes 6 of 12 inner cols) */}
-                  <div className="sm:col-span-6 space-y-3.5">
+                  <img
+                    src="/images/payment%20modes/jca.png"
+                    alt="Jawaaf Consulting Academy Putalisadak Office Building"
+                    className="w-full h-full object-cover object-top sm:object-center hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Left Content (Text & Contact Info) */}
+                <div className="relative z-10 p-6 sm:p-8 lg:p-9 sm:w-[54%] lg:w-[52%] flex flex-col justify-between h-full space-y-4">
+                  <div>
+                    {/* Header */}
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
-                        <MapPin className="h-4 w-4 text-white" />
+                      <div className="w-9 h-9 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
+                        <MapPin className="h-5 w-5 text-white" />
                       </div>
-                      <h4 className="font-black text-base sm:text-lg lg:text-xl text-white tracking-tight leading-tight">
+                      <h4 className="font-black text-lg sm:text-xl lg:text-2xl text-white tracking-tight leading-tight">
                         Visit Our Putalisadak Office
                       </h4>
                     </div>
 
-                    <div className="w-12 h-1 bg-[#EE6055] rounded-full mt-1.5 mb-2.5"></div>
+                    <div className="w-14 h-1 bg-[#EE6055] rounded-full mt-2 mb-3"></div>
 
-                    <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed">
+                    <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed max-w-sm">
                       Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
                     </p>
 
-                    <div className="border-t border-white/15 my-3"></div>
+                    <div className="border-t border-white/15 my-3.5"></div>
 
-                    <div className="space-y-2.5 text-xs sm:text-[13px]">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Phone className="h-3 w-3" />
+                    {/* Contact Rows */}
+                    <div className="space-y-3 text-xs sm:text-[13px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Phone className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-semibold text-white tracking-wide">
                           01-4467115 | +977-9800000000
                         </span>
                       </div>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Clock className="h-3 w-3" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Clock className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-medium text-blue-100">
                           Sunday – Friday: 7:00 AM – 6:00 PM
                         </span>
                       </div>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Building2 className="h-3 w-3" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Building2 className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-medium text-blue-100">
                           Silent Computer Lab &amp; Physical Speaking Rooms
@@ -1290,47 +1305,46 @@ export default function PricingPage() {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* JCA Building Photo (Takes 6 of 12 inner cols - Wide, Grand & Naturally Proportioned) */}
-                  <div className="sm:col-span-6 relative h-64 sm:h-72 md:h-80 lg:h-[330px] rounded-2xl overflow-hidden border border-white/20 shadow-2xl group">
-                    <img
-                      src="/images/payment%20modes/jca.png"
-                      alt="Jawaaf Consulting Academy Putalisadak Building"
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
+                {/* Bottom Curved Wave Ribbon across building bottom: Quality course Quality Career */}
+                <div className="absolute bottom-0 right-0 w-full sm:w-[90%] max-w-[500px] h-[72px] sm:h-[84px] pointer-events-none select-none z-20">
+                  <svg viewBox="0 0 500 84" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    {/* Orange accent curve */}
+                    <path
+                      d="M 10 84 C 90 84, 140 55, 210 48 C 280 41, 380 44, 500 20 L 500 28 C 380 52, 280 49, 210 56 C 140 63, 90 84, 10 84 Z"
+                      fill="#EE6055"
                     />
-                  </div>
+                    {/* Dark navy background curve */}
+                    <path
+                      d="M 50 84 C 130 84, 180 62, 230 55 C 300 48, 400 50, 500 26 L 500 84 L 50 84 Z"
+                      fill="#0B2558"
+                    />
+                    {/* Script text: Quality course Quality Career */}
+                    <text
+                      x="250"
+                      y="60"
+                      fill="#FFFFFF"
+                      fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
+                      fontStyle="italic"
+                      fontWeight="700"
+                      fontSize="18"
+                      letterSpacing="0.02em"
+                    >
+                      Quality course Quality Career
+                    </text>
+                    {/* White underline curve under Quality course Quality Career */}
+                    <path
+                      d="M 250 68 Q 350 73, 450 60"
+                      stroke="#FFFFFF"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      fill="none"
+                      opacity="0.85"
+                    />
+                  </svg>
                 </div>
               </div>
-            </div>
-
-            {/* Bottom-Right Curved Ribbon: Quality course Quality Career */}
-            <div className="hidden sm:block absolute bottom-0 right-0 w-[420px] md:w-[480px] h-[60px] md:h-[70px] pointer-events-none select-none z-20">
-              <svg viewBox="0 0 480 70" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                {/* Orange accent curve */}
-                <path
-                  d="M 10 70 C 80 70, 130 48, 190 42 C 250 36, 340 40, 480 18 L 480 25 C 340 47, 250 43, 190 49 C 130 55, 80 70, 10 70 Z"
-                  fill="#EE6055"
-                />
-                {/* Dark navy base ribbon */}
-                <path
-                  d="M 50 70 C 120 70, 160 53, 210 48 C 270 42, 360 44, 480 23 L 480 70 L 50 70 Z"
-                  fill="#0B2558"
-                />
-                {/* Script slogan */}
-                <text
-                  x="225"
-                  y="55"
-                  fill="#FFFFFF"
-                  fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
-                  fontStyle="italic"
-                  fontWeight="700"
-                  fontSize="16"
-                  letterSpacing="0.03em"
-                >
-                  Quality course Quality Career
-                </text>
-              </svg>
             </div>
 
           </div>
