@@ -1133,28 +1133,17 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO NEW DESIGN) ── */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20" aria-label="Payment Methods and Putalisadak Office">
-          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-10 lg:p-12 xl:p-14 overflow-hidden min-h-[500px]">
+        {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO REFERENCE DESIGN) ── */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16" aria-label="Payment Methods and Putalisadak Office">
+          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-6 sm:p-8 lg:p-10 xl:p-12 overflow-hidden min-h-[480px]">
 
-{/* Full-bleed Himalaya & Pagoda Temples Background - Spans to the Very Top of Container */}
-            <div className="absolute top-0 right-0 w-[65%] max-w-[860px] h-[340px] sm:h-[400px] md:h-[460px] pointer-events-none select-none z-0 overflow-hidden flex justify-end">
-              {/* Left-edge smooth fade into white container background */}
-              <div className="absolute inset-y-0 left-0 w-36 sm:w-48 bg-gradient-to-r from-white via-white/60 to-transparent z-10 pointer-events-none" />
-              {/* Top soft blend to prevent harsh border */}
-              <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/30 to-transparent z-10 pointer-events-none" />
-              
-              <img
-                src="/images/payment%20modes/himal_temple_background.png"
-                alt="Nepal Himalaya and Pagoda Temples"
-                className="w-full h-full object-cover sm:object-contain object-top opacity-95"
-              />
-            </div>
+            {/* Soft Ambient Sky Glow at Top Right */}
+            <div className="absolute top-0 right-0 w-[55%] h-56 bg-gradient-to-b from-sky-50/70 via-sky-50/20 to-transparent pointer-events-none z-0" />
 
-            {/* Main Content Grid: Balanced 5-Col (Payment) vs 7-Col (Office & Spacious Building) */}
+            {/* Main Content Grid: Balanced 5-Col (Payment) vs 7-Col (Office & Building) */}
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-end">
 
-              {/* Left Column: Payment Gateways (Takes 5 of 12 columns - Compact & Clean) */}
+              {/* Left Column: Payment Gateways (5 of 12 columns) */}
               <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
                 <div>
                   {/* Badge */}
@@ -1173,7 +1162,7 @@ export default function PricingPage() {
                     We accept all popular payment gateways in Nepal. Pay online in seconds or walk into our Putalisadak Academy.
                   </p>
 
-                  {/* 6 Payment Cards (2-column grid for clean spacious readability) */}
+                  {/* 6 Payment Cards (2 columns x 3 rows) */}
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       {
@@ -1245,14 +1234,42 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Right Column: Putalisadak Office Card (Left) & Building (Right) - Naturally Blended */}
-              <div className="lg:col-span-7 relative pt-14 sm:pt-16 md:pt-20">
+              {/* Right Column: Unified Seamless Putalisadak Card & Integrated Building */}
+              <div className="lg:col-span-7 relative pt-12 sm:pt-14 md:pt-16">
                 
-                {/* Seamless Duo Container */}
-                <div className="relative flex flex-col sm:flex-row items-stretch min-h-[380px] sm:min-h-[420px]">
+                {/* Himalaya & Temples Background - Docked seamlessly right behind the card's top edge */}
+                <div className="absolute top-0 right-0 w-full max-w-[620px] h-[130px] sm:h-[150px] md:h-[170px] pointer-events-none select-none z-0 overflow-hidden flex justify-end items-end">
+                  {/* Left-edge smooth fade into white container background */}
+                  <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
                   
-                  {/* Part 1: Left Dark Blue Office Information Card */}
-                  <div className="relative z-20 w-full sm:w-[56%] lg:w-[55%] rounded-3xl sm:rounded-l-3xl sm:rounded-r-xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-6 sm:p-7 lg:p-8 text-white shadow-2xl flex flex-col justify-between border border-white/10 sm:border-r-0">
+                  <img
+                    src="/images/payment%20modes/himal_temple_background.png"
+                    alt="Nepal Himalaya and Pagoda Temples"
+                    className="w-full h-full object-contain object-bottom-right opacity-95 [mask-image:linear-gradient(to_bottom,black_65%,transparent_100%)]"
+                  />
+                </div>
+
+                {/* ONE SINGLE UNIFIED DARK BLUE CARD (No seams, no split boxes) */}
+                <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[380px] sm:min-h-[420px] flex flex-col justify-between">
+
+                  {/* Building Photo Integrated Full-Bleed on the Right Side */}
+                  <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
+                    {/* Seamless gradient fade: Left edge dissolves into the dark blue card smoothly */}
+                    <div className="hidden sm:block absolute inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/60 to-transparent z-10 pointer-events-none" />
+                    
+                    {/* Top sky ambient blend to harmonize with himalaya background */}
+                    <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0B2558]/30 via-transparent to-transparent z-10 pointer-events-none" />
+
+                    <img
+                      src="/images/payment%20modes/jca.png"
+                      alt="Jawaaf Consulting Academy Putalisadak Office Building"
+                      className="w-full h-full object-cover object-[62%_center] hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  {/* Left Content (Text & Contact Info) */}
+                  <div className="relative z-10 p-6 sm:p-7 lg:p-8 sm:w-[54%] lg:w-[52%] flex flex-col justify-between h-full space-y-4">
                     <div>
                       {/* Header */}
                       <div className="flex items-center gap-2.5">
@@ -1302,24 +1319,8 @@ export default function PricingPage() {
                     </div>
                   </div>
 
-                  {/* Part 2: Right Building Photo (Stands freely under open himalaya sky) */}
-                  <div className="relative z-10 w-full sm:w-[48%] lg:w-[49%] sm:-ml-3 h-72 sm:h-auto min-h-[340px] sm:min-h-full rounded-2xl sm:rounded-r-3xl overflow-hidden shadow-xl sm:shadow-none">
-                    {/* Soft gradient fade on left edge to blend seamlessly into dark blue card */}
-                    <div className="hidden sm:block absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#0E2E6B]/90 via-[#0E2E6B]/30 to-transparent z-10 pointer-events-none" />
-                    
-                    {/* Soft fade at top of building sky so it dissolves into himalaya background */}
-                    <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-sky-100/40 via-transparent to-transparent z-10 pointer-events-none" />
-
-                    <img
-                      src="/images/payment%20modes/jca.png"
-                      alt="Jawaaf Consulting Academy Putalisadak Office Building"
-                      className="w-full h-full object-cover object-top sm:object-center hover:scale-105 transition-transform duration-700"
-                      loading="lazy"
-                    />
-                  </div>
-
                   {/* Bottom Curved Wave Ribbon across building bottom: Quality course Quality Career */}
-                  <div className="absolute bottom-0 right-0 w-full sm:w-[85%] max-w-[500px] h-[72px] sm:h-[84px] pointer-events-none select-none z-30">
+                  <div className="absolute bottom-0 right-0 w-full sm:w-[85%] max-w-[500px] h-[72px] sm:h-[84px] pointer-events-none select-none z-20">
                     <svg viewBox="0 0 500 84" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                       {/* Orange accent curve */}
                       <path
@@ -1355,7 +1356,6 @@ export default function PricingPage() {
                       />
                     </svg>
                   </div>
-
                 </div>
               </div>
             </div>
