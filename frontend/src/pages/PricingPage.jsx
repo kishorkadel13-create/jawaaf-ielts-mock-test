@@ -1136,19 +1136,13 @@ export default function PricingPage() {
         {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO NEW DESIGN) ── */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20" aria-label="Payment Methods and Putalisadak Office">
           <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-10 lg:p-12 xl:p-14 overflow-hidden min-h-[500px]">
-            
-            {/* Himalaya & Temples Background Illustration at Top Right */}
-            <div className="absolute top-0 right-0 w-[55%] max-w-[720px] h-36 sm:h-48 md:h-60 pointer-events-none select-none z-0 overflow-hidden flex justify-end">
-              <img
-                src="/images/payment%20modes/himal_temple_background.png"
-                alt="Nepal Himalaya and Pagoda Temples"
-                className="h-full w-auto object-contain object-right-top opacity-90"
-              />
-            </div>
+
+{/* Top-right sky backdrop handled above office card */}
+            <div className="absolute top-0 right-0 w-[60%] h-48 bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none z-0" />
 
             {/* Main Content Grid: Balanced 5-Col (Payment) vs 7-Col (Office & Spacious Building) */}
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
-              
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-end">
+
               {/* Left Column: Payment Gateways (Takes 5 of 12 columns - Compact & Clean) */}
               <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
                 <div>
@@ -1240,14 +1234,26 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Right Column: Putalisadak Office Card with Seamless Full-Bleed Building Integration */}
-              <div className="lg:col-span-7 relative rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[400px] sm:min-h-[440px] flex flex-col justify-between border border-white/10">
+              {/* Right Column: Putalisadak Office Card with Himalaya & Temples Background Directly Above Building */}
+              <div className="lg:col-span-7 relative pt-20 sm:pt-24 md:pt-28">
                 
+                {/* Himalaya & Temples Background Illustration - Anchored Directly Above Building & Office Card */}
+                <div className="absolute top-0 right-0 w-full max-w-[680px] h-24 sm:h-28 md:h-36 pointer-events-none select-none z-0 flex justify-end items-end">
+                  <img
+                    src="/images/payment%20modes/himal_temple_background.png"
+                    alt="Nepal Himalaya and Pagoda Temples"
+                    className="w-full h-full object-contain object-bottom-right"
+                  />
+                </div>
+
+                {/* Dark Blue Putalisadak Office Card */}
+                <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[400px] sm:min-h-[440px] flex flex-col justify-between border border-white/10">
+
                 {/* Building Photo - Integrated Full-Bleed (Flush to Top, Right, Bottom with soft gradient blend) */}
                 <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
                   {/* Left-edge soft gradient fade to blend building into navy blue background */}
                   <div className="hidden sm:block absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/40 to-transparent z-10 pointer-events-none" />
-                  
+
                   <img
                     src="/images/payment%20modes/jca.png"
                     alt="Jawaaf Consulting Academy Putalisadak Office Building"
@@ -1265,7 +1271,7 @@ export default function PricingPage() {
                         <MapPin className="h-5 w-5 text-white" />
                       </div>
                       <h4 className="font-black text-lg sm:text-xl lg:text-2xl text-white tracking-tight leading-tight">
-                        Visit Our Putalisadak Office
+                        Visit Our Putalisadak Office, New Plaza
                       </h4>
                     </div>
 
@@ -1284,7 +1290,7 @@ export default function PricingPage() {
                           <Phone className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-semibold text-white tracking-wide">
-                          01-4467115 | +977-9800000000
+                          01-4567115 | +977-9812311390
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1292,7 +1298,7 @@ export default function PricingPage() {
                           <Clock className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-medium text-blue-100">
-                          Sunday – Friday: 7:00 AM – 6:00 PM
+                          Sunday – Friday: 7:00 AM – 5:00 PM
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1346,6 +1352,7 @@ export default function PricingPage() {
                 </div>
               </div>
             </div>
+          </div>
 
           </div>
         </section>
