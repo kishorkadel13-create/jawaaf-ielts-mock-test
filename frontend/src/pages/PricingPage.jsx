@@ -1134,11 +1134,11 @@ export default function PricingPage() {
         </section>
 
         {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO NEW DESIGN) ── */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16" aria-label="Payment Methods and Putalisadak Office">
-          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-6 sm:p-8 lg:p-10 overflow-hidden">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20" aria-label="Payment Methods and Putalisadak Office">
+          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-10 lg:p-12 xl:p-14 overflow-hidden min-h-[500px]">
             
             {/* Himalaya & Temples Background Illustration at Top Right */}
-            <div className="absolute top-0 right-0 w-[55%] max-w-[680px] h-32 sm:h-44 md:h-52 pointer-events-none select-none z-0 overflow-hidden flex justify-end">
+            <div className="absolute top-0 right-0 w-[55%] max-w-[720px] h-36 sm:h-48 md:h-60 pointer-events-none select-none z-0 overflow-hidden flex justify-end">
               <img
                 src="/images/payment%20modes/himal_temple_background.png"
                 alt="Nepal Himalaya and Pagoda Temples"
@@ -1146,30 +1146,30 @@ export default function PricingPage() {
               />
             </div>
 
-            {/* Main Content Grid */}
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+            {/* Main Content Grid: Balanced 5-Col (Payment) vs 7-Col (Office & Spacious Building) */}
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
               
-              {/* Left Column: Payment Gateways */}
-              <div className="lg:col-span-7 flex flex-col justify-between">
+              {/* Left Column: Payment Gateways (Takes 5 of 12 columns - Compact & Clean) */}
+              <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
                 <div>
                   {/* Badge */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#EE6055]/30 bg-[#EE6055]/10 text-[#EE6055] text-[11px] sm:text-xs font-black uppercase tracking-wider mb-3.5 shadow-sm">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#EE6055]/30 bg-[#EE6055]/10 text-[#EE6055] text-[11px] sm:text-xs font-black uppercase tracking-wider mb-4 shadow-sm">
                     <CreditCard className="h-3.5 w-3.5 text-[#EE6055]" />
                     <span>Multiple Payment Modes</span>
                   </div>
 
                   {/* Heading */}
-                  <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-[#05162E] tracking-tight leading-snug mb-2.5">
+                  <h3 className="text-2xl sm:text-3xl lg:text-[32px] font-black text-[#05162E] tracking-tight leading-snug mb-3">
                     Fast &amp; Convenient <span className="text-[#EE6055]">Payment</span> Across Nepal
                   </h3>
 
                   {/* Subtitle */}
-                  <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed max-w-xl mb-6">
+                  <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed max-w-md mb-6">
                     We accept all popular payment gateways in Nepal. Pay online in seconds or walk into our Putalisadak Academy.
                   </p>
 
-                  {/* 6 Payment Cards (3 columns x 2 rows) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* 6 Payment Cards (2-column grid for clean spacious readability) */}
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       {
                         name: 'eSewa',
@@ -1204,9 +1204,9 @@ export default function PricingPage() {
                     ].map((m) => (
                       <div
                         key={m.name}
-                        className="p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:border-[#1E3A6E]/40 shadow-sm hover:shadow-md transition-all flex items-center gap-3"
+                        className="p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:border-[#1E3A6E]/40 shadow-sm hover:shadow-md transition-all flex items-center gap-2.5 sm:gap-3"
                       >
-                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center p-0.5">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center p-0.5">
                           <img
                             src={m.icon}
                             alt={m.name}
@@ -1228,7 +1228,7 @@ export default function PricingPage() {
                 </div>
 
                 {/* Safe • Secure • Hassle-Free Bar */}
-                <div className="flex items-center gap-2.5 pt-5 sm:pt-6">
+                <div className="flex items-center gap-2.5 pt-2">
                   <span className="text-[#EE6055] font-semibold text-xs tracking-tighter">──→</span>
                   <div className="flex items-center gap-2 text-xs sm:text-sm">
                     <span className="font-black text-[#05162E]">Safe</span>
@@ -1240,30 +1240,30 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Right Column: Putalisadak Office Card with JCA Building */}
-              <div className="lg:col-span-5 relative rounded-3xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-5 sm:p-6 lg:p-7 text-white shadow-2xl border border-white/10 flex flex-col justify-between overflow-hidden">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+              {/* Right Column: Putalisadak Office Card with Spacious, Natural JCA Building (7 of 12 columns) */}
+              <div className="lg:col-span-7 relative rounded-3xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-6 sm:p-8 lg:p-9 text-white shadow-2xl border border-white/10 flex flex-col justify-between overflow-hidden min-h-[380px] sm:min-h-[420px]">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center h-full">
                   
-                  {/* Office Info */}
-                  <div className="sm:col-span-7 space-y-3">
+                  {/* Office Info (Takes 6 of 12 inner cols) */}
+                  <div className="sm:col-span-6 space-y-3.5">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
                         <MapPin className="h-4 w-4 text-white" />
                       </div>
-                      <h4 className="font-black text-base sm:text-lg text-white tracking-tight leading-tight">
+                      <h4 className="font-black text-base sm:text-lg lg:text-xl text-white tracking-tight leading-tight">
                         Visit Our Putalisadak Office
                       </h4>
                     </div>
 
-                    <div className="w-12 h-1 bg-[#EE6055] rounded-full mt-1 mb-2"></div>
+                    <div className="w-12 h-1 bg-[#EE6055] rounded-full mt-1.5 mb-2.5"></div>
 
-                    <p className="text-[11px] sm:text-xs text-blue-100/90 leading-relaxed">
+                    <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed">
                       Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
                     </p>
 
-                    <div className="border-t border-white/15 my-2.5"></div>
+                    <div className="border-t border-white/15 my-3"></div>
 
-                    <div className="space-y-2 text-[11px] sm:text-xs">
+                    <div className="space-y-2.5 text-xs sm:text-[13px]">
                       <div className="flex items-center gap-2.5">
                         <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
                           <Phone className="h-3 w-3" />
@@ -1291,12 +1291,12 @@ export default function PricingPage() {
                     </div>
                   </div>
 
-                  {/* JCA Building Photo */}
-                  <div className="sm:col-span-5 relative h-48 sm:h-56 md:h-60 rounded-2xl overflow-hidden border border-white/20 shadow-xl group">
+                  {/* JCA Building Photo (Takes 6 of 12 inner cols - Wide, Grand & Naturally Proportioned) */}
+                  <div className="sm:col-span-6 relative h-64 sm:h-72 md:h-80 lg:h-[330px] rounded-2xl overflow-hidden border border-white/20 shadow-2xl group">
                     <img
                       src="/images/payment%20modes/jca.png"
                       alt="Jawaaf Consulting Academy Putalisadak Building"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
                   </div>
@@ -1305,27 +1305,27 @@ export default function PricingPage() {
             </div>
 
             {/* Bottom-Right Curved Ribbon: Quality course Quality Career */}
-            <div className="hidden sm:block absolute bottom-0 right-0 w-[380px] md:w-[460px] h-[55px] md:h-[65px] pointer-events-none select-none z-20">
-              <svg viewBox="0 0 460 65" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            <div className="hidden sm:block absolute bottom-0 right-0 w-[420px] md:w-[480px] h-[60px] md:h-[70px] pointer-events-none select-none z-20">
+              <svg viewBox="0 0 480 70" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                 {/* Orange accent curve */}
                 <path
-                  d="M 10 65 C 80 65, 120 44, 180 38 C 240 32, 320 36, 460 16 L 460 23 C 320 43, 240 39, 180 45 C 120 51, 80 65, 10 65 Z"
+                  d="M 10 70 C 80 70, 130 48, 190 42 C 250 36, 340 40, 480 18 L 480 25 C 340 47, 250 43, 190 49 C 130 55, 80 70, 10 70 Z"
                   fill="#EE6055"
                 />
                 {/* Dark navy base ribbon */}
                 <path
-                  d="M 50 65 C 110 65, 150 49, 200 44 C 260 38, 340 40, 460 21 L 460 65 L 50 65 Z"
+                  d="M 50 70 C 120 70, 160 53, 210 48 C 270 42, 360 44, 480 23 L 480 70 L 50 70 Z"
                   fill="#0B2558"
                 />
                 {/* Script slogan */}
                 <text
-                  x="215"
-                  y="52"
+                  x="225"
+                  y="55"
                   fill="#FFFFFF"
                   fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
                   fontStyle="italic"
                   fontWeight="700"
-                  fontSize="15"
+                  fontSize="16"
                   letterSpacing="0.03em"
                 >
                   Quality course Quality Career
