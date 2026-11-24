@@ -1137,8 +1137,19 @@ export default function PricingPage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20" aria-label="Payment Methods and Putalisadak Office">
           <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-10 lg:p-12 xl:p-14 overflow-hidden min-h-[500px]">
 
-{/* Top-right sky backdrop handled above office card */}
-            <div className="absolute top-0 right-0 w-[60%] h-48 bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none z-0" />
+{/* Full-bleed Himalaya & Pagoda Temples Background - Spans to the Very Top of Container */}
+            <div className="absolute top-0 right-0 w-[65%] max-w-[860px] h-[340px] sm:h-[400px] md:h-[460px] pointer-events-none select-none z-0 overflow-hidden flex justify-end">
+              {/* Left-edge smooth fade into white container background */}
+              <div className="absolute inset-y-0 left-0 w-36 sm:w-48 bg-gradient-to-r from-white via-white/60 to-transparent z-10 pointer-events-none" />
+              {/* Top soft blend to prevent harsh border */}
+              <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/30 to-transparent z-10 pointer-events-none" />
+              
+              <img
+                src="/images/payment%20modes/himal_temple_background.png"
+                alt="Nepal Himalaya and Pagoda Temples"
+                className="w-full h-full object-cover sm:object-contain object-top opacity-95"
+              />
+            </div>
 
             {/* Main Content Grid: Balanced 5-Col (Payment) vs 7-Col (Office & Spacious Building) */}
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-end">
@@ -1237,22 +1248,18 @@ export default function PricingPage() {
               {/* Right Column: Putalisadak Office Card with Himalaya & Temples Background Directly Above Building */}
               <div className="lg:col-span-7 relative pt-20 sm:pt-24 md:pt-28">
                 
-                {/* Himalaya & Temples Background Illustration - Anchored Directly Above Building & Office Card */}
-                <div className="absolute top-0 right-0 w-full max-w-[680px] h-24 sm:h-28 md:h-36 pointer-events-none select-none z-0 flex justify-end items-end">
-                  <img
-                    src="/images/payment%20modes/himal_temple_background.png"
-                    alt="Nepal Himalaya and Pagoda Temples"
-                    className="w-full h-full object-contain object-bottom-right"
-                  />
-                </div>
+
 
                 {/* Dark Blue Putalisadak Office Card */}
                 <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[400px] sm:min-h-[440px] flex flex-col justify-between border border-white/10">
 
-                {/* Building Photo - Integrated Full-Bleed (Flush to Top, Right, Bottom with soft gradient blend) */}
+                {/* Building Photo - Integrated Full-Bleed with Natural Sky & Navy Blending */}
                 <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
                   {/* Left-edge soft gradient fade to blend building into navy blue background */}
                   <div className="hidden sm:block absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/40 to-transparent z-10 pointer-events-none" />
+                  
+                  {/* Top sky ambient blend to harmonize with himalaya background above */}
+                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-sky-200/20 via-transparent to-transparent z-10 pointer-events-none" />
 
                   <img
                     src="/images/payment%20modes/jca.png"
