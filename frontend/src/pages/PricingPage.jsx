@@ -1245,121 +1245,120 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Right Column: Putalisadak Office Card with Himalaya & Temples Background Directly Above Building */}
-              <div className="lg:col-span-7 relative pt-20 sm:pt-24 md:pt-28">
+              {/* Right Column: Putalisadak Office Card (Left) & Building (Right) - Naturally Blended */}
+              <div className="lg:col-span-7 relative pt-14 sm:pt-16 md:pt-20">
                 
-
-
-                {/* Dark Blue Putalisadak Office Card */}
-                <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[400px] sm:min-h-[440px] flex flex-col justify-between border border-white/10">
-
-                {/* Building Photo - Integrated Full-Bleed with Natural Sky & Navy Blending */}
-                <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
-                  {/* Left-edge soft gradient fade to blend building into navy blue background */}
-                  <div className="hidden sm:block absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/40 to-transparent z-10 pointer-events-none" />
+                {/* Seamless Duo Container */}
+                <div className="relative flex flex-col sm:flex-row items-stretch min-h-[380px] sm:min-h-[420px]">
                   
-                  {/* Top sky ambient blend to harmonize with himalaya background above */}
-                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-sky-200/20 via-transparent to-transparent z-10 pointer-events-none" />
-
-                  <img
-                    src="/images/payment%20modes/jca.png"
-                    alt="Jawaaf Consulting Academy Putalisadak Office Building"
-                    className="w-full h-full object-cover object-top sm:object-center hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Left Content (Text & Contact Info) */}
-                <div className="relative z-10 p-6 sm:p-8 lg:p-9 sm:w-[54%] lg:w-[52%] flex flex-col justify-between h-full space-y-4">
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
-                        <MapPin className="h-5 w-5 text-white" />
-                      </div>
-                      <h4 className="font-black text-lg sm:text-xl lg:text-2xl text-white tracking-tight leading-tight">
-                        Visit Our Putalisadak Office, New Plaza
-                      </h4>
-                    </div>
-
-                    <div className="w-14 h-1 bg-[#EE6055] rounded-full mt-2 mb-3"></div>
-
-                    <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed max-w-sm">
-                      Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
-                    </p>
-
-                    <div className="border-t border-white/15 my-3.5"></div>
-
-                    {/* Contact Rows */}
-                    <div className="space-y-3 text-xs sm:text-[13px]">
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Phone className="h-3.5 w-3.5" />
+                  {/* Part 1: Left Dark Blue Office Information Card */}
+                  <div className="relative z-20 w-full sm:w-[56%] lg:w-[55%] rounded-3xl sm:rounded-l-3xl sm:rounded-r-xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-6 sm:p-7 lg:p-8 text-white shadow-2xl flex flex-col justify-between border border-white/10 sm:border-r-0">
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
+                          <MapPin className="h-5 w-5 text-white" />
                         </div>
-                        <span className="font-semibold text-white tracking-wide">
-                          01-4567115 | +977-9812311390
-                        </span>
+                        <h4 className="font-black text-lg sm:text-xl lg:text-2xl text-white tracking-tight leading-tight">
+                          Visit Our Putalisadak Office, New Plaza
+                        </h4>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Clock className="h-3.5 w-3.5" />
+
+                      <div className="w-14 h-1 bg-[#EE6055] rounded-full mt-2 mb-3"></div>
+
+                      <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed max-w-sm">
+                        Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
+                      </p>
+
+                      <div className="border-t border-white/15 my-3.5"></div>
+
+                      {/* Contact Rows */}
+                      <div className="space-y-3 text-xs sm:text-[13px]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                            <Phone className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="font-semibold text-white tracking-wide">
+                            01-4567115 | +977-9812311390
+                          </span>
                         </div>
-                        <span className="font-medium text-blue-100">
-                          Sunday – Friday: 7:00 AM – 5:00 PM
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
-                          <Building2 className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                            <Clock className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="font-medium text-blue-100">
+                            Sunday – Friday: 7:00 AM – 5:00 PM
+                          </span>
                         </div>
-                        <span className="font-medium text-blue-100">
-                          Silent Computer Lab &amp; Physical Speaking Rooms
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                            <Building2 className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="font-medium text-blue-100">
+                            Silent Computer Lab &amp; Physical Speaking Rooms
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom Curved Wave Ribbon across building bottom: Quality course Quality Career */}
-                <div className="absolute bottom-0 right-0 w-full sm:w-[90%] max-w-[500px] h-[72px] sm:h-[84px] pointer-events-none select-none z-20">
-                  <svg viewBox="0 0 500 84" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                    {/* Orange accent curve */}
-                    <path
-                      d="M 10 84 C 90 84, 140 55, 210 48 C 280 41, 380 44, 500 20 L 500 28 C 380 52, 280 49, 210 56 C 140 63, 90 84, 10 84 Z"
-                      fill="#EE6055"
+                  {/* Part 2: Right Building Photo (Stands freely under open himalaya sky) */}
+                  <div className="relative z-10 w-full sm:w-[48%] lg:w-[49%] sm:-ml-3 h-72 sm:h-auto min-h-[340px] sm:min-h-full rounded-2xl sm:rounded-r-3xl overflow-hidden shadow-xl sm:shadow-none">
+                    {/* Soft gradient fade on left edge to blend seamlessly into dark blue card */}
+                    <div className="hidden sm:block absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#0E2E6B]/90 via-[#0E2E6B]/30 to-transparent z-10 pointer-events-none" />
+                    
+                    {/* Soft fade at top of building sky so it dissolves into himalaya background */}
+                    <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-sky-100/40 via-transparent to-transparent z-10 pointer-events-none" />
+
+                    <img
+                      src="/images/payment%20modes/jca.png"
+                      alt="Jawaaf Consulting Academy Putalisadak Office Building"
+                      className="w-full h-full object-cover object-top sm:object-center hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
                     />
-                    {/* Dark navy background curve */}
-                    <path
-                      d="M 50 84 C 130 84, 180 62, 230 55 C 300 48, 400 50, 500 26 L 500 84 L 50 84 Z"
-                      fill="#0B2558"
-                    />
-                    {/* Script text: Quality course Quality Career */}
-                    <text
-                      x="250"
-                      y="60"
-                      fill="#FFFFFF"
-                      fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
-                      fontStyle="italic"
-                      fontWeight="700"
-                      fontSize="18"
-                      letterSpacing="0.02em"
-                    >
-                      Quality course Quality Career
-                    </text>
-                    {/* White underline curve under Quality course Quality Career */}
-                    <path
-                      d="M 250 68 Q 350 73, 450 60"
-                      stroke="#FFFFFF"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      fill="none"
-                      opacity="0.85"
-                    />
-                  </svg>
+                  </div>
+
+                  {/* Bottom Curved Wave Ribbon across building bottom: Quality course Quality Career */}
+                  <div className="absolute bottom-0 right-0 w-full sm:w-[85%] max-w-[500px] h-[72px] sm:h-[84px] pointer-events-none select-none z-30">
+                    <svg viewBox="0 0 500 84" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      {/* Orange accent curve */}
+                      <path
+                        d="M 10 84 C 90 84, 140 55, 210 48 C 280 41, 380 44, 500 20 L 500 28 C 380 52, 280 49, 210 56 C 140 63, 90 84, 10 84 Z"
+                        fill="#EE6055"
+                      />
+                      {/* Dark navy background curve */}
+                      <path
+                        d="M 50 84 C 130 84, 180 62, 230 55 C 300 48, 400 50, 500 26 L 500 84 L 50 84 Z"
+                        fill="#0B2558"
+                      />
+                      {/* Script text: Quality course Quality Career */}
+                      <text
+                        x="250"
+                        y="60"
+                        fill="#FFFFFF"
+                        fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
+                        fontStyle="italic"
+                        fontWeight="700"
+                        fontSize="18"
+                        letterSpacing="0.02em"
+                      >
+                        Quality course Quality Career
+                      </text>
+                      {/* White underline curve under Quality course Quality Career */}
+                      <path
+                        d="M 250 68 Q 350 73, 450 60"
+                        stroke="#FFFFFF"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        fill="none"
+                        opacity="0.85"
+                      />
+                    </svg>
+                  </div>
+
                 </div>
               </div>
             </div>
-          </div>
 
           </div>
         </section>
