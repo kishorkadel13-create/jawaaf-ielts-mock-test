@@ -1133,63 +1133,206 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-          <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-md">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#EE6055] bg-[#EE6055]/10 px-3 py-1 rounded-full border border-[#EE6055]/20">
-                  Multiple Payment Modes
-                </span>
-                <h3 className="text-xl sm:text-2xl font-black text-[#05162E] tracking-tight mt-3 mb-2">
-                  Fast &amp; Convenient Payment Across Nepal
-                </h3>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
-                  We accept all popular payment gateways in Nepal. Pay online in seconds or walk into our Putalisadak Academy.
-                </p>
+        {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO NEW DESIGN) ── */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16" aria-label="Payment Methods and Putalisadak Office">
+          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-6 sm:p-8 lg:p-10 overflow-hidden">
+            
+            {/* Himalaya & Temples Background Illustration at Top Right */}
+            <div className="absolute top-0 right-0 w-[55%] max-w-[680px] h-32 sm:h-44 md:h-52 pointer-events-none select-none z-0 overflow-hidden flex justify-end">
+              <img
+                src="/images/payment%20modes/himal_temple_background.png"
+                alt="Nepal Himalaya and Pagoda Temples"
+                className="h-full w-auto object-contain object-right-top opacity-90"
+              />
+            </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {[
-                    { name: 'eSewa', sub: 'Instant Digital Wallet' },
-                    { name: 'Khalti', sub: 'Instant Wallet' },
-                    { name: 'Fonepay QR', sub: 'Any Mobile Banking' },
-                    { name: 'Bank Transfer', sub: 'All Nepali Banks' },
-                    { name: 'Putalisadak Cash', sub: 'At Front Desk' },
-                    { name: 'Debit / Credit Card', sub: 'At Office POS' }
-                  ].map((m) => (
-                    <div key={m.name} className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-left">
-                      <p className="font-extrabold text-xs text-[#05162E]">{m.name}</p>
-                      <p className="text-[10px] text-slate-500">{m.sub}</p>
-                    </div>
-                  ))}
+            {/* Main Content Grid */}
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+              
+              {/* Left Column: Payment Gateways */}
+              <div className="lg:col-span-7 flex flex-col justify-between">
+                <div>
+                  {/* Badge */}
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#EE6055]/30 bg-[#EE6055]/10 text-[#EE6055] text-[11px] sm:text-xs font-black uppercase tracking-wider mb-3.5 shadow-sm">
+                    <CreditCard className="h-3.5 w-3.5 text-[#EE6055]" />
+                    <span>Multiple Payment Modes</span>
+                  </div>
+
+                  {/* Heading */}
+                  <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-[#05162E] tracking-tight leading-snug mb-2.5">
+                    Fast &amp; Convenient <span className="text-[#EE6055]">Payment</span> Across Nepal
+                  </h3>
+
+                  {/* Subtitle */}
+                  <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed max-w-xl mb-6">
+                    We accept all popular payment gateways in Nepal. Pay online in seconds or walk into our Putalisadak Academy.
+                  </p>
+
+                  {/* 6 Payment Cards (3 columns x 2 rows) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      {
+                        name: 'eSewa',
+                        sub: 'Instant Digital Wallet',
+                        icon: '/images/payment%20modes/esewa_icon.png'
+                      },
+                      {
+                        name: 'Khalti',
+                        sub: 'Instant Wallet',
+                        icon: '/images/payment%20modes/khalti_icon.png'
+                      },
+                      {
+                        name: 'Fonepay QR',
+                        sub: 'Any Mobile Banking',
+                        icon: '/images/payment%20modes/fonepay_logo.png'
+                      },
+                      {
+                        name: 'Bank Transfer',
+                        sub: 'All Nepali Banks',
+                        icon: '/images/payment%20modes/bank_transfer_icon.png'
+                      },
+                      {
+                        name: 'Putalisadak Cash',
+                        sub: 'At Front Desk',
+                        icon: '/images/payment%20modes/cash_icon.png'
+                      },
+                      {
+                        name: 'Debit / Credit Card',
+                        sub: 'At Office POS',
+                        icon: '/images/payment%20modes/debit_credit_card_logo.png'
+                      }
+                    ].map((m) => (
+                      <div
+                        key={m.name}
+                        className="p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:border-[#1E3A6E]/40 shadow-sm hover:shadow-md transition-all flex items-center gap-3"
+                      >
+                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center p-0.5">
+                          <img
+                            src={m.icon}
+                            alt={m.name}
+                            className="max-w-full max-h-full object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-xs sm:text-[13px] text-[#05162E] leading-snug truncate">
+                            {m.name}
+                          </p>
+                          <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-snug truncate mt-0.5">
+                            {m.sub}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Safe • Secure • Hassle-Free Bar */}
+                <div className="flex items-center gap-2.5 pt-5 sm:pt-6">
+                  <span className="text-[#EE6055] font-semibold text-xs tracking-tighter">──→</span>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <span className="font-black text-[#05162E]">Safe</span>
+                    <span className="text-[#EE6055] font-black">•</span>
+                    <span className="font-black text-[#05162E]">Secure</span>
+                    <span className="text-[#EE6055] font-black">•</span>
+                    <span className="font-black text-[#05162E]">Hassle-Free</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Putalisadak Location Card */}
-              <div className="rounded-2xl bg-gradient-to-br from-[#0B2558] to-[#1E3A6E] p-6 text-white border border-white/10 shadow-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="h-5 w-5 text-[#EE6055]" />
-                  <h4 className="font-bold text-base">Visit Our Putalisadak Office</h4>
-                </div>
-                <p className="text-xs text-blue-100 leading-relaxed mb-4">
-                  Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
-                </p>
-                <div className="space-y-2 text-xs border-t border-white/10 pt-4">
-                  <p className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-sky-300" />
-                    <span>01-4647115 | +977-9800000000</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-amber-300" />
-                    <span>Sunday – Friday: 7:00 AM – 6:00 PM</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-emerald-300" />
-                    <span>Silent Computer Lab &amp; Physical Speaking Rooms</span>
-                  </p>
+              {/* Right Column: Putalisadak Office Card with JCA Building */}
+              <div className="lg:col-span-5 relative rounded-3xl bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] p-5 sm:p-6 lg:p-7 text-white shadow-2xl border border-white/10 flex flex-col justify-between overflow-hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                  
+                  {/* Office Info */}
+                  <div className="sm:col-span-7 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#EE6055] flex items-center justify-center flex-shrink-0 shadow-md">
+                        <MapPin className="h-4 w-4 text-white" />
+                      </div>
+                      <h4 className="font-black text-base sm:text-lg text-white tracking-tight leading-tight">
+                        Visit Our Putalisadak Office
+                      </h4>
+                    </div>
+
+                    <div className="w-12 h-1 bg-[#EE6055] rounded-full mt-1 mb-2"></div>
+
+                    <p className="text-[11px] sm:text-xs text-blue-100/90 leading-relaxed">
+                      Opposite to Star Mall / near Kumari Bank, Putalisadak, Kathmandu, Nepal. Our counselors and IELTS trainers are ready to guide you.
+                    </p>
+
+                    <div className="border-t border-white/15 my-2.5"></div>
+
+                    <div className="space-y-2 text-[11px] sm:text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Phone className="h-3 w-3" />
+                        </div>
+                        <span className="font-semibold text-white tracking-wide">
+                          01-4467115 | +977-9800000000
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <span className="font-medium text-blue-100">
+                          Sunday – Friday: 7:00 AM – 6:00 PM
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/25 border border-blue-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+                          <Building2 className="h-3 w-3" />
+                        </div>
+                        <span className="font-medium text-blue-100">
+                          Silent Computer Lab &amp; Physical Speaking Rooms
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* JCA Building Photo */}
+                  <div className="sm:col-span-5 relative h-48 sm:h-56 md:h-60 rounded-2xl overflow-hidden border border-white/20 shadow-xl group">
+                    <img
+                      src="/images/payment%20modes/jca.png"
+                      alt="Jawaaf Consulting Academy Putalisadak Building"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Bottom-Right Curved Ribbon: Quality course Quality Career */}
+            <div className="hidden sm:block absolute bottom-0 right-0 w-[380px] md:w-[460px] h-[55px] md:h-[65px] pointer-events-none select-none z-20">
+              <svg viewBox="0 0 460 65" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                {/* Orange accent curve */}
+                <path
+                  d="M 10 65 C 80 65, 120 44, 180 38 C 240 32, 320 36, 460 16 L 460 23 C 320 43, 240 39, 180 45 C 120 51, 80 65, 10 65 Z"
+                  fill="#EE6055"
+                />
+                {/* Dark navy base ribbon */}
+                <path
+                  d="M 50 65 C 110 65, 150 49, 200 44 C 260 38, 340 40, 460 21 L 460 65 L 50 65 Z"
+                  fill="#0B2558"
+                />
+                {/* Script slogan */}
+                <text
+                  x="215"
+                  y="52"
+                  fill="#FFFFFF"
+                  fontFamily="'Caveat', 'Dancing Script', 'Brush Script MT', cursive, sans-serif"
+                  fontStyle="italic"
+                  fontWeight="700"
+                  fontSize="15"
+                  letterSpacing="0.03em"
+                >
+                  Quality course Quality Career
+                </text>
+              </svg>
+            </div>
+
           </div>
         </section>
 
