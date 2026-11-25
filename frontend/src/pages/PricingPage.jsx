@@ -1135,7 +1135,7 @@ export default function PricingPage() {
 
         {/* ── SECTION 5: PAYMENT METHODS & PUTALISADAK ACADEMY (DITTO TO REFERENCE DESIGN) ── */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16" aria-label="Payment Methods and Putalisadak Office">
-          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-6 sm:p-8 lg:p-10 xl:p-12 overflow-hidden min-h-[480px]">
+          <div className="relative rounded-[28px] sm:rounded-[36px] bg-white border border-slate-200/90 shadow-2xl p-8 sm:p-10 lg:p-12 xl:p-14 overflow-hidden min-h-[580px] sm:min-h-[620px] lg:min-h-[640px]">
 
             {/* Soft Ambient Sky Glow at Top Right */}
             <div className="absolute top-0 right-0 w-[55%] h-56 bg-gradient-to-b from-sky-50/70 via-sky-50/20 to-transparent pointer-events-none z-0" />
@@ -1235,22 +1235,22 @@ export default function PricingPage() {
               </div>
 
               {/* Right Column: Unified Seamless Putalisadak Card & Integrated Building */}
-              <div className="lg:col-span-7 relative pt-12 sm:pt-14 md:pt-16">
+              <div className="lg:col-span-7 relative pt-24 sm:pt-28 md:pt-32 lg:pt-36">
                 
-                {/* Himalaya & Temples Background - Docked seamlessly right behind the card's top edge */}
-                <div className="absolute top-0 right-0 w-full max-w-[620px] h-[130px] sm:h-[150px] md:h-[170px] pointer-events-none select-none z-0 overflow-hidden flex justify-end items-end">
+                {/* Himalaya & Temples Background - Grand, Full Height, Smoothly Rising Above Building */}
+                <div className="absolute top-0 right-0 w-full max-w-[680px] h-[155px] sm:h-[185px] md:h-[210px] pointer-events-none select-none z-0 overflow-hidden flex justify-end items-end">
                   {/* Left-edge smooth fade into white container background */}
-                  <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+                  <div className="absolute inset-y-0 left-0 w-36 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
                   
                   <img
                     src="/images/payment%20modes/himal_temple_background.png"
                     alt="Nepal Himalaya and Pagoda Temples"
-                    className="w-full h-full object-contain object-bottom-right opacity-95 [mask-image:linear-gradient(to_bottom,black_65%,transparent_100%)]"
+                    className="w-full h-full object-contain object-bottom-right opacity-95 [mask-image:linear-gradient(to_bottom,black_75%,transparent_100%)]"
                   />
                 </div>
 
                 {/* ONE SINGLE UNIFIED DARK BLUE CARD (No seams, no split boxes) */}
-                <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[380px] sm:min-h-[420px] flex flex-col justify-between">
+                <div className="relative z-10 rounded-[28px] sm:rounded-[34px] bg-gradient-to-br from-[#0B2558] via-[#0E2E6B] to-[#051838] text-white shadow-2xl overflow-hidden min-h-[410px] sm:min-h-[450px] flex flex-col justify-between">
 
                   {/* Building Photo Integrated Full-Bleed on the Right Side */}
                   <div className="sm:absolute sm:top-0 sm:right-0 sm:bottom-0 sm:w-[48%] lg:w-[50%] h-64 sm:h-full z-0 overflow-hidden">
@@ -1258,7 +1258,7 @@ export default function PricingPage() {
                     <div className="hidden sm:block absolute inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-[#0E2E6B] via-[#0E2E6B]/60 to-transparent z-10 pointer-events-none" />
                     
                     {/* Top sky ambient blend to harmonize with himalaya background */}
-                    <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0B2558]/30 via-transparent to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#0B2558]/40 via-transparent to-transparent z-10 pointer-events-none" />
 
                     <img
                       src="/images/payment%20modes/jca.png"
